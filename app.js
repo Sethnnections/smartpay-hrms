@@ -11,8 +11,8 @@ const createError = require('http-errors');
 // Initialize Express app
 const app = express();
 
-// Database connection
-require('./config/database');
+// Database connections
+//require('./config/database');
 
 // Passport configuration
 require('./config/passport');
@@ -41,8 +41,8 @@ app.use((req, res, next) => {
 });
 
 // Routes
-app.use('/', require('./routes/webRoutes'));
-app.use('/api', require('./routes/api'));
+//app.use('/', require('./routes/webRoutes'));
+//app.use('/api', require('./routes/api'));
 
 // Error handling
 app.use((req, res, next) => {
