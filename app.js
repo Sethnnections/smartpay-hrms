@@ -1,60 +1,58 @@
 require('dotenv').config();
 const express = require('express');
 const path = require('path');
-const mongoose = require('mongoose');
-const session = require('express-session');
-const passport = require('passport');
-const flash = require('connect-flash');
 const logger = require('morgan');
-const createError = require('http-errors');
+const session = require('express-session');
+const expressLayouts = require('express-ejs-layouts');
+const passport = require('./config/passport');
 
-// Initialize Express app
 const app = express();
 
-// Database connections
-//require('./config/database');
-
-// Passport configuration
-require('./config/passport');
-
-// View engine setup
+// View engine setup (EJS)
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 
-// Middleware
+// Use express-ejs-layouts
+app.use(expressLayouts);
+app.set('layout', 'admin/layout');
+app.set('layout extractScripts', true);
+app.set('layout extractStyles', true);
+
+// Logging
 app.use(logger('dev'));
+
+// Middleware
 app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
-app.use(session(require('./config/session')));
+app.use(session({
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false
+}));
 app.use(passport.initialize());
 app.use(passport.session());
-app.use(flash());
-
-// Global variables
-app.use((req, res, next) => {
-  res.locals.user = req.user;
-  res.locals.success_msg = req.flash('success_msg');
-  res.locals.error_msg = req.flash('error_msg');
-  res.locals.error = req.flash('error');
-  next();
-});
 
 // Routes
-//app.use('/', require('./routes/webRoutes'));
-//app.use('/api', require('./routes/api'));
+app.use('/api/auth', require('./routes/api/authRoutes'));
+app.use('/', require('./routes/webRoutes'));
 
 // Error handling
-app.use((req, res, next) => {
-  next(createError(404));
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).render('error', { 
+    title: 'Error',
+    message: 'An unexpected error occurred. Please try again later.',
+    error: err 
+  });
 });
 
-app.use((err, req, res, next) => {
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
-
-  res.status(err.status || 500);
-  res.render('error');
+// 404 handler
+app.use((req, res, next) => {
+  res.status(404).render('error', {
+    title: 'Page Not Found',
+    message: 'The page you are looking for could not be found.'
+  });
 });
 
 module.exports = app;

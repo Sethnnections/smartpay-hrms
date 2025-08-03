@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
+// User schema definition
 const userSchema = new mongoose.Schema({
   email: {
     type: String,
@@ -217,6 +218,40 @@ userSchema.methods.softDelete = function() {
   return this.save();
 };
 
+// Add to userSchema.methods:
+userSchema.methods.generateAuthToken = function() {
+  const jwt = require('jsonwebtoken');
+  const token = jwt.sign(
+    { 
+      id: this._id,
+      role: this.role,
+      email: this.email
+    },
+    process.env.JWT_SECRET || 'your_jwt_secret',
+    { expiresIn: '1d' }
+  );
+  return token;
+};
+
+userSchema.methods.getPublicProfile = function() {
+  const user = this.toObject();
+  delete user.password;
+  delete user.twoFactorSecret;
+  delete user.passwordResetToken;
+  delete user.passwordResetExpires;
+  delete user.loginAttempts;
+  delete user.lockUntil;
+  return {
+    id: user._id,
+    email: user.email,
+    role: user.role,
+    isActive: user.isActive,
+    profilePicture: user.profilePicture,
+    createdAt: user.createdAt
+  };
+};
+
 const User = mongoose.model('User', userSchema);
+
 
 module.exports = User;

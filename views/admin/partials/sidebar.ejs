@@ -1,0 +1,105 @@
+<aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <div class="brand-logo">
+            <div class="brand-icon">
+                <i class="fas fa-building"></i>
+            </div>
+            <div class="brand-text">
+                <h1>SmartPay</h1>
+                <p>HRMS Dashboard</p>
+            </div>
+        </div>
+    </div>
+
+    <nav class="sidebar-nav">
+        <div class="nav-section">
+            <div class="nav-section-title">Main</div>
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a href="/admin" class="nav-link <%= currentPage === 'dashboard' ? 'active' : '' %>">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title">HR Management</div>
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a href="/admin/employees" class="nav-link <%= currentPage === 'employees' ? 'active' : '' %>">
+                        <i class="fas fa-users"></i>
+                        <span>Employees</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/admin/departments" class="nav-link <%= currentPage === 'departments' ? 'active' : '' %>">
+                        <i class="fas fa-sitemap"></i>
+                        <span>Departments</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/admin/positions" class="nav-link <%= currentPage === 'positions' ? 'active' : '' %>">
+                        <i class="fas fa-briefcase"></i>
+                        <span>Positions</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title">Payroll</div>
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a href="/admin/payroll" class="nav-link <%= currentPage === 'payroll' ? 'active' : '' %>">
+                        <i class="fas fa-calculator"></i>
+                        <span>Process Payroll</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/admin/payslips" class="nav-link <%= currentPage === 'payslips' ? 'active' : '' %>">
+                        <i class="fas fa-file-invoice"></i>
+                        <span>Payslips</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title">Reports</div>
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a href="/admin/reports" class="nav-link <%= currentPage === 'reports' ? 'active' : '' %>">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Analytics</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/admin/exports" class="nav-link <%= currentPage === 'exports' ? 'active' : '' %>">
+                        <i class="fas fa-download"></i>
+                        <span>Export Data</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title">System</div>
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a href="/admin/settings" class="nav-link <%= currentPage === 'settings' ? 'active' : '' %>">
+                        <i class="fas fa-cog"></i>
+                        <span>Settings</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/admin/users" class="nav-link <%= currentPage === 'users' ? 'active' : '' %>">
+                        <i class="fas fa-user-cog"></i>
+                        <span>User Management</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+</aside>

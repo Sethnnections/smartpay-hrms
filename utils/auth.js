@@ -1,334 +1,200 @@
-const bcrypt = require('bcryptjs');
-const logger = require('./logger');
+const jwt = require('jsonwebtoken');
+const User = require('../models/User');
 
-// Hash password
-const hashPassword = async (password) => {
+// JWT Token authentication middleware
+const authenticateToken = async (req, res, next) => {
   try {
-    const saltRounds = parseInt(process.env.BCRYPT_ROUNDS) || 12;
-    return await bcrypt.hash(password, saltRounds);
-  } catch (error) {
-    logger.error('Password hashing failed:', error);
-    throw new Error('Password hashing failed');
-  }
-};
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
 
-// Compare password
-const comparePassword = async (password, hashedPassword) => {
-  try {
-    return await bcrypt.compare(password, hashedPassword);
-  } catch (error) {
-    logger.error('Password comparison failed:', error);
-    throw new Error('Password comparison failed');
-  }
-};
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: 'Access token is required'
+      });
+    }
 
-// Require authentication middleware
-const requireAuth = (req, res, next) => {
-  if (!req.session.user) {
-    logger.logSecurity('Unauthorized access attempt', {
-      ip: req.ip,
-      url: req.originalUrl,
-      userAgent: req.get('User-Agent')
-    });
+    // Verify the token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your_jwt_secret');
     
-    if (req.path.startsWith('/api/')) {
+    // Get user from database to ensure they still exist and are active
+    const user = await User.findById(decoded.id);
+    if (!user || !user.isActive) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid or expired token'
+      });
+    }
+
+    // Add user info to request object
+    req.user = {
+      id: decoded.id,
+      email: decoded.email,
+      role: decoded.role
+    };
+
+    next();
+  } catch (error) {
+    console.error('Token verification error:', error);
+    
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid token'
+      });
+    }
+    
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({
+        success: false,
+        message: 'Token expired'
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: 'Token verification failed'
+    });
+  }
+};
+
+// Role-based authorization middleware
+const authorize = (...roles) => {
+  return (req, res, next) => {
+    if (!req.user) {
       return res.status(401).json({
         success: false,
         message: 'Authentication required'
       });
     }
-    
-    req.flash('error_msg', 'Please log in to access this page');
-    return res.redirect('/login');
-  }
-  
-  // Check if user is still active
-  if (!req.session.user.isActive) {
-    logger.logSecurity('Inactive user access attempt', {
-      user: req.session.user.email,
-      ip: req.ip
-    });
-    
-    req.session.destroy();
-    
-    if (req.path.startsWith('/api/')) {
-      return res.status(401).json({
+
+    if (!roles.includes(req.user.role)) {
+      return res.status(403).json({
         success: false,
-        message: 'Account has been deactivated'
+        message: 'Insufficient permissions'
       });
-    }
-    
-    req.flash('error_msg', 'Your account has been deactivated');
-    return res.redirect('/login');
-  }
-  
-  next();
-};
-
-// Require specific role middleware
-const requireRole = (...roles) => {
-  return (req, res, next) => {
-    if (!req.session.user) {
-      return requireAuth(req, res, next);
-    }
-    
-    if (!roles.includes(req.session.user.role)) {
-      logger.logSecurity('Insufficient permissions', {
-        user: req.session.user.email,
-        requiredRoles: roles,
-        userRole: req.session.user.role,
-        ip: req.ip,
-        url: req.originalUrl
-      });
-      
-      if (req.path.startsWith('/api/')) {
-        return res.status(403).json({
-          success: false,
-          message: 'Insufficient permissions'
-        });
-      }
-      
-      req.flash('error_msg', 'You do not have permission to access this page');
-      return res.redirect('/dashboard');
-    }
-    
-    next();
-  };
-};
-
-// Optional authentication (don't redirect if not authenticated)
-const optionalAuth = (req, res, next) => {
-  // User info is already available in res.locals from server.js
-  next();
-};
-
-// Check if user has permission for specific action
-const hasPermission = (user, action, resource = null) => {
-  const permissions = {
-    admin: {
-      'read': ['*'],
-      'write': ['*'],
-      'delete': ['*'],
-      'manage': ['*']
-    },
-    hr: {
-      'read': ['employees', 'departments', 'positions', 'grades', 'payroll', 'reports'],
-      'write': ['employees', 'departments', 'positions', 'grades', 'payroll'],
-      'delete': ['employees', 'departments', 'positions'],
-      'manage': ['payroll', 'overtime']
-    },
-    employee: {
-      'read': ['profile', 'payslips', 'overtime'],
-      'write': ['profile', 'overtime'],
-      'delete': [],
-      'manage': []
-    }
-  };
-
-  if (!user || !permissions[user.role]) {
-    return false;
-  }
-
-  const userPermissions = permissions[user.role];
-  
-  if (!userPermissions[action]) {
-    return false;
-  }
-
-  // Check if user has wildcard permission
-  if (userPermissions[action].includes('*')) {
-    return true;
-  }
-
-  // Check specific resource permission
-  if (resource && userPermissions[action].includes(resource)) {
-    return true;
-  }
-
-  // If no resource specified, check if user has any permission for this action
-  if (!resource && userPermissions[action].length > 0) {
-    return true;
-  }
-
-  return false;
-};
-
-// Middleware to check specific permission
-const requirePermission = (action, resource = null) => {
-  return (req, res, next) => {
-    if (!req.session.user) {
-      return requireAuth(req, res, next);
-    }
-
-    if (!hasPermission(req.session.user, action, resource)) {
-      logger.logSecurity('Permission denied', {
-        user: req.session.user.email,
-        action,
-        resource,
-        ip: req.ip,
-        url: req.originalUrl
-      });
-
-      if (req.path.startsWith('/api/')) {
-        return res.status(403).json({
-          success: false,
-          message: `Permission denied for ${action} on ${resource || 'resource'}`
-        });
-      }
-
-      req.flash('error_msg', 'You do not have permission to perform this action');
-      return res.redirect('/dashboard');
     }
 
     next();
   };
 };
 
-// Generate secure random password
-const generatePassword = (length = 12) => {
-  const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
-  let password = '';
-  
-  for (let i = 0; i < length; i++) {
-    password += charset.charAt(Math.floor(Math.random() * charset.length));
+// Admin only middleware
+const requireAdmin = authorize('admin');
+
+// HR or Admin middleware
+const requireHROrAdmin = authorize('hr', 'admin');
+
+// Any authenticated user middleware (alias for authenticateToken)
+const requireAuth = authenticateToken;
+
+// Optional authentication (doesn't fail if no token)
+const optionalAuth = async (req, res, next) => {
+  try {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (token) {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your_jwt_secret');
+      const user = await User.findById(decoded.id);
+      
+      if (user && user.isActive) {
+        req.user = {
+          id: decoded.id,
+          email: decoded.email,
+          role: decoded.role
+        };
+      }
+    }
+
+    next();
+  } catch (error) {
+    // Continue without authentication
+    next();
   }
-  
-  return password;
 };
 
-// Validate password strength
-const validatePassword = (password) => {
-  const minLength = 8;
-  const hasUpperCase = /[A-Z]/.test(password);
-  const hasLowerCase = /[a-z]/.test(password);
-  const hasNumbers = /\d/.test(password);
-  const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+// Check if user owns resource or is admin/hr
+const requireOwnershipOrPrivileged = (resourceUserIdField = 'userId') => {
+  return async (req, res, next) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({
+          success: false,
+          message: 'Authentication required'
+        });
+      }
 
-  const errors = [];
+      // Admin and HR can access any resource
+      if (['admin', 'hr'].includes(req.user.role)) {
+        return next();
+      }
 
-  if (password.length < minLength) {
-    errors.push(`Password must be at least ${minLength} characters long`);
-  }
+      // For employees, check if they own the resource
+      const resourceUserId = req.params.userId || req.body[resourceUserIdField] || req.query.userId;
+      
+      if (resourceUserId && resourceUserId.toString() !== req.user.id.toString()) {
+        return res.status(403).json({
+          success: false,
+          message: 'Access denied: You can only access your own resources'
+        });
+      }
 
-  if (!hasUpperCase) {
-    errors.push('Password must contain at least one uppercase letter');
-  }
-
-  if (!hasLowerCase) {
-    errors.push('Password must contain at least one lowercase letter');
-  }
-
-  if (!hasNumbers) {
-    errors.push('Password must contain at least one number');
-  }
-
-  if (!hasSpecialChar) {
-    errors.push('Password must contain at least one special character');
-  }
-
-  return {
-    isValid: errors.length === 0,
-    errors,
-    strength: calculatePasswordStrength(password)
+      next();
+    } catch (error) {
+      console.error('Ownership check error:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Authorization check failed'
+      });
+    }
   };
 };
 
-// Calculate password strength score
-const calculatePasswordStrength = (password) => {
-  let score = 0;
-  
-  // Length bonus
-  score += Math.min(password.length * 2, 20);
-  
-  // Character variety bonus
-  if (/[a-z]/.test(password)) score += 5;
-  if (/[A-Z]/.test(password)) score += 5;
-  if (/[0-9]/.test(password)) score += 5;
-  if (/[^A-Za-z0-9]/.test(password)) score += 10;
-  
-  // Penalty for common patterns
-  if (/(.)\1{2,}/.test(password)) score -= 10; // Repeated characters
-  if (/123|abc|qwe/i.test(password)) score -= 10; // Sequential patterns
-  
-  // Return strength level
-  if (score < 30) return 'weak';
-  if (score < 60) return 'medium';
-  if (score < 80) return 'strong';
-  return 'very strong';
-};
+// Rate limiting middleware (simple implementation)
+const createRateLimit = (maxRequests = 100, windowMs = 15 * 60 * 1000) => {
+  const requests = new Map();
 
-// Session security helpers
-const regenerateSession = (req) => {
-  return new Promise((resolve, reject) => {
-    const userData = req.session.user;
-    req.session.regenerate((err) => {
-      if (err) {
-        logger.error('Session regeneration failed:', err);
-        return reject(err);
+  return (req, res, next) => {
+    const key = req.ip || req.connection.remoteAddress;
+    const now = Date.now();
+    const windowStart = now - windowMs;
+
+    // Clean old entries
+    requests.forEach((timestamp, ip) => {
+      if (timestamp < windowStart) {
+        requests.delete(ip);
       }
-      req.session.user = userData;
-      resolve();
     });
-  });
-};
 
-// Check for session hijacking
-const validateSession = (req, res, next) => {
-  if (req.session.user) {
-    const currentIP = req.ip;
-    const currentUserAgent = req.get('User-Agent');
-    
-    if (req.session.lastIP && req.session.lastIP !== currentIP) {
-      logger.logSecurity('Potential session hijacking - IP change', {
-        user: req.session.user.email,
-        oldIP: req.session.lastIP,
-        newIP: currentIP,
-        userAgent: currentUserAgent
-      });
-      
-      // Optionally destroy session on IP change
-      if (process.env.STRICT_SESSION_SECURITY === 'true') {
-        req.session.destroy();
-        if (req.path.startsWith('/api/')) {
-          return res.status(401).json({
-            success: false,
-            message: 'Session security violation detected'
-          });
-        }
-        req.flash('error_msg', 'Security violation detected. Please log in again.');
-        return res.redirect('/login');
-      }
-    }
-    
-    if (req.session.lastUserAgent && req.session.lastUserAgent !== currentUserAgent) {
-      logger.logSecurity('Potential session hijacking - User Agent change', {
-        user: req.session.user.email,
-        oldUserAgent: req.session.lastUserAgent,
-        newUserAgent: currentUserAgent,
-        ip: currentIP
+    // Count requests for this IP
+    const userRequests = Array.from(requests.entries())
+      .filter(([ip, timestamp]) => ip === key && timestamp > windowStart)
+      .length;
+
+    if (userRequests >= maxRequests) {
+      return res.status(429).json({
+        success: false,
+        message: 'Too many requests, please try again later'
       });
     }
-    
-    // Update session tracking
-    req.session.lastIP = currentIP;
-    req.session.lastUserAgent = currentUserAgent;
-    req.session.lastActivity = new Date();
-  }
-  
-  next();
+
+    requests.set(key, now);
+    next();
+  };
 };
 
+// Export all middleware functions
 module.exports = {
-  hashPassword,
-  comparePassword,
+  authenticateToken,
+  authorize,
+  requireAdmin,
+  requireHROrAdmin,
   requireAuth,
-  requireRole,
-  requirePermission,
   optionalAuth,
-  hasPermission,
-  generatePassword,
-  validatePassword,
-  calculatePasswordStrength,
-  regenerateSession,
-  validateSession
+  requireOwnershipOrPrivileged,
+  createRateLimit,
+  // Aliases for backward compatibility
+  auth: authenticateToken,
+  verifyToken: authenticateToken
 };

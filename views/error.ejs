@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #0a1f3a 0%, #1e3a8a 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Inter', sans-serif;
+        }
+        .error-container {
+            text-align: center;
+            color: white;
+            max-width: 500px;
+            padding: 2rem;
+        }
+        .error-icon {
+            font-size: 4rem;
+            color: #FFD700;
+            margin-bottom: 1rem;
+        }
+        .error-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+        .error-message {
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+        .btn-home {
+            background-color: #FFD700;
+            border-color: #FFD700;
+            color: #0a1f3a;
+            font-weight: 600;
+            padding: 12px 30px;
+            border-radius: 8px;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+        .btn-home:hover {
+            background-color: #e6c200;
+            transform: translateY(-2px);
+            color: #0a1f3a;
+        }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <i class="fas fa-exclamation-triangle error-icon"></i>
+        <h1 class="error-title">Oops! Something went wrong</h1>
+        <p class="error-message"><%= message %></p>
+        <a href="/admin" class="btn-home">
+            <i class="fas fa-home me-2"></i>Back to Dashboard
+        </a>
+        
+        <% if (typeof error !== 'undefined' && error.stack) { %>
+            <div class="mt-4 text-start" style="background: rgba(255,255,255,0.1); padding: 1rem; border-radius: 8px; font-family: monospace; font-size: 0.9rem; overflow-x: auto;">
+                <pre><%= error.stack %></pre>
+            </div>
+        <% } %>
+    </div>
+</body>
+</html>

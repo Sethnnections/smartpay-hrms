@@ -1,0 +1,22 @@
+<header class="top-header">
+    <div class="header-left">
+        <button class="sidebar-toggle" id="sidebarToggle">
+            <i class="fas fa-bars"></i>
+        </button>
+        <h1 class="page-title"><%= title %></h1>
+    </div>
+    <div class="header-right">
+        <div class="user-info">
+            <div class="user-details">
+                <h6><%= user.name %></h6>
+                <small><%= user.email %></small>
+            </div>
+            <div class="user-avatar"><%= user.avatar %></div>
+        </div>
+        <form method="POST" action="/admin/logout" style="display: inline;">
+            <button type="submit" class="btn logout-btn" onclick="return confirm('Are you sure you want to logout?')">
+                <i class="fas fa-sign-out-alt me-1"></i>Logout
+            </button>
+        </form>
+    </div>
+</header>

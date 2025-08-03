@@ -1,0 +1,162 @@
+
+<!-- Page Header -->
+<div class="page-header">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-0">Employee Management</h2>
+            <p class="text-muted">Manage your organization's workforce</p>
+        </div>
+        <button class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>Add Employee
+        </button>
+    </div>
+</div>
+
+<!-- Employee Stats -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-header">
+                <p class="stat-title">Active Employees</p>
+                <div class="stat-icon">
+                    <i class="fas fa-user-check"></i>
+                </div>
+            </div>
+            <div class="stat-value">247</div>
+            <div class="stat-trend">
+                <i class="fas fa-arrow-up"></i>
+                <span>+12 this month</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-header">
+                <p class="stat-title">On Leave</p>
+                <div class="stat-icon">
+                    <i class="fas fa-calendar-times"></i>
+                </div>
+            </div>
+            <div class="stat-value">8</div>
+            <div class="stat-trend">
+                <i class="fas fa-minus"></i>
+                <span>2 fewer than last week</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-header">
+                <p class="stat-title">New Hires</p>
+                <div class="stat-icon">
+                    <i class="fas fa-user-plus"></i>
+                </div>
+            </div>
+            <div class="stat-value">5</div>
+            <div class="stat-trend">
+                <i class="fas fa-arrow-up"></i>
+                <span>This month</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-header">
+                <p class="stat-title">Avg. Tenure</p>
+                <div class="stat-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+            </div>
+            <div class="stat-value">3.2y</div>
+            <div class="stat-trend">
+                <i class="fas fa-arrow-up"></i>
+                <span>+0.3 years</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Employee Table -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Employee List</h5>
+        <div class="d-flex gap-2">
+            <input type="text" class="form-control" placeholder="Search employees..." style="width: 200px;">
+            <select class="form-select" style="width: 150px;">
+                <option>All Departments</option>
+                <option>IT</option>
+                <option>HR</option>
+                <option>Finance</option>
+            </select>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Employee</th>
+                        <th>Position</th>
+                        <th>Department</th>
+                        <th>Hire Date</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="user-avatar me-3">JD</div>
+                                <div>
+                                    <div class="fw-medium">John Doe</div>
+                                    <small class="text-muted">john.doe@company.com</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>Software Engineer</td>
+                        <td>IT</td>
+                        <td>Jan 15, 2023</td>
+                        <td><span class="badge bg-success">Active</span></td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-primary" title="View">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-outline-warning" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-outline-danger" title="Delete">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    <!-- More employee rows would be dynamically generated here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="card-footer d-flex justify-content-between align-items-center">
+        <small class="text-muted">Showing 1-10 of 247 employees</small>
+        <nav>
+            <ul class="pagination pagination-sm mb-0">
+                <li class="page-item disabled">
+                    <span class="page-link">Previous</span>
+                </li>
+                <li class="page-item active">
+                    <span class="page-link">1</span>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="#">2</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="#">3</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="#">Next</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+</div>

@@ -1,0 +1,1160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartPay HRMS - Admin Dashboard</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    
+    <style>
+        :root {
+            --sidebar-dark-blue: #0a1f3a;
+            --sidebar-dark-blue-hover: #0f2a4d;
+            --golden-yellow: #FFD700;
+            --golden-yellow-light: #ffea99;
+            --bg-white: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --border-color: #e2e8f0;
+            --sidebar-width: 280px;
+            --header-height: 70px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-white);
+            color: var(--text-primary);
+            overflow-x: hidden;
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: var(--sidebar-width);
+            height: 100vh;
+            background: var(--sidebar-dark-blue);
+            z-index: 1000;
+            transition: transform 0.3s ease;
+            overflow-y: auto;
+        }
+
+        .sidebar.collapsed {
+            transform: translateX(-100%);
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+        }
+
+        .brand-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--golden-yellow);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--sidebar-dark-blue);
+            font-size: 1.2rem;
+        }
+
+        .brand-text h1 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--golden-yellow);
+            margin: 0;
+        }
+
+        .brand-text p {
+            font-size: 0.85rem;
+            color: var(--golden-yellow-light);
+            margin: 0;
+        }
+
+        .sidebar-nav {
+            padding: 20px 0;
+        }
+
+        .nav-section {
+            margin-bottom: 30px;
+        }
+
+        .nav-section-title {
+            padding: 0 20px 10px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--golden-yellow-light);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            opacity: 0.8;
+        }
+
+        .nav-item {
+            margin-bottom: 4px;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 20px;
+            color: var(--golden-yellow-light);
+            text-decoration: none;
+            transition: all 0.2s ease;
+            font-weight: 500;
+            border-radius: 0;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            background: var(--sidebar-dark-blue-hover);
+            color: var(--golden-yellow);
+            text-decoration: none;
+        }
+
+        .nav-link i {
+            width: 20px;
+            font-size: 1rem;
+            color: var(--golden-yellow);
+        }
+
+        .nav-link.active i,
+        .nav-link:hover i {
+            color: var(--golden-yellow);
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            min-height: 100vh;
+            transition: margin-left 0.3s ease;
+            background-color: var(--bg-white);
+        }
+
+        .main-content.expanded {
+            margin-left: 0;
+        }
+
+        /* Top Header */
+        .top-header {
+            background: var(--bg-white);
+            border-bottom: 1px solid var(--border-color);
+            padding: 0 30px;
+            height: var(--header-height);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .sidebar-toggle {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .sidebar-toggle:hover {
+            background: var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .page-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            background: var(--golden-yellow);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--sidebar-dark-blue);
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .user-details h6 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        .user-details small {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+        }
+
+        .logout-btn {
+            background: none;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+        }
+
+        .logout-btn:hover {
+            border-color: var(--golden-yellow);
+            color: var(--golden-yellow);
+        }
+
+        /* Dashboard Content */
+        .dashboard-content {
+            padding: 30px;
+        }
+
+        /* Welcome Section */
+        .welcome-section {
+            background: var(--bg-white);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 30px;
+            border: 1px solid var(--border-color);
+        }
+
+        .welcome-section h2 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .welcome-section p {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            margin: 0;
+        }
+
+        .date-time {
+            background: rgba(255, 215, 0, 0.1);
+            color: var(--text-primary);
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 500;
+            font-size: 0.9rem;
+            margin-top: 16px;
+            display: inline-block;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 24px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: var(--bg-white);
+            border-radius: 12px;
+            padding: 24px;
+            border: 1px solid var(--border-color);
+            transition: all 0.2s ease;
+        }
+
+        .stat-card:hover {
+            box-shadow: 0 4px 20px rgba(255, 215, 0, 0.1);
+            border-color: var(--golden-yellow);
+        }
+
+        .stat-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .stat-title {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin: 0;
+        }
+
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            color: var(--sidebar-dark-blue);
+            background-color: var(--golden-yellow);
+        }
+
+        .stat-value {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .stat-trend {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--golden-yellow);
+        }
+
+        /* Charts Section */
+        .charts-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-top: 30px;
+        }
+
+        .chart-card {
+            background: var(--bg-white);
+            border-radius: 12px;
+            padding: 24px;
+            border: 1px solid var(--border-color);
+        }
+
+        .chart-header {
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .chart-header h5 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        .chart-header h5 i {
+            color: var(--golden-yellow);
+            margin-right: 10px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.mobile-open {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .top-header {
+                padding: 0 20px;
+            }
+
+            .dashboard-content {
+                padding: 20px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+
+            .charts-section {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+
+            .user-details {
+                display: none;
+            }
+
+            .page-title {
+                font-size: 1.3rem;
+            }
+
+            .welcome-section h2 {
+                font-size: 1.5rem;
+            }
+        }
+
+        /* Sidebar Overlay for Mobile */
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Animations */
+        .fade-in {
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .stat-card {
+            animation: slideUp 0.5s ease-out;
+        }
+
+        .stat-card:nth-child(1) { animation-delay: 0.1s; }
+        .stat-card:nth-child(2) { animation-delay: 0.2s; }
+        .stat-card:nth-child(3) { animation-delay: 0.3s; }
+        .stat-card:nth-child(4) { animation-delay: 0.4s; }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar Overlay for Mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="brand-logo">
+                <div class="brand-icon">
+                    <i class="fas fa-building"></i>
+                </div>
+                <div class="brand-text">
+                    <h1>SmartPay</h1>
+                    <p>HRMS Dashboard</p>
+                </div>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <div class="nav-section">
+                <div class="nav-section-title">Main</div>
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a href="#" class="nav-link active">
+                            <i class="fas fa-tachometer-alt"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">HR Management</div>
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" onclick="navigateToSection('employees')">
+                            <i class="fas fa-users"></i>
+                            <span>Employees</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" onclick="navigateToSection('departments')">
+                            <i class="fas fa-sitemap"></i>
+                            <span>Departments</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" onclick="navigateToSection('positions')">
+                            <i class="fas fa-briefcase"></i>
+                            <span>Positions</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">Payroll</div>
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" onclick="navigateToSection('payroll')">
+                            <i class="fas fa-calculator"></i>
+                            <span>Process Payroll</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" onclick="navigateToSection('payslips')">
+                            <i class="fas fa-file-invoice"></i>
+                            <span>Payslips</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">Reports</div>
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" onclick="navigateToSection('reports')">
+                            <i class="fas fa-chart-line"></i>
+                            <span>Analytics</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" onclick="navigateToSection('exports')">
+                            <i class="fas fa-download"></i>
+                            <span>Export Data</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">System</div>
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" onclick="navigateToSection('settings')">
+                            <i class="fas fa-cog"></i>
+                            <span>Settings</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" onclick="navigateToSection('users')">
+                            <i class="fas fa-user-cog"></i>
+                            <span>User Management</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="main-content" id="mainContent">
+        <!-- Top Header -->
+        <header class="top-header">
+            <div class="header-left">
+                <button class="sidebar-toggle" id="sidebarToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <h1 class="page-title">Dashboard</h1>
+            </div>
+            <div class="header-right">
+                <div class="user-info">
+                    <div class="user-details">
+                        <h6>Administrator</h6>
+                        <small>admin@smartpay.com</small>
+                    </div>
+                    <div class="user-avatar">AD</div>
+                </div>
+                <button class="btn logout-btn" onclick="handleLogout()">
+                    <i class="fas fa-sign-out-alt me-1"></i>Logout
+                </button>
+            </div>
+        </header>
+
+        <!-- Dashboard Content -->
+        <main class="dashboard-content">
+            <!-- Welcome Section -->
+            <div class="welcome-section fade-in">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h2>Welcome back, Administrator!</h2>
+                        <p>Here's what's happening with your HR system today. Manage your employees, process payroll, and generate reports all from one place.</p>
+                        <div class="date-time" id="currentDateTime">
+                            <i class="fas fa-calendar-alt me-2"></i>
+                            <span id="dateTime"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistics Cards -->
+            <div class="stats-grid">
+                <div class="stat-card employees">
+                    <div class="stat-header">
+                        <p class="stat-title">Total Employees</p>
+                        <div class="stat-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                    </div>
+                    <div class="stat-value" id="employeeCount">247</div>
+                    <div class="stat-trend">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>+12 this month</span>
+                    </div>
+                </div>
+
+                <div class="stat-card departments">
+                    <div class="stat-header">
+                        <p class="stat-title">Departments</p>
+                        <div class="stat-icon">
+                            <i class="fas fa-sitemap"></i>
+                        </div>
+                    </div>
+                    <div class="stat-value" id="departmentCount">15</div>
+                    <div class="stat-trend">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>+2 new departments</span>
+                    </div>
+                </div>
+
+                <div class="stat-card positions">
+                    <div class="stat-header">
+                        <p class="stat-title">Active Positions</p>
+                        <div class="stat-icon">
+                            <i class="fas fa-briefcase"></i>
+                        </div>
+                    </div>
+                    <div class="stat-value" id="positionCount">42</div>
+                    <div class="stat-trend">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>+5 positions</span>
+                    </div>
+                </div>
+
+                <div class="stat-card payroll">
+                    <div class="stat-header">
+                        <p class="stat-title">Monthly Payroll</p>
+                        <div class="stat-icon">
+                            <i class="fas fa-money-bill-wave"></i>
+                        </div>
+                    </div>
+                    <div class="stat-value">$2.4M</div>
+                    <div class="stat-trend">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>+8.5% from last month</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Section -->
+            <div class="charts-section">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h5><i class="fas fa-chart-bar"></i>Employee Distribution by Department</h5>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="departmentChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h5><i class="fas fa-chart-line"></i>Monthly Payroll Trends</h5>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="payrollChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Dashboard Management System
+        class SmartPayDashboard {
+            constructor() {
+                this.initializeDateTime();
+                this.initializeCharts();
+                this.setupEventListeners();
+                this.animateCounters();
+                this.setupSidebar();
+            }
+
+            setupSidebar() {
+                const sidebarToggle = document.getElementById('sidebarToggle');
+                const sidebar = document.getElementById('sidebar');
+                const mainContent = document.getElementById('mainContent');
+                const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+                sidebarToggle.addEventListener('click', () => {
+                    if (window.innerWidth <= 768) {
+                        // Mobile behavior
+                        sidebar.classList.toggle('mobile-open');
+                        sidebarOverlay.classList.toggle('active');
+                    } else {
+                        // Desktop behavior
+                        sidebar.classList.toggle('collapsed');
+                        mainContent.classList.toggle('expanded');
+                    }
+                });
+
+                // Close sidebar when clicking overlay
+                sidebarOverlay.addEventListener('click', () => {
+                    sidebar.classList.remove('mobile-open');
+                    sidebarOverlay.classList.remove('active');
+                });
+
+                // Handle window resize
+                window.addEventListener('resize', () => {
+                    if (window.innerWidth > 768) {
+                        sidebar.classList.remove('mobile-open');
+                        sidebarOverlay.classList.remove('active');
+                    }
+                });
+            }
+
+            initializeDateTime() {
+                const updateDateTime = () => {
+                    const now = new Date();
+                    const options = {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    };
+                    document.getElementById('dateTime').textContent = now.toLocaleDateString('en-US', options);
+                };
+
+                updateDateTime();
+                setInterval(updateDateTime, 60000);
+            }
+
+            setupEventListeners() {
+                // Navigation links
+                document.querySelectorAll('.nav-link').forEach(link => {
+                    link.addEventListener('click', (e) => {
+                        // Remove active class from all links
+                        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+                        // Add active class to clicked link
+                        e.currentTarget.classList.add('active');
+                    });
+                });
+            }
+
+            animateCounters() {
+                const counters = [
+                    { element: document.getElementById('employeeCount'), target: 247, duration: 2000 },
+                    { element: document.getElementById('departmentCount'), target: 15, duration: 1500 },
+                    { element: document.getElementById('positionCount'), target: 42, duration: 1800 }
+                ];
+
+                counters.forEach(counter => {
+                    this.animateCounter(counter.element, counter.target, counter.duration);
+                });
+            }
+
+            animateCounter(element, target, duration) {
+                let start = 0;
+                const increment = target / (duration / 16);
+                
+                const timer = setInterval(() => {
+                    start += increment;
+                    if (start >= target) {
+                        element.textContent = target;
+                        clearInterval(timer);
+                    } else {
+                        element.textContent = Math.floor(start);
+                    }
+                }, 16);
+            }
+
+            initializeCharts() {
+                this.createDepartmentChart();
+                this.createPayrollChart();
+            }
+
+            createDepartmentChart() {
+                const ctx = document.getElementById('departmentChart').getContext('2d');
+                
+                new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['IT', 'HR', 'Finance', 'Operations', 'Marketing', 'Others'],
+                        datasets: [{
+                            data: [45, 25, 30, 35, 28, 84],
+                            backgroundColor: [
+                                '#0a1f3a',
+                                '#FFD700',
+                                '#0f2a4d',
+                                '#64748b',
+                                '#0a1f3a',
+                                '#FFD700'
+                            ],
+                            borderWidth: 0,
+                            hoverOffset: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    padding: 20,
+                                    usePointStyle: true,
+                                    font: {
+                                        family: 'Inter',
+                                        size: 12
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            createPayrollChart() {
+                const ctx = document.getElementById('payrollChart').getContext('2d');
+                
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                        datasets: [{
+                            label: 'Monthly Payroll ($M)',
+                            data: [2.1, 2.2, 2.0, 2.3, 2.4, 2.4],
+                            borderColor: '#FFD700',
+                            backgroundColor: 'rgba(255, 215, 0, 0.1)',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.4,
+                            pointBackgroundColor: '#FFD700',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                            pointRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: false,
+                                min: 1.8,
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.1)'
+                                },
+                                ticks: {
+                                    font: {
+                                        family: 'Inter'
+                                    }
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.1)'
+                                },
+                                ticks: {
+                                    font: {
+                                        family: 'Inter'
+                                    }
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        // Navigation Functions
+        function navigateToSection(section) {
+            showNotification(`Navigating to ${section.toUpperCase()} section...`, 'info');
+            
+            // Update page title
+            document.querySelector('.page-title').textContent = section.charAt(0).toUpperCase() + section.slice(1);
+            
+            // Close mobile sidebar if open
+            if (window.innerWidth <= 768) {
+                document.getElementById('sidebar').classList.remove('mobile-open');
+                document.getElementById('sidebarOverlay').classList.remove('active');
+            }
+        }
+
+        function handleLogout() {
+            if (confirm('Are you sure you want to logout?')) {
+                showNotification('Logging out...', 'info');
+                setTimeout(() => {
+                    alert('Logout successful! Redirecting to login page...');
+                }, 1000);
+            }
+        }
+
+        // Notification System
+        function showNotification(message, type = 'info') {
+            // Remove existing notifications
+            const existingNotifications = document.querySelectorAll('.notification');
+            existingNotifications.forEach(notification => notification.remove());
+
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `notification alert alert-${type} alert-dismissible fade show`;
+            notification.style.cssText = `
+                position: fixed;
+                top: 90px;
+                right: 20px;
+                z-index: 9999;
+                min-width: 300px;
+                border-radius: 8px;
+                border: none;
+                font-weight: 500;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+                font-family: 'Inter', sans-serif;
+            `;
+
+            let icon = '';
+            let bgColor = '';
+            switch(type) {
+                case 'success': 
+                    icon = 'fas fa-check-circle'; 
+                    bgColor = '#FFD700';
+                    break;
+                case 'info': 
+                    icon = 'fas fa-info-circle'; 
+                    bgColor = '#0a1f3a';
+                    break;
+                case 'warning': 
+                    icon = 'fas fa-exclamation-triangle'; 
+                    bgColor = '#f59e0b';
+                    break;
+                case 'danger': 
+                    icon = 'fas fa-exclamation-circle'; 
+                    bgColor = '#ef4444';
+                    break;
+            }
+
+            notification.style.backgroundColor = bgColor;
+            notification.style.color = 'white';
+            notification.style.border = 'none';
+
+            notification.innerHTML = `
+                <i class="${icon} me-2"></i>${message}
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
+            `;
+
+            document.body.appendChild(notification);
+
+            // Auto-remove after 3 seconds
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.classList.remove('show');
+                    setTimeout(() => notification.remove(), 150);
+                }
+            }, 3000);
+        }
+
+        // Initialize Dashboard
+        document.addEventListener('DOMContentLoaded', () => {
+            new SmartPayDashboard();
+            
+            // Show welcome message
+            setTimeout(() => {
+                showNotification('Welcome to SmartPay HRMS Dashboard!', 'success');
+            }, 1000);
+
+            // Add loading animation for stats
+            const statCards = document.querySelectorAll('.stat-card');
+            statCards.forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(30px)';
+                
+                setTimeout(() => {
+                    card.style.transition = 'all 0.5s ease-out';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, 150 * (index + 1));
+            });
+        });
+
+        // Real-time updates simulation
+        setInterval(() => {
+            const employeeCount = document.getElementById('employeeCount');
+            const currentCount = parseInt(employeeCount.textContent);
+            
+            if (Math.random() > 0.98) {
+                const newCount = currentCount + (Math.random() > 0.5 ? 1 : -1);
+                employeeCount.textContent = Math.max(0, newCount);
+                
+                // Flash effect for updates
+                employeeCount.style.color = '#FFD700';
+                setTimeout(() => {
+                    employeeCount.style.color = '';
+                }, 1000);
+            }
+        }, 5000);
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey) {
+                switch(e.key) {
+                    case 'b':
+                        e.preventDefault();
+                        document.getElementById('sidebarToggle').click();
+                        break;
+                    case '1':
+                        e.preventDefault();
+                        navigateToSection('employees');
+                        break;
+                    case '2':
+                        e.preventDefault();
+                        navigateToSection('payroll');
+                        break;
+                    case '3':
+                        e.preventDefault();
+                        navigateToSection('reports');
+                        break;
+                }
+            }
+        });
+
+        // Touch gestures for mobile
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        document.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+        });
+
+        document.addEventListener('touchend', (e) => {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        });
+
+        function handleSwipe() {
+            const swipeThreshold = 100;
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+
+            if (touchEndX - touchStartX > swipeThreshold) {
+                // Swipe right - open sidebar
+                if (window.innerWidth <= 768) {
+                    sidebar.classList.add('mobile-open');
+                    overlay.classList.add('active');
+                }
+            } else if (touchStartX - touchEndX > swipeThreshold) {
+                // Swipe left - close sidebar
+                if (window.innerWidth <= 768) {
+                    sidebar.classList.remove('mobile-open');
+                    overlay.classList.remove('active');
+                }
+            }
+        }
+
+        // Performance monitoring
+        function monitorPerformance() {
+            if ('performance' in window) {
+                window.addEventListener('load', () => {
+                    const perfData = performance.getEntriesByType('navigation')[0];
+                    if (perfData) {
+                        console.log('Page Load Time:', perfData.loadEventEnd - perfData.loadEventStart, 'ms');
+                    }
+                });
+            }
+        }
+
+        // Initialize performance monitoring
+        monitorPerformance();
+
+        // Accessibility improvements
+        document.addEventListener('keydown', (e) => {
+            // Escape key closes mobile sidebar
+            if (e.key === 'Escape') {
+                const sidebar = document.getElementById('sidebar');
+                const overlay = document.getElementById('sidebarOverlay');
+                if (sidebar.classList.contains('mobile-open')) {
+                    sidebar.classList.remove('mobile-open');
+                    overlay.classList.remove('active');
+                }
+            }
+        });
+
+        // Focus management for sidebar
+        const sidebar = document.getElementById('sidebar');
+        const firstFocusableElement = sidebar.querySelector('a, button');
+        const lastFocusableElement = sidebar.querySelectorAll('a, button');
+        const lastElement = lastFocusableElement[lastFocusableElement.length - 1];
+
+        sidebar.addEventListener('keydown', (e) => {
+            if (e.key === 'Tab') {
+                if (e.shiftKey) {
+                    if (document.activeElement === firstFocusableElement) {
+                        lastElement.focus();
+                        e.preventDefault();
+                    }
+                } else {
+                    if (document.activeElement === lastElement) {
+                        firstFocusableElement.focus();
+                        e.preventDefault();
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

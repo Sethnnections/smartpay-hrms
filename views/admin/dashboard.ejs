@@ -1,0 +1,108 @@
+<!-- Welcome Section -->
+<div class="welcome-section fade-in">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h2>Welcome back, <%= user.name %>!</h2>
+            <p>Here's what's happening with your HR system today. Manage your employees, process payroll, and generate reports all from one place.</p>
+            <div class="date-time" id="currentDateTime">
+                <i class="fas fa-calendar-alt me-2"></i>
+                <span id="dateTime"></span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="stats-grid">
+    <div class="stat-card employees">
+        <div class="stat-header">
+            <p class="stat-title">Total Employees</p>
+            <div class="stat-icon">
+                <i class="fas fa-users"></i>
+            </div>
+        </div>
+        <div class="stat-value" id="employeeCount">247</div>
+        <div class="stat-trend">
+            <i class="fas fa-arrow-up"></i>
+            <span>+12 this month</span>
+        </div>
+    </div>
+
+    <div class="stat-card departments">
+        <div class="stat-header">
+            <p class="stat-title">Departments</p>
+            <div class="stat-icon">
+                <i class="fas fa-sitemap"></i>
+            </div>
+        </div>
+        <div class="stat-value" id="departmentCount">15</div>
+        <div class="stat-trend">
+            <i class="fas fa-arrow-up"></i>
+            <span>+2 new departments</span>
+        </div>
+    </div>
+
+    <div class="stat-card positions">
+        <div class="stat-header">
+            <p class="stat-title">Active Positions</p>
+            <div class="stat-icon">
+                <i class="fas fa-briefcase"></i>
+            </div>
+        </div>
+        <div class="stat-value" id="positionCount">42</div>
+        <div class="stat-trend">
+            <i class="fas fa-arrow-up"></i>
+            <span>+5 positions</span>
+        </div>
+    </div>
+
+    <div class="stat-card payroll">
+        <div class="stat-header">
+            <p class="stat-title">Monthly Payroll</p>
+            <div class="stat-icon">
+                <i class="fas fa-money-bill-wave"></i>
+            </div>
+        </div>
+        <div class="stat-value">$2.4M</div>
+        <div class="stat-trend">
+            <i class="fas fa-arrow-up"></i>
+            <span>+8.5% from last month</span>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Section -->
+<div class="charts-section">
+    <div class="chart-card">
+        <div class="chart-header">
+            <h5><i class="fas fa-chart-bar"></i>Employee Distribution by Department</h5>
+        </div>
+        <div class="chart-container">
+            <canvas id="departmentChart"></canvas>
+        </div>
+    </div>
+
+    <div class="chart-card">
+        <div class="chart-header">
+            <h5><i class="fas fa-chart-line"></i>Monthly Payroll Trends</h5>
+        </div>
+        <div class="chart-container">
+            <canvas id="payrollChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Dashboard-specific JavaScript
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize dashboard charts
+        if (typeof initializeDashboardCharts === 'function') {
+            initializeDashboardCharts();
+        }
+        
+        // Show welcome notification
+        setTimeout(() => {
+            showNotification('Welcome to SmartPay HRMS Dashboard!', 'success');
+        }, 1000);
+    });
+</script>
