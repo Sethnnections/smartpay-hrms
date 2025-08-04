@@ -36,6 +36,7 @@ app.use(passport.session());
 // Routes
 app.use('/api/auth', require('./routes/api/authRoutes'));
 app.use('/', require('./routes/webRoutes'));
+app.use('/api/departments', require('./routes/api/departmentRoutes'));
 
 // Error handling
 app.use((err, req, res, next) => {

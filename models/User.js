@@ -227,7 +227,7 @@ userSchema.methods.generateAuthToken = function() {
       role: this.role,
       email: this.email
     },
-    process.env.JWT_SECRET || 'your_jwt_secret',
+    process.env.JWT_SECRET,
     { expiresIn: '1d' }
   );
   return token;
