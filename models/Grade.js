@@ -387,10 +387,21 @@ gradeSchema.methods.calculateNetSalary = function(overtimeHours = 0) {
 };
 
 // Static method to get grade hierarchy
-gradeSchema.statics.getHierarchy = function() {
-  return this.find({ isActive: true })
-    .sort({ level: 1 })
-    .populate('promotion.nextGrade', 'name code level');
+gradeSchema.statics.getHierarchy = async function() {
+  try {
+    const hierarchy = await this.find({ isActive: true })
+      .sort({ level: 1 })
+      .populate('promotion.nextGrade', 'name code level');
+    
+    if (!hierarchy || hierarchy.length === 0) {
+      throw new Error('No active grades found');
+    }
+    
+    return hierarchy;
+  } catch (error) {
+    console.error('Error building hierarchy:', error);
+    throw error;
+  }
 };
 
 // Static method to find grades by salary range
