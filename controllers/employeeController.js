@@ -167,6 +167,113 @@ async function generateEmployeeId() {
   return `EMP${lastId + 1}`;
 }
 
+// Get all employees with filtering, pagination, and sorting
+exports.getAllEmployees = async (req, res) => {
+  try {
+    // Extract query parameters
+    const {
+      search,
+      departmentId,
+      positionId,
+      gradeId,
+      status = 'active',
+      minSalary,
+      maxSalary,
+      minGradeLevel,
+      maxGradeLevel,
+      page = 1,
+      limit = 10,
+      sortBy = 'personalInfo.lastName',
+      sortOrder = 'asc'
+    } = req.query;
+
+    // Build the query
+    const query = {
+      'employmentInfo.status': status
+    };
+
+    // Search filter
+    if (search) {
+      query.$or = [
+        { 'personalInfo.firstName': { $regex: search, $options: 'i' } },
+        { 'personalInfo.lastName': { $regex: search, $options: 'i' } },
+        { employeeId: { $regex: search, $options: 'i' } },
+        { 'personalInfo.email': { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    // Department filter
+    if (departmentId) {
+      query['employmentInfo.departmentId'] = departmentId;
+    }
+
+    // Position filter
+    if (positionId) {
+      query['employmentInfo.positionId'] = positionId;
+    }
+
+    // Grade filter
+    if (gradeId) {
+      query['employmentInfo.gradeId'] = gradeId;
+    }
+
+    // Salary range filter
+    if (minSalary || maxSalary) {
+      query['employmentInfo.currentSalary'] = {};
+      if (minSalary) query['employmentInfo.currentSalary'].$gte = Number(minSalary);
+      if (maxSalary) query['employmentInfo.currentSalary'].$lte = Number(maxSalary);
+    }
+
+    // Grade level filter (requires aggregation)
+    if (minGradeLevel || maxGradeLevel) {
+      const gradeFilter = {};
+      if (minGradeLevel) gradeFilter.level = { $gte: Number(minGradeLevel) };
+      if (maxGradeLevel) gradeFilter.level = { $lte: Number(maxGradeLevel) };
+      
+      const matchingGrades = await Grade.find(gradeFilter).select('_id');
+      const gradeIds = matchingGrades.map(g => g._id);
+      
+      query['employmentInfo.gradeId'] = { $in: gradeIds };
+    }
+
+    // Sorting
+    const sort = {};
+    sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
+
+    // Execute query with pagination
+    const employees = await Employee.find(query)
+      .populate('position', 'name code')
+      .populate('department', 'name code')
+      .populate('grade', 'name code level')
+      .populate('manager', 'personalInfo.firstName personalInfo.lastName employeeId')
+      .sort(sort)
+      .limit(Number(limit))
+      .skip((Number(page) - 1) * Number(limit));
+
+    // Count total documents for pagination info
+    const total = await Employee.countDocuments(query);
+
+    return res.status(200).json({
+      success: true,
+      data: employees,
+      pagination: {
+        total,
+        page: Number(page),
+        limit: Number(limit),
+        totalPages: Math.ceil(total / Number(limit))
+      }
+    });
+
+  } catch (error) {
+    console.error('Error fetching employees:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error.message
+    });
+  }
+};
+
 // Get employee details
 exports.getEmployeeDetails = async (req, res) => {
   try {

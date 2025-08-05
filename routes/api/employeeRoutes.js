@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const employeeController = require('../../controllers/employeeController');
 const {  requireAdmin, requireHROrAdmin } = require('../../utils/auth');
+const { getAllEmployees } = require('../../controllers/employeeController');
 
 
 // Create employee (HR or Admin only)
@@ -11,7 +12,14 @@ router.post(
   requireHROrAdmin,
   employeeController.createEmployee
 );
- 
+//get all employees (Admin only)
+// Get all employees with filters
+router.get(
+  '/',
+  requireAdmin,
+  employeeController.getAllEmployees
+);
+
 // Get employee details
 router.get(
   '/:id',

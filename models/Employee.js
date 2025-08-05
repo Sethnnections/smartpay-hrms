@@ -852,6 +852,12 @@ employeeSchema.methods.terminate = function(endDate, reason) {
   return this.save();
 };
 
+employeeSchema.index({ 'employmentInfo.departmentId': 1 });
+employeeSchema.index({ 'employmentInfo.gradeId': 1 });
+employeeSchema.index({ 'employmentInfo.status': 1 });
+employeeSchema.index({ 'personalInfo.lastName': 1, 'personalInfo.firstName': 1 });
+employeeSchema.index({ employeeId: 1 });
+
 const Employee = mongoose.model('Employee', employeeSchema);
 
 module.exports = Employee;
