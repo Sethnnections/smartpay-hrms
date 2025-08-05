@@ -38,6 +38,8 @@ app.use('/api/auth', require('./routes/api/authRoutes'));
 app.use('/', require('./routes/webRoutes'));
 app.use('/api/departments', require('./routes/api/departmentRoutes'));
 app.use('/api/grades', require('./routes/api/gradeRoutes'));
+app.use('/api/positions', require('./routes/api/positionRoutes'));
+app.use('/api/employees', require('./routes/api/employeeRoutes'));
 
 // Error handling
 app.use((err, req, res, next) => {

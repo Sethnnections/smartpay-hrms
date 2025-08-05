@@ -143,7 +143,7 @@ const employeeSchema = new mongoose.Schema({
     },
     managerId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Employee'
+      ref: 'User'
     },
     startDate: {
       type: Date,
