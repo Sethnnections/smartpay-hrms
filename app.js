@@ -40,6 +40,7 @@ app.use('/api/departments', require('./routes/api/departmentRoutes'));
 app.use('/api/grades', require('./routes/api/gradeRoutes'));
 app.use('/api/positions', require('./routes/api/positionRoutes'));
 app.use('/api/employees', require('./routes/api/employeeRoutes'));
+app.use('/api/payroll', require('./routes/api/payrollRoutes'));
 
 
 // Error handling
