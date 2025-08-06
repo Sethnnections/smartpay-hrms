@@ -50,6 +50,7 @@ router.get('/admin/grades', (req, res) => {
     res.render('admin/grades', {
         title: 'Grades',
         currentPage: 'grades',
+        layout: false,
         user: {
             name: 'Administrator',
             email: 'admin@smartpay.com',
