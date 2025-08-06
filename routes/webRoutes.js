@@ -122,10 +122,12 @@ router.get('/admin/users', (req, res) => {
         title: 'User Management',
         currentPage: 'users',
         user: {
-            name: 'Administrator',
+            name: 'Administrator 2',
             email: 'admin@smartpay.com',
             avatar: 'AD'
-        }
+        },
+        layout: false // Use no layout for error page
+
     });
 });
 

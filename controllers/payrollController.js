@@ -25,28 +25,44 @@ const payrollController = {
     }
   },
 
+  
+
   // Get payroll list with filters
-  listPayrolls: async (filters = {}) => {
-    try {
-      const {
-        month,
-        employeeId,
-        department,
-        status,
-        approvalStatus,
-        paymentStatus,
-        page = 1,
-        limit = 20,
-        search
-      } = filters;
+listPayrolls: async (filters = {}) => {
+  try {
+    const user = filters.user;
+    
+    if (!user) {
+      throw new Error('Authentication required');
+    }
 
-      let query = { isActive: true };
+    // Validate and set default pagination parameters
+    const page = Math.max(1, parseInt(filters.page) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(filters.limit) || 20));
+    const skip = (page - 1) * limit;
 
-      if (month) query.payrollMonth = month;
-      if (employeeId) query.employeeId = employeeId;
-      if (paymentStatus) query['payment.status'] = paymentStatus;
+    // Set default query
+    let query = { isActive: true };
 
-      let payrolls = await Payroll.find(query)
+    // Admin users can see all payrolls without restrictions
+    if (user.role !== 'admin') {
+      // HR users can see all payrolls but with possible filters
+      if (user.role !== 'hr') {
+        // Regular employees can only see their own payroll
+        if (!user.employeeId) {
+          throw new Error('Employee record not found for user');
+        }
+        query.employeeId = user.employeeId;
+      }
+    }
+
+    // Apply filters from query parameters
+    if (filters.month) query.payrollMonth = filters.month;
+    if (filters.employeeId) query.employeeId = filters.employeeId;
+    if (filters.paymentStatus) query['payment.status'] = filters.paymentStatus;
+
+    const [payrolls, total] = await Promise.all([
+      Payroll.find(query)
         .populate({
           path: 'employeeId',
           select: 'employeeId personalInfo.firstName personalInfo.lastName employmentInfo.departmentId',
@@ -57,52 +73,27 @@ const payrollController = {
         })
         .populate('processedBy', 'email')
         .sort({ createdAt: -1 })
-        .limit(limit * 1)
-        .skip((page - 1) * limit);
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      Payroll.countDocuments(query)
+    ]);
 
-      // Filter by department if specified
-      if (department) {
-        payrolls = payrolls.filter(p => 
-          p.employeeId?.employmentInfo?.departmentId?.name?.toLowerCase().includes(department.toLowerCase())
-        );
+    return {
+      payrolls,
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(total / limit),
+        totalRecords: total,
+        hasNext: page < Math.ceil(total / limit),
+        hasPrev: page > 1
       }
-
-      // Filter by approval status if specified
-      if (approvalStatus) {
-        payrolls = payrolls.filter(p => p.approvalStatus === approvalStatus);
-      }
-
-      // Search functionality
-      if (search) {
-        payrolls = payrolls.filter(p => {
-          const employee = p.employeeId;
-          if (!employee) return false;
-          
-          const fullName = `${employee.personalInfo.firstName} ${employee.personalInfo.lastName}`.toLowerCase();
-          const employeeNumber = employee.employeeId.toLowerCase();
-          
-          return fullName.includes(search.toLowerCase()) || 
-                 employeeNumber.includes(search.toLowerCase());
-        });
-      }
-
-      const total = await Payroll.countDocuments(query);
-
-      return {
-        payrolls,
-        pagination: {
-          currentPage: page,
-          totalPages: Math.ceil(total / limit),
-          totalRecords: total,
-          hasNext: page < Math.ceil(total / limit),
-          hasPrev: page > 1
-        }
-      };
-    } catch (error) {
-      throw error;
-    }
-  },
-
+    };
+  } catch (error) {
+    console.error('Payroll listing error:', error);
+    throw error;
+  }
+},
   // Get single payroll details
   getPayrollDetails: async (payrollId) => {
     try {

@@ -48,4 +48,87 @@ router.get('/profile', authenticateToken, async (req, res) => { // Updated middl
   }
 });
 
+
+router.use(authenticateToken); // All routes below require authentication
+// Create user (admin only)
+router.post('/users', async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Forbidden' });
+    }
+
+    const user = await authController.createUser(req.body);
+    res.status(201).json({ success: true, user });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+});
+
+// List users with pagination (admin only)
+router.get('/users', async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Forbidden' });
+    }
+
+    const { page = 1, limit = 10, role, isActive } = req.query;
+    const filter = {};
+    
+    if (role) filter.role = role;
+    if (isActive) filter.isActive = isActive === 'true';
+
+    const result = await authController.listUsers(parseInt(page), parseInt(limit), filter);
+    res.status(200).json({ success: true, ...result });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Update user (admin only)
+router.put('/users/:id', async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Forbidden' });
+    }
+
+    const user = await authController.updateUser(req.params.id, req.body);
+    res.status(200).json({ success: true, user });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+});
+
+// Deactivate user (admin only)
+router.delete('/users/:id', async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Forbidden' });
+    }
+
+    const result = await authController.deactivateUser(req.params.id);
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+});
+
+// Admin password reset (no verification needed)
+router.post('/users/:id/reset-password', async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Forbidden' });
+    }
+
+    const { newPassword } = req.body;
+    if (!newPassword) {
+      return res.status(400).json({ success: false, message: 'New password is required' });
+    }
+
+    const result = await authController.adminResetPassword(req.params.id, newPassword);
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+});
+
 module.exports = router;

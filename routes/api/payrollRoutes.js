@@ -1,7 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const payrollController = require('../../controllers/payrollController');
-const { requireAdmin, requireHROrAdmin } = require('../../utils/auth');
+const { authenticateToken, requireAdmin, requireHROrAdmin } = require('../../utils/auth');
+
+router.use(authenticateToken);
 
 // Process payroll for all active employees (Admin/HR only)
 router.post('/process', requireHROrAdmin, async (req, res) => {
@@ -64,6 +66,7 @@ router.post('/batch-payment', requireAdmin, async (req, res) => {
 });
 
 // Generate all payslips for a month (HR/Admin only)
+
 router.post('/payslips/generate-all', requireHROrAdmin, async (req, res) => {
   try {
     const { month } = req.body;
@@ -115,32 +118,12 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// List payrolls with filters
-router.get('/', async (req, res) => {
+router.get('/', requireHROrAdmin, async (req, res) => {
   try {
-    let filters = {
-      month: req.query.month,
-      employeeId: req.query.employeeId,
-      department: req.query.department,
-      status: req.query.status,
-      approvalStatus: req.query.approvalStatus,
-      paymentStatus: req.query.paymentStatus,
-      page: parseInt(req.query.page) || 1,
-      limit: parseInt(req.query.limit) || 20,
-      search: req.query.search
+    const filters = {
+      ...req.query,
+      user: req.user
     };
-
-    // If employee, only show their own payrolls
-    if (req.user.role === 'employee') {
-      const Employee = require('../../models/Employee');
-      const employee = await Employee.findOne({ userId: req.user.id });
-      if (employee) {
-        filters.employeeId = employee._id;
-      } else {
-        return res.json({ payrolls: [], pagination: {} });
-      }
-    }
-
     const result = await payrollController.listPayrolls(filters);
     res.json(result);
   } catch (error) {

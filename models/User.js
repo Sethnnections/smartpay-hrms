@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+const mongoosePaginate = require('mongoose-paginate-v2');
 
 // User schema definition
 const userSchema = new mongoose.Schema({
@@ -251,6 +252,7 @@ userSchema.methods.getPublicProfile = function() {
   };
 };
 
+userSchema.plugin(mongoosePaginate);
 const User = mongoose.model('User', userSchema);
 
 
