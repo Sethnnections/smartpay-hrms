@@ -37,6 +37,7 @@ router.get('/admin/departments', (req, res) => {
     res.render('admin/departments', {
         title: 'Departments',
         currentPage: 'departments',
+        layout:false,
         user: {
             name: 'Administrator',
             email: 'admin@smartpay.com',
@@ -45,6 +46,17 @@ router.get('/admin/departments', (req, res) => {
     });
 });
 
+router.get('/admin/grades', (req, res) => {
+    res.render('admin/grades', {
+        title: 'Grades',
+        currentPage: 'grades',
+        user: {
+            name: 'Administrator',
+            email: 'admin@smartpay.com',
+            avatar: 'AD'
+        }
+    });
+});
 router.get('/admin/positions', (req, res) => {
     res.render('admin/positions', {
         title: 'Positions',
