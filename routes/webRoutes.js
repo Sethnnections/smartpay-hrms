@@ -62,6 +62,7 @@ router.get('/admin/positions', (req, res) => {
     res.render('admin/positions', {
         title: 'Positions',
         currentPage: 'positions',
+        layout:false,
         user: {
             name: 'Administrator',
             email: 'admin@smartpay.com',
