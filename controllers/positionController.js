@@ -30,6 +30,10 @@ exports.createPosition = async (positionData, createdBy) => {
     return position;
   } catch (error) {
     error.statusCode = 400;
+    console.error('Error creating position:', error);
+    if (error.name === 'ValidationError') {
+      throw new Error('Invalid position data');
+    }
     throw error;
   }
 };

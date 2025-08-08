@@ -8,110 +8,167 @@ $(document).ready(function() {
     let positions = [];
     
     // Initialize Select2 dropdowns
-    $('.form-select').select2({
-        width: '100%',
-        theme: 'bootstrap-5'
-    });
+    function initSelect2() {
+        $('.select2').select2({
+            width: '100%',
+            theme: 'bootstrap-5',
+            dropdownParent: $('#addPositionModal')
+        });
+    }
+    
+    // Show loading state
+    function showLoading(show = true) {
+        if (show) {
+            $('#loadingOverlay').fadeIn(200);
+        } else {
+            $('#loadingOverlay').fadeOut(200);
+        }
+    }
+    
+    // Show SweetAlert notification
+    function showAlert(title, text, icon, confirmButtonText = 'OK') {
+        Swal.fire({
+            title: title,
+            text: text,
+            icon: icon,
+            confirmButtonText: confirmButtonText,
+            buttonsStyling: false,
+            customClass: {
+                confirmButton: 'btn btn-' + (icon === 'error' ? 'danger' : 'primary')
+            }
+        });
+    }
+    
+    // Show toast notification
+    function showToast(title, icon = 'success') {
+        const Toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true,
+            didOpen: (toast) => {
+                toast.addEventListener('mouseenter', Swal.stopTimer);
+                toast.addEventListener('mouseleave', Swal.resumeTimer);
+            }
+        });
+        
+        Toast.fire({
+            icon: icon,
+            title: title
+        });
+    }
     
     // Load initial data
-    loadDepartments();
-    loadGrades();
-    loadPositions();
-    loadStats();
+    function loadInitialData() {
+        showLoading();
+        
+        // Load departments and grades in parallel
+        Promise.all([loadDepartments(), loadGrades()])
+            .then(() => {
+                loadPositions();
+                loadStats();
+                initSelect2();
+                setupAddPositionModal();
+            })
+            .catch(error => {
+                showAlert('Error', 'Failed to load initial data: ' + error, 'error');
+            })
+            .finally(() => {
+                showLoading(false);
+            });
+    }
     
-    // Event listeners
-    $('#filterForm').on('submit', function(e) {
-        e.preventDefault();
-        currentPage = 1;
-        loadPositions();
-    });
+    // Setup add position modal dropdowns
+    function setupAddPositionModal() {
+        // Populate department dropdown
+        const $deptDropdown = $('#positionDepartment');
+        $deptDropdown.empty().append('<option value="">Select Department</option>');
+        departments.forEach(dept => {
+            $deptDropdown.append(`<option value="${dept._id}">${dept.name} (${dept.code})</option>`);
+        });
+        
+        // Populate grade dropdown
+        const $gradeDropdown = $('#positionGrade');
+        $gradeDropdown.empty().append('<option value="">Select Grade</option>');
+        grades.forEach(grade => {
+            $gradeDropdown.append(`<option value="${grade._id}">${grade.name} (Level ${grade.level})</option>`);
+        });
+        
+        // Populate reportingTo dropdown
+        const $reportingDropdown = $('#positionReportingTo');
+        $reportingDropdown.empty().append('<option value="">Select Reporting Position</option>');
+        positions.forEach(position => {
+            $reportingDropdown.append(`<option value="${position._id}">${position.name} (${position.code})</option>`);
+        });
+    }
     
-    $('#addPositionForm').on('submit', function(e) {
-        e.preventDefault();
-        addPosition();
-    });
-    
-    $('#editPositionForm').on('submit', function(e) {
-        e.preventDefault();
-        updatePosition();
-    });
-    
-    $('#capacityForm').on('submit', function(e) {
-        e.preventDefault();
-        updateCapacity();
-    });
-    
-    $('#deactivatePositionForm').on('submit', function(e) {
-        e.preventDefault();
-        deactivatePosition();
-    });
-    
-    $('#addResponsibility').on('click', function() {
-        addResponsibilityField();
-    });
-    
-    $(document).on('click', '.remove-responsibility', function() {
-        $(this).closest('.input-group').remove();
-    });
-    
-    // Functions
+    // Load departments
     function loadDepartments() {
-        const token = localStorage.getItem('authToken');
-        
-        $.ajax({
-            url: '/api/departments',
-            type: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`
-            },
-            success: function(response) {
-                departments = response;
-                
-                // Populate department dropdowns
-                const departmentDropdowns = ['#departmentFilter', '#positionDepartment'];
-                
-                departmentDropdowns.forEach(selector => {
-                    $(selector).empty().append('<option value="">Select Department</option>');
+        return new Promise((resolve, reject) => {
+            const token = localStorage.getItem('authToken');
+            
+            $.ajax({
+                url: 'http://localhost:3000/api/departments',
+                type: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
+                success: function(response) {
+                    departments = response;
+                    
+                    // Populate department dropdowns
+                    const $filterDept = $('#departmentFilter');
+                    $filterDept.empty().append('<option value="">All Departments</option>');
+                    
                     response.forEach(dept => {
-                        $(selector).append(`<option value="${dept._id}">${dept.name} (${dept.code})</option>`);
+                        $filterDept.append(`<option value="${dept._id}">${dept.name} (${dept.code})</option>`);
                     });
-                });
-            },
-            error: function(xhr) {
-                showAlert('Failed to load departments: ' + xhr.responseJSON?.error || 'Unknown error', 'danger');
-            }
+                    
+                    resolve();
+                },
+                error: function(xhr) {
+                    reject(xhr.responseJSON?.error || 'Failed to load departments');
+                }
+            });
         });
     }
     
+    // Load grades
     function loadGrades() {
-        const token = localStorage.getItem('authToken');
-        
-        $.ajax({
-            url: '/api/grades',
-            type: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`
-            },
-            success: function(response) {
-                grades = response;
-                
-                // Populate grade dropdowns
-                const gradeDropdowns = ['#gradeFilter', '#positionGrade'];
-                
-                gradeDropdowns.forEach(selector => {
-                    $(selector).empty().append('<option value="">Select Grade</option>');
+        return new Promise((resolve, reject) => {
+            const token = localStorage.getItem('authToken');
+            
+            $.ajax({
+                url: 'http://localhost:3000/api/grades',
+                type: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
+                success: function(response) {
+                    grades = response;
+                    
+                    // Populate grade dropdowns
+                    const $filterGrade = $('#gradeFilter');
+                    $filterGrade.empty().append('<option value="">All Grades</option>');
+                    
                     response.forEach(grade => {
-                        $(selector).append(`<option value="${grade._id}">${grade.name} (Level ${grade.level})</option>`);
+                        $filterGrade.append(`<option value="${grade._id}">${grade.name} (Level ${grade.level})</option>`);
                     });
-                });
-            },
-            error: function(xhr) {
-                showAlert('Failed to load grades: ' + xhr.responseJSON?.error || 'Unknown error', 'danger');
-            }
+                    
+                    resolve();
+                },
+                error: function(xhr) {
+                    reject(xhr.responseJSON?.error || 'Failed to load grades');
+                }
+            });
         });
     }
     
+    // Load positions
     function loadPositions() {
+        showLoading();
+        
         const token = localStorage.getItem('authToken');
         const search = $('#searchInput').val();
         const departmentId = $('#departmentFilter').val();
@@ -119,7 +176,7 @@ $(document).ready(function() {
         const isActive = $('#statusFilter').val() === 'true';
         const hasVacancies = $('#vacancyFilter').val() === 'true';
         
-        let url = `/api/positions?page=${currentPage}&limit=${itemsPerPage}`;
+        let url = `http://localhost:3000/api/positions?page=${currentPage}&limit=${itemsPerPage}`;
         
         if (search) url += `&search=${search}`;
         if (departmentId) url += `&departmentId=${departmentId}`;
@@ -136,19 +193,28 @@ $(document).ready(function() {
             success: function(response) {
                 positions = response;
                 renderPositionsTable(response);
+                
+                // Update reporting dropdown in add modal if it's open
+                if ($('#addPositionModal').hasClass('show')) {
+                    setupAddPositionModal();
+                }
             },
             error: function(xhr) {
-                showAlert('Failed to load positions: ' + xhr.responseJSON?.error || 'Unknown error', 'danger');
+                showAlert('Error', 'Failed to load positions: ' + (xhr.responseJSON?.error || 'Unknown error'), 'error');
+            },
+            complete: function() {
+                showLoading(false);
             }
         });
     }
     
+    // Render positions table
     function renderPositionsTable(positions) {
         const $tableBody = $('#positionsTableBody');
         $tableBody.empty();
         
         if (positions.length === 0) {
-            $tableBody.append('<tr><td colspan="7" class="text-center">No positions found</td></tr>');
+            $tableBody.append('<tr><td colspan="7" class="text-center py-4">No positions found matching your criteria</td></tr>');
             return;
         }
         
@@ -204,42 +270,54 @@ $(document).ready(function() {
         });
         
         // Add event listeners for action buttons
-        $('.view-details').on('click', function() {
+        addPositionActionListeners();
+    }
+    
+    // Add event listeners for position actions
+    function addPositionActionListeners() {
+        $('.view-details').on('click', function(e) {
+            e.preventDefault();
             const positionId = $(this).data('id');
             showPositionDetails(positionId);
         });
         
-        $('.edit-position').on('click', function() {
+        $('.edit-position').on('click', function(e) {
+            e.preventDefault();
             const positionId = $(this).data('id');
             showEditPositionModal(positionId);
         });
         
-        $('.update-capacity').on('click', function() {
+        $('.update-capacity').on('click', function(e) {
+            e.preventDefault();
             const positionId = $(this).data('id');
             showCapacityModal(positionId);
         });
         
-        $('.view-hierarchy').on('click', function() {
+        $('.view-hierarchy').on('click', function(e) {
+            e.preventDefault();
             const positionId = $(this).data('id');
             showHierarchy(positionId);
         });
         
-        $('.view-statistics').on('click', function() {
+        $('.view-statistics').on('click', function(e) {
+            e.preventDefault();
             const positionId = $(this).data('id');
             showStatistics(positionId);
         });
         
-        $('.deactivate-position').on('click', function() {
+        $('.deactivate-position').on('click', function(e) {
+            e.preventDefault();
             const positionId = $(this).data('id');
             showDeactivateModal(positionId);
         });
     }
     
+    // Load stats
     function loadStats() {
         const token = localStorage.getItem('authToken');
         
         $.ajax({
-            url: '/api/positions',
+            url: 'http://localhost:3000/api/positions',
             type: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`
@@ -300,14 +378,20 @@ $(document).ready(function() {
                 $('#positionsStats').html(statsHtml);
             },
             error: function(xhr) {
-                showAlert('Failed to load position statistics: ' + xhr.responseJSON?.error || 'Unknown error', 'danger');
+                console.error('Failed to load position statistics:', xhr.responseJSON?.error || 'Unknown error');
             }
         });
     }
     
+    // Add position
     function addPosition() {
+        const $form = $('#addPositionForm');
+        const $submitBtn = $('#savePositionBtn');
+        $submitBtn.prop('disabled', true);
+        $submitBtn.find('.spinner-border').removeClass('d-none');
+        
         const token = localStorage.getItem('authToken');
-        const formData = $('#addPositionForm').serializeArray();
+        const formData = $form.serializeArray();
         const positionData = {};
         
         // Convert form data to object
@@ -337,7 +421,7 @@ $(document).ready(function() {
         };
         
         $.ajax({
-            url: '/api/positions',
+            url: 'http://localhost:3000/api/positions',
             type: 'POST',
             headers: {
                 'Authorization': `Bearer ${token}`,
@@ -346,17 +430,23 @@ $(document).ready(function() {
             data: JSON.stringify(positionData),
             success: function(response) {
                 $('#addPositionModal').modal('hide');
-                showAlert('Position created successfully!', 'success');
+                showToast('Position created successfully!');
                 loadPositions();
                 loadStats();
                 resetAddPositionForm();
             },
             error: function(xhr) {
-                showAlert('Failed to create position: ' + xhr.responseJSON?.error || 'Unknown error', 'danger');
+                const errorMsg = xhr.responseJSON?.error || 'Failed to create position';
+                showAlert('Error', errorMsg, 'error');
+            },
+            complete: function() {
+                $submitBtn.prop('disabled', false);
+                $submitBtn.find('.spinner-border').addClass('d-none');
             }
         });
     }
     
+    // Reset add position form
     function resetAddPositionForm() {
         $('#addPositionForm')[0].reset();
         $('#responsibilitiesContainer').html(`
@@ -367,8 +457,12 @@ $(document).ready(function() {
                 </button>
             </div>
         `);
+        
+        // Reinitialize Select2
+        $('#positionDepartment, #positionGrade, #positionReportingTo').val('').trigger('change');
     }
     
+    // Add responsibility field
     function addResponsibilityField() {
         const $container = $('#responsibilitiesContainer');
         const $newField = $(`
@@ -383,7 +477,10 @@ $(document).ready(function() {
         $container.append($newField);
     }
     
+    // Show position details
     function showPositionDetails(positionId) {
+        showLoading();
+        
         const token = localStorage.getItem('authToken');
         const position = positions.find(p => p._id === positionId);
         
@@ -495,8 +592,10 @@ $(document).ready(function() {
         
         $('#positionDetailsContent').html(detailsHtml);
         $('#positionDetailsModal').modal('show');
+        showLoading(false);
     }
     
+    // Format education level
     function formatEducationLevel(level) {
         if (!level) return 'Not specified';
         
@@ -511,91 +610,117 @@ $(document).ready(function() {
         return levels[level] || level;
     }
     
+    // Show edit position modal
     function showEditPositionModal(positionId) {
+        showLoading();
+        
         const token = localStorage.getItem('authToken');
         const position = positions.find(p => p._id === positionId);
         
         if (!position) return;
         
-        // Populate the edit form
-        $('#editPositionId').val(position._id);
-        
-        let editFormHtml = $('#addPositionForm').html();
-        $('#editPositionForm .modal-body').html(editFormHtml);
-        
-        // Set form values
-        $('#editPositionForm [name="name"]').val(position.name);
-        $('#editPositionForm [name="code"]').val(position.code);
-        $('#editPositionForm [name="departmentId"]').val(position.departmentId).trigger('change');
-        $('#editPositionForm [name="gradeId"]').val(position.gradeId).trigger('change');
-        $('#editPositionForm [name="reportingTo"]').val(position.reportingTo).trigger('change');
-        $('#editPositionForm [name="jobType"]').val(position.jobType).trigger('change');
-        $('#editPositionForm [name="capacity.total"]').val(position.capacity.total);
-        $('#editPositionForm [name="status"]').val(position.status).trigger('change');
-        $('#editPositionForm [name="description"]').val(position.description);
-        
-        // Set requirements
-        if (position.requirements?.education) {
-            $('#editPositionForm [name="requirements.education.minimum"]').val(position.requirements.education.minimum).trigger('change');
-            $('#editPositionForm [name="requirements.education.preferred"]').val(position.requirements.education.preferred || '').trigger('change');
-            $('#editPositionForm [name="requirements.education.field"]').val(position.requirements.education.field || '');
-        }
-        
-        if (position.requirements?.experience) {
-            $('#editPositionForm [name="requirements.experience.minimum"]').val(position.requirements.experience.minimum);
-            $('#editPositionForm [name="requirements.experience.preferred"]').val(position.requirements.experience.preferred || '');
-            $('#editPositionForm [name="requirements.experience.type"]').val(position.requirements.experience.type || 'relevant').trigger('change');
-        }
-        
-        // Set responsibilities
-        const $responsibilitiesContainer = $('#editPositionForm #responsibilitiesContainer');
-        $responsibilitiesContainer.empty();
-        
-        if (position.responsibilities && position.responsibilities.length > 0) {
-            position.responsibilities.forEach(resp => {
-                const $field = $(`
-                    <div class="input-group mb-2">
-                        <input type="text" class="form-control responsibility-input" name="responsibilities[]" value="${resp}">
-                        <button type="button" class="btn btn-outline-danger remove-responsibility">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                `);
-                $responsibilitiesContainer.append($field);
-            });
-        } else {
-            $responsibilitiesContainer.append(`
-                <div class="input-group mb-2">
-                    <input type="text" class="form-control responsibility-input" name="responsibilities[]">
-                    <button type="button" class="btn btn-outline-danger remove-responsibility" disabled>
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-            `);
-        }
-        
-        // Reinitialize Select2
-        $('#editPositionForm .form-select').select2({
-            width: '100%',
-            theme: 'bootstrap-5'
+        // Get full position details
+        $.ajax({
+            url: `http://localhost:3000/api/positions/${positionId}`,
+            type: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            },
+            success: function(position) {
+                // Populate the edit form
+                $('#editPositionId').val(position._id);
+                
+                let editFormHtml = $('#addPositionForm').html();
+                $('#editPositionForm .modal-body').html(editFormHtml);
+                
+                // Set form values
+                $('#editPositionForm [name="name"]').val(position.name);
+                $('#editPositionForm [name="code"]').val(position.code);
+                $('#editPositionForm [name="departmentId"]').val(position.departmentId).trigger('change');
+                $('#editPositionForm [name="gradeId"]').val(position.gradeId).trigger('change');
+                $('#editPositionForm [name="reportingTo"]').val(position.reportingTo || '').trigger('change');
+                $('#editPositionForm [name="jobType"]').val(position.jobType).trigger('change');
+                $('#editPositionForm [name="capacity.total"]').val(position.capacity.total);
+                $('#editPositionForm [name="status"]').val(position.status).trigger('change');
+                $('#editPositionForm [name="description"]').val(position.description);
+                
+                // Set requirements
+                if (position.requirements?.education) {
+                    $('#editPositionForm [name="requirements.education.minimum"]').val(position.requirements.education.minimum).trigger('change');
+                    $('#editPositionForm [name="requirements.education.preferred"]').val(position.requirements.education.preferred || '').trigger('change');
+                    $('#editPositionForm [name="requirements.education.field"]').val(position.requirements.education.field || '');
+                }
+                
+                if (position.requirements?.experience) {
+                    $('#editPositionForm [name="requirements.experience.minimum"]').val(position.requirements.experience.minimum);
+                    $('#editPositionForm [name="requirements.experience.preferred"]').val(position.requirements.experience.preferred || '');
+                    $('#editPositionForm [name="requirements.experience.type"]').val(position.requirements.experience.type || 'relevant').trigger('change');
+                }
+                
+                // Set responsibilities
+                const $responsibilitiesContainer = $('#editPositionForm #responsibilitiesContainer');
+                $responsibilitiesContainer.empty();
+                
+                if (position.responsibilities && position.responsibilities.length > 0) {
+                    position.responsibilities.forEach(resp => {
+                        const $field = $(`
+                            <div class="input-group mb-2">
+                                <input type="text" class="form-control responsibility-input" name="responsibilities[]" value="${resp}">
+                                <button type="button" class="btn btn-outline-danger remove-responsibility">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        `);
+                        $responsibilitiesContainer.append($field);
+                    });
+                } else {
+                    $responsibilitiesContainer.append(`
+                        <div class="input-group mb-2">
+                            <input type="text" class="form-control responsibility-input" name="responsibilities[]">
+                            <button type="button" class="btn btn-outline-danger remove-responsibility" disabled>
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    `);
+                }
+                
+                // Reinitialize Select2
+                $('#editPositionForm .select2').select2({
+                    width: '100%',
+                    theme: 'bootstrap-5',
+                    dropdownParent: $('#editPositionModal')
+                });
+                
+                // Reattach event listeners
+                $('#editPositionForm #addResponsibility').on('click', function() {
+                    addResponsibilityField('edit');
+                });
+                
+                $('#editPositionForm').on('click', '.remove-responsibility', function() {
+                    $(this).closest('.input-group').remove();
+                });
+                
+                $('#editPositionModal').modal('show');
+            },
+            error: function(xhr) {
+                showAlert('Error', 'Failed to load position details: ' + (xhr.responseJSON?.error || 'Unknown error'), 'error');
+            },
+            complete: function() {
+                showLoading(false);
+            }
         });
-        
-        // Reattach event listeners
-        $('#editPositionForm #addResponsibility').on('click', function() {
-            addResponsibilityField('edit');
-        });
-        
-        $('#editPositionForm').on('click', '.remove-responsibility', function() {
-            $(this).closest('.input-group').remove();
-        });
-        
-        $('#editPositionModal').modal('show');
     }
     
+    // Update position
     function updatePosition() {
+        const $form = $('#editPositionForm');
+        const $submitBtn = $('#updatePositionBtn');
+        $submitBtn.prop('disabled', true);
+        $submitBtn.find('.spinner-border').removeClass('d-none');
+        
         const token = localStorage.getItem('authToken');
         const positionId = $('#editPositionId').val();
-        const formData = $('#editPositionForm').serializeArray();
+        const formData = $form.serializeArray();
         const positionData = {};
         
         // Convert form data to object
@@ -626,7 +751,7 @@ $(document).ready(function() {
         };
         
         $.ajax({
-            url: `/api/positions/${positionId}`,
+            url: `http://localhost:3000/api/positions/${positionId}`,
             type: 'PUT',
             headers: {
                 'Authorization': `Bearer ${token}`,
@@ -635,21 +760,27 @@ $(document).ready(function() {
             data: JSON.stringify(positionData),
             success: function(response) {
                 $('#editPositionModal').modal('hide');
-                showAlert('Position updated successfully!', 'success');
+                showToast('Position updated successfully!');
                 loadPositions();
             },
             error: function(xhr) {
-                showAlert('Failed to update position: ' + xhr.responseJSON?.error || 'Unknown error', 'danger');
+                showAlert('Error', 'Failed to update position: ' + (xhr.responseJSON?.error || 'Unknown error'), 'error');
+            },
+            complete: function() {
+                $submitBtn.prop('disabled', false);
+                $submitBtn.find('.spinner-border').addClass('d-none');
             }
         });
     }
     
+    // Show capacity modal
     function showCapacityModal(positionId) {
         const position = positions.find(p => p._id === positionId);
         
         if (!position) return;
         
         $('#capacityPositionId').val(positionId);
+        $('#capacityChange').val(1);
         $('#currentCapacityDisplay').html(`
             ${position.capacity.filled} filled / ${position.capacity.total} total (${position.capacity.vacant} vacant)
         `);
@@ -657,13 +788,19 @@ $(document).ready(function() {
         $('#capacityModal').modal('show');
     }
     
+    // Update capacity
     function updateCapacity() {
+        const $form = $('#capacityForm');
+        const $submitBtn = $form.find('button[type="submit"]');
+        $submitBtn.prop('disabled', true);
+        $submitBtn.find('.spinner-border').removeClass('d-none');
+        
         const token = localStorage.getItem('authToken');
         const positionId = $('#capacityPositionId').val();
         const change = parseInt($('#capacityChange').val()) || 0;
         
         $.ajax({
-            url: `/api/positions/${positionId}/capacity`,
+            url: `http://localhost:3000/api/positions/${positionId}/capacity`,
             type: 'PATCH',
             headers: {
                 'Authorization': `Bearer ${token}`,
@@ -672,16 +809,21 @@ $(document).ready(function() {
             data: JSON.stringify({ change }),
             success: function(response) {
                 $('#capacityModal').modal('hide');
-                showAlert('Position capacity updated successfully!', 'success');
+                showToast('Position capacity updated successfully!');
                 loadPositions();
                 loadStats();
             },
             error: function(xhr) {
-                showAlert('Failed to update capacity: ' + xhr.responseJSON?.error || 'Unknown error', 'danger');
+                showAlert('Error', 'Failed to update capacity: ' + (xhr.responseJSON?.error || 'Unknown error'), 'error');
+            },
+            complete: function() {
+                $submitBtn.prop('disabled', false);
+                $submitBtn.find('.spinner-border').addClass('d-none');
             }
         });
     }
     
+    // Show deactivate modal
     function showDeactivateModal(positionId) {
         const position = positions.find(p => p._id === positionId);
         
@@ -693,7 +835,7 @@ $(document).ready(function() {
         const token = localStorage.getItem('authToken');
         
         $.ajax({
-            url: `/api/employees?positionId=${positionId}&status=active`,
+            url: `http://localhost:3000/api/employees?positionId=${positionId}&status=active`,
             type: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`
@@ -719,33 +861,46 @@ $(document).ready(function() {
         $('#deactivatePositionModal').modal('show');
     }
     
+    // Deactivate position
     function deactivatePosition() {
+        const $form = $('#deactivatePositionForm');
+        const $submitBtn = $form.find('button[type="submit"]');
+        $submitBtn.prop('disabled', true);
+        $submitBtn.find('.spinner-border').removeClass('d-none');
+        
         const token = localStorage.getItem('authToken');
         const positionId = $('#deactivatePositionId').val();
         
         $.ajax({
-            url: `/api/positions/${positionId}/deactivate`,
+            url: `http://localhost:3000/api/positions/${positionId}/deactivate`,
             type: 'PATCH',
             headers: {
                 'Authorization': `Bearer ${token}`
             },
             success: function(response) {
                 $('#deactivatePositionModal').modal('hide');
-                showAlert('Position deactivated successfully!', 'success');
+                showToast('Position deactivated successfully!');
                 loadPositions();
                 loadStats();
             },
             error: function(xhr) {
-                showAlert('Failed to deactivate position: ' + xhr.responseJSON?.error || 'Unknown error', 'danger');
+                showAlert('Error', 'Failed to deactivate position: ' + (xhr.responseJSON?.error || 'Unknown error'), 'error');
+            },
+            complete: function() {
+                $submitBtn.prop('disabled', false);
+                $submitBtn.find('.spinner-border').addClass('d-none');
             }
         });
     }
     
+    // Show hierarchy
     function showHierarchy(positionId) {
+        showLoading();
+        
         const token = localStorage.getItem('authToken');
         
         $.ajax({
-            url: `/api/positions/${positionId}/hierarchy`,
+            url: `http://localhost:3000/api/positions/${positionId}/hierarchy`,
             type: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`
@@ -763,11 +918,15 @@ $(document).ready(function() {
                 $('#hierarchyModal').modal('show');
             },
             error: function(xhr) {
-                showAlert('Failed to load hierarchy: ' + xhr.responseJSON?.error || 'Unknown error', 'danger');
+                showAlert('Error', 'Failed to load hierarchy: ' + (xhr.responseJSON?.error || 'Unknown error'), 'error');
+            },
+            complete: function() {
+                showLoading(false);
             }
         });
     }
     
+    // Build hierarchy tree
     function buildHierarchyTree(hierarchy) {
         let html = '';
         
@@ -788,12 +947,15 @@ $(document).ready(function() {
         return html;
     }
     
+    // Show statistics
     function showStatistics(positionId) {
+        showLoading();
+        
         const token = localStorage.getItem('authToken');
         
         // Get position details for salary info
         $.ajax({
-            url: `/api/positions/${positionId}`,
+            url: `http://localhost:3000/api/positions/${positionId}`,
             type: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`
@@ -801,7 +963,7 @@ $(document).ready(function() {
             success: function(position) {
                 // Get statistics
                 $.ajax({
-                    url: `/api/positions/${positionId}/statistics`,
+                    url: `http://localhost:3000/api/positions/${positionId}/statistics`,
                     type: 'GET',
                     headers: {
                         'Authorization': `Bearer ${token}`
@@ -863,30 +1025,60 @@ $(document).ready(function() {
                         $('#statisticsModal').modal('show');
                     },
                     error: function(xhr) {
-                        showAlert('Failed to load statistics: ' + xhr.responseJSON?.error || 'Unknown error', 'danger');
+                        showAlert('Error', 'Failed to load statistics: ' + (xhr.responseJSON?.error || 'Unknown error'), 'error');
+                    },
+                    complete: function() {
+                        showLoading(false);
                     }
                 });
             },
             error: function(xhr) {
-                showAlert('Failed to load position details: ' + xhr.responseJSON?.error || 'Unknown error', 'danger');
+                showAlert('Error', 'Failed to load position details: ' + (xhr.responseJSON?.error || 'Unknown error'), 'error');
+                showLoading(false);
             }
         });
     }
     
-    function showAlert(message, type) {
-        const alertHtml = `
-            <div class="alert alert-${type} alert-dismissible fade show" role="alert">
-                ${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        `;
-        
-        // Prepend to the container
-        $('.container-fluid').prepend(alertHtml);
-        
-        // Auto dismiss after 5 seconds
-        setTimeout(() => {
-            $('.alert').alert('close');
-        }, 5000);
-    }
+    // Initialize the page
+    loadInitialData();
+    
+    // Event listeners
+    $('#filterForm').on('submit', function(e) {
+        e.preventDefault();
+        currentPage = 1;
+        loadPositions();
+    });
+    
+    $('#addPositionForm').on('submit', function(e) {
+        e.preventDefault();
+        addPosition();
+    });
+    
+    $('#editPositionForm').on('submit', function(e) {
+        e.preventDefault();
+        updatePosition();
+    });
+    
+    $('#capacityForm').on('submit', function(e) {
+        e.preventDefault();
+        updateCapacity();
+    });
+    
+    $('#deactivatePositionForm').on('submit', function(e) {
+        e.preventDefault();
+        deactivatePosition();
+    });
+    
+    $('#addResponsibility').on('click', function() {
+        addResponsibilityField();
+    });
+    
+    $(document).on('click', '.remove-responsibility', function() {
+        $(this).closest('.input-group').remove();
+    });
+    
+    // When add position modal is shown, ensure dropdowns are populated
+    $('#addPositionModal').on('shown.bs.modal', function() {
+        setupAddPositionModal();
+    });
 });

@@ -11,6 +11,8 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- SweetAlert2 -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/11.4.8/sweetalert2.min.css" rel="stylesheet">
     
     <!-- Custom CSS -->
     <link rel="stylesheet" href="/css/admin.css">
@@ -22,6 +24,13 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet">
 </head>
 <body>
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+
     <!-- Sidebar Overlay for Mobile -->
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
@@ -39,10 +48,14 @@
         <!-- Page Content -->
         <main class="dashboard-content">
             <div class="container-fluid px-4">
+                <!-- Alerts Container -->
+                <div id="alertsContainer"></div>
+                
                 <!-- Page Header -->
                 <div class="page-header">
                     <div class="d-flex justify-content-between align-items-center mb-4">
                         <div>
+                            <h1 class="page-title">Positions</h1>
                             <p class="text-muted">Manage and track all positions within your organization</p>
                         </div>
                         <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addPositionModal" id="addPositionBtn">
@@ -53,7 +66,26 @@
 
                 <!-- Positions Stats -->
                 <div class="row mb-4" id="positionsStats">
-                    <!-- Stats will be loaded here -->
+                    <div class="col-md-12">
+                        <div class="card placeholder-glow">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="stat-value"><span class="placeholder col-3"></span></div>
+                                        <div class="stat-label"><span class="placeholder col-6"></span></div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="stat-value"><span class="placeholder col-3"></span></div>
+                                        <div class="stat-label"><span class="placeholder col-6"></span></div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="stat-value"><span class="placeholder col-3"></span></div>
+                                        <div class="stat-label"><span class="placeholder col-6"></span></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Filters -->
@@ -66,14 +98,14 @@
                             </div>
                             <div class="col-md-2">
                                 <label for="departmentFilter" class="form-label">Department</label>
-                                <select class="form-select" id="departmentFilter">
+                                <select class="form-select select2" id="departmentFilter">
                                     <option value="">All Departments</option>
                                     <!-- Departments will be loaded here -->
                                 </select>
                             </div>
                             <div class="col-md-2">
                                 <label for="gradeFilter" class="form-label">Grade</label>
-                                <select class="form-select" id="gradeFilter">
+                                <select class="form-select select2" id="gradeFilter">
                                     <option value="">All Grades</option>
                                     <!-- Grades will be loaded here -->
                                 </select>
@@ -118,7 +150,13 @@
                                     </tr>
                                 </thead>
                                 <tbody id="positionsTableBody">
-                                    <!-- Positions will be loaded here -->
+                                    <tr>
+                                        <td colspan="7" class="text-center">
+                                            <div class="spinner-border text-primary" role="status">
+                                                <span class="visually-hidden">Loading...</span>
+                                            </div>
+                                        </td>
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>
@@ -126,7 +164,13 @@
                         <!-- Pagination -->
                         <nav aria-label="Page navigation" class="mt-4">
                             <ul class="pagination justify-content-center" id="pagination">
-                                <!-- Pagination will be loaded here -->
+                                <li class="page-item disabled">
+                                    <a class="page-link" href="#" tabindex="-1">Previous</a>
+                                </li>
+                                <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                                <li class="page-item disabled">
+                                    <a class="page-link" href="#">Next</a>
+                                </li>
                             </ul>
                         </nav>
                     </div>
@@ -156,23 +200,20 @@
                             </div>
                             <div class="col-md-6">
                                 <label for="positionDepartment" class="form-label">Department*</label>
-                                <select class="form-select" id="positionDepartment" name="departmentId" required>
-                                    <option value="">Select Department</option>
-                                    <!-- Departments will be loaded here -->
+                                <select class="form-select select2" id="positionDepartment" name="departmentId" required>
+                                    <option value="">Loading departments...</option>
                                 </select>
                             </div>
                             <div class="col-md-6">
                                 <label for="positionGrade" class="form-label">Grade*</label>
-                                <select class="form-select" id="positionGrade" name="gradeId" required>
-                                    <option value="">Select Grade</option>
-                                    <!-- Grades will be loaded here -->
+                                <select class="form-select select2" id="positionGrade" name="gradeId" required>
+                                    <option value="">Loading grades...</option>
                                 </select>
                             </div>
                             <div class="col-md-6">
                                 <label for="positionReportingTo" class="form-label">Reports To</label>
-                                <select class="form-select" id="positionReportingTo" name="reportingTo">
-                                    <option value="">Select Reporting Position</option>
-                                    <!-- Positions will be loaded here -->
+                                <select class="form-select select2" id="positionReportingTo" name="reportingTo">
+                                    <option value="">Loading positions...</option>
                                 </select>
                             </div>
                             <div class="col-md-6">
@@ -279,7 +320,10 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary">Save Position</button>
+                        <button type="submit" class="btn btn-primary" id="savePositionBtn">
+                            <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                            Save Position
+                        </button>
                     </div>
                 </form>
             </div>
@@ -297,11 +341,19 @@
                 <form id="editPositionForm">
                     <input type="hidden" id="editPositionId" name="id">
                     <div class="modal-body">
-                        <!-- Same content as add modal, will be populated dynamically -->
+                        <!-- Content will be loaded dynamically -->
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                        <button type="submit" class="btn btn-primary" id="updatePositionBtn">
+                            <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                            Save Changes
+                        </button>
                     </div>
                 </form>
             </div>
@@ -317,173 +369,9 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body" id="positionDetailsContent">
-                    <!-- Details will be loaded here -->
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Capacity Update Modal -->
-    <div class="modal fade" id="capacityModal" tabindex="-1" aria-labelledby="capacityModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="capacityModalLabel">Update Position Capacity</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <form id="capacityForm">
-                    <input type="hidden" id="capacityPositionId">
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <label for="capacityChange" class="form-label">Change in Filled Positions</label>
-                            <input type="number" class="form-control" id="capacityChange" min="-10" max="10" value="1">
-                            <small class="text-muted">Positive number to add, negative to remove</small>
-                        </div>
-                        <div class="alert alert-info">
-                            Current capacity: <span id="currentCapacityDisplay"></span>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary">Update Capacity</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Deactivate Position Modal -->
-    <div class="modal fade" id="deactivatePositionModal" tabindex="-1" aria-labelledby="deactivatePositionModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header bg-warning">
-                    <h5 class="modal-title" id="deactivatePositionModalLabel">Deactivate Position</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <form id="deactivatePositionForm">
-                    <input type="hidden" id="deactivatePositionId">
-                    <div class="modal-body">
-                        <p>Are you sure you want to deactivate this position?</p>
-                        <div class="alert alert-danger" id="deactivatePositionWarning" style="display: none;">
-                            <i class="fas fa-exclamation-triangle me-2"></i>
-                            <span id="deactivateWarningText"></span>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-warning">Deactivate</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Hierarchy Modal -->
-    <div class="modal fade" id="hierarchyModal" tabindex="-1" aria-labelledby="hierarchyModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="hierarchyModalLabel">Position Hierarchy</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div id="hierarchyChart">
-                        <!-- Hierarchy chart will be loaded here -->
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Statistics Modal -->
-    <div class="modal fade" id="statisticsModal" tabindex="-1" aria-labelledby="statisticsModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="statisticsModalLabel">Position Statistics</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="card mb-4">
-                                <div class="card-header">
-                                    <h6 class="card-title">Capacity Overview</h6>
-                                </div>
-                                <div class="card-body">
-                                    <div class="d-flex justify-content-between mb-3">
-                                        <div>
-                                            <h5 id="totalCapacityStat">0</h5>
-                                            <small class="text-muted">Total Positions</small>
-                                        </div>
-                                        <div>
-                                            <h5 id="filledCapacityStat">0</h5>
-                                            <small class="text-muted">Filled</small>
-                                        </div>
-                                        <div>
-                                            <h5 id="vacantCapacityStat">0</h5>
-                                            <small class="text-muted">Vacant</small>
-                                        </div>
-                                    </div>
-                                    <div class="progress">
-                                        <div class="progress-bar bg-success" id="filledProgress" role="progressbar" style="width: 0%"></div>
-                                        <div class="progress-bar bg-warning" id="vacantProgress" role="progressbar" style="width: 0%"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="card mb-4">
-                                <div class="card-header">
-                                    <h6 class="card-title">Employee Statistics</h6>
-                                </div>
-                                <div class="card-body">
-                                    <div class="d-flex justify-content-between mb-3">
-                                        <div>
-                                            <h5 id="activeEmployeesStat">0</h5>
-                                            <small class="text-muted">Active</small>
-                                        </div>
-                                        <div>
-                                            <h5 id="totalEmployeesStat">0</h5>
-                                            <small class="text-muted">Total</small>
-                                        </div>
-                                        <div>
-                                            <h5 id="avgTenureStat">0</h5>
-                                            <small class="text-muted">Avg Tenure (months)</small>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-12">
-                            <div class="card">
-                                <div class="card-header">
-                                    <h6 class="card-title">Salary Information</h6>
-                                </div>
-                                <div class="card-body">
-                                    <div class="table-responsive">
-                                        <table class="table table-sm">
-                                            <thead>
-                                                <tr>
-                                                    <th>Component</th>
-                                                    <th>Amount</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="salaryStatsBody">
-                                                <!-- Salary stats will be loaded here -->
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </div>
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
                         </div>
                     </div>
                 </div>
@@ -500,6 +388,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <!-- Select2 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+    <!-- SweetAlert2 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/11.4.8/sweetalert2.min.js"></script>
     <!-- Chart.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
     
