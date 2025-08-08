@@ -59,7 +59,7 @@ $(document).ready(function() {
         const token = localStorage.getItem('authToken');
         
         $.ajax({
-            url: 'http://localhost:3000/api/departments',
+            url: '/api/departments',
             type: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`
@@ -87,7 +87,7 @@ $(document).ready(function() {
         const token = localStorage.getItem('authToken');
         
         $.ajax({
-            url: 'http://localhost:3000/api/grades',
+            url: '/api/grades',
             type: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`
@@ -119,7 +119,7 @@ $(document).ready(function() {
         const isActive = $('#statusFilter').val() === 'true';
         const hasVacancies = $('#vacancyFilter').val() === 'true';
         
-        let url = `http://localhost:3000/api/positions?page=${currentPage}&limit=${itemsPerPage}`;
+        let url = `/api/positions?page=${currentPage}&limit=${itemsPerPage}`;
         
         if (search) url += `&search=${search}`;
         if (departmentId) url += `&departmentId=${departmentId}`;
@@ -239,7 +239,7 @@ $(document).ready(function() {
         const token = localStorage.getItem('authToken');
         
         $.ajax({
-            url: 'http://localhost:3000/api/positions',
+            url: '/api/positions',
             type: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`
@@ -337,7 +337,7 @@ $(document).ready(function() {
         };
         
         $.ajax({
-            url: 'http://localhost:3000/api/positions',
+            url: '/api/positions',
             type: 'POST',
             headers: {
                 'Authorization': `Bearer ${token}`,
@@ -626,7 +626,7 @@ $(document).ready(function() {
         };
         
         $.ajax({
-            url: `http://localhost:3000/api/positions/${positionId}`,
+            url: `/api/positions/${positionId}`,
             type: 'PUT',
             headers: {
                 'Authorization': `Bearer ${token}`,
@@ -663,7 +663,7 @@ $(document).ready(function() {
         const change = parseInt($('#capacityChange').val()) || 0;
         
         $.ajax({
-            url: `http://localhost:3000/api/positions/${positionId}/capacity`,
+            url: `/api/positions/${positionId}/capacity`,
             type: 'PATCH',
             headers: {
                 'Authorization': `Bearer ${token}`,
@@ -693,7 +693,7 @@ $(document).ready(function() {
         const token = localStorage.getItem('authToken');
         
         $.ajax({
-            url: `http://localhost:3000/api/employees?positionId=${positionId}&status=active`,
+            url: `/api/employees?positionId=${positionId}&status=active`,
             type: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`
@@ -724,7 +724,7 @@ $(document).ready(function() {
         const positionId = $('#deactivatePositionId').val();
         
         $.ajax({
-            url: `http://localhost:3000/api/positions/${positionId}/deactivate`,
+            url: `/api/positions/${positionId}/deactivate`,
             type: 'PATCH',
             headers: {
                 'Authorization': `Bearer ${token}`
@@ -745,7 +745,7 @@ $(document).ready(function() {
         const token = localStorage.getItem('authToken');
         
         $.ajax({
-            url: `http://localhost:3000/api/positions/${positionId}/hierarchy`,
+            url: `/api/positions/${positionId}/hierarchy`,
             type: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`
@@ -793,7 +793,7 @@ $(document).ready(function() {
         
         // Get position details for salary info
         $.ajax({
-            url: `http://localhost:3000/api/positions/${positionId}`,
+            url: `/api/positions/${positionId}`,
             type: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`
@@ -801,7 +801,7 @@ $(document).ready(function() {
             success: function(position) {
                 // Get statistics
                 $.ajax({
-                    url: `http://localhost:3000/api/positions/${positionId}/statistics`,
+                    url: `/api/positions/${positionId}/statistics`,
                     type: 'GET',
                     headers: {
                         'Authorization': `Bearer ${token}`
