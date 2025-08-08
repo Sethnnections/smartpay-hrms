@@ -76,26 +76,28 @@ const positionSchema = new mongoose.Schema({
   }],
   requirements: {
     education: {
-      minimum: {
-        type: String,
-        enum: ['high_school', 'diploma', 'bachelor', 'master', 'phd'],
-        required: [true, 'Minimum education is required']
-      },
-      preferred: {
-        type: String,
-        enum: ['high_school', 'diploma', 'bachelor', 'master', 'phd']
-      },
+     minimum: {
+      type: String,
+      enum: ['high_school', 'diploma', 'bachelor', 'master', 'phd'],
+      required: [true, 'Minimum education is required'],
+      default: 'bachelor' // Add default value
+    },
+    preferred: {
+      type: String,
+      enum: ['high_school', 'diploma', 'bachelor', 'master', 'phd'],
+      default: null // Change from empty string to null
+    },
       field: {
         type: String,
         trim: true
       }
     },
     experience: {
-      minimum: {
-        type: Number,
-        required: [true, 'Minimum experience is required'],
-        min: [0, 'Minimum experience cannot be negative']
-      },
+       minimum: {
+      type: Number,
+      required: [true, 'Minimum experience is required'],
+      default: 0 // Add default value
+    },
       preferred: {
         type: Number,
         min: [0, 'Preferred experience cannot be negative']

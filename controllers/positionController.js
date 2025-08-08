@@ -3,22 +3,31 @@ const Department = require('../models/Department');
 const Grade = require('../models/Grade');
 const Employee = require('../models/Employee');
 
-// Create new position
+
 exports.createPosition = async (positionData, createdBy) => {
   try {
-    // Validate department and grade exist
-    const [department, grade] = await Promise.all([
+     const [department, grade] = await Promise.all([
       Department.findById(positionData.departmentId),
       Grade.findById(positionData.gradeId)
     ]);
 
     if (!department) throw new Error('Department not found');
     if (!grade) throw new Error('Grade not found');
-
+    
     // Validate reportingTo if provided
     if (positionData.reportingTo) {
       const reportingPosition = await Position.findById(positionData.reportingTo);
       if (!reportingPosition) throw new Error('Reporting position not found');
+    } else {
+      positionData.reportingTo = null; // Ensure it's null if empty
+    }
+
+    // Ensure requirements object is properly structured
+    if (!positionData.requirements) {
+      positionData.requirements = {
+        education: {},
+        experience: {}
+      };
     }
 
     const position = new Position({

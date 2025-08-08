@@ -1,1084 +1,637 @@
 $(document).ready(function() {
-    // Global variables
-    let currentPage = 1;
-    const itemsPerPage = 10;
-    let totalPositions = 0;
-    let departments = [];
-    let grades = [];
-    let positions = [];
-    
     // Initialize Select2 dropdowns
-    function initSelect2() {
-        $('.select2').select2({
-            width: '100%',
-            theme: 'bootstrap-5',
-            dropdownParent: $('#addPositionModal')
-        });
-    }
-    
-    // Show loading state
-    function showLoading(show = true) {
-        if (show) {
-            $('#loadingOverlay').fadeIn(200);
-        } else {
-            $('#loadingOverlay').fadeOut(200);
+    $('.select2').select2({
+        theme: 'bootstrap-5'
+    });
+
+    // Load departments and grades for dropdowns
+    loadDepartments();
+    loadGrades();
+
+    // Load positions on page load
+    loadPositions();
+
+    // Form submission for adding new position
+    $('#addPositionForm').submit(async function(e) {
+        e.preventDefault();
+        await createPosition();
+    });
+
+    // Form submission for updating position
+    $('#editPositionForm').submit(async function(e) {
+        e.preventDefault();
+        await updatePosition();
+    });
+
+    // Initialize tabs
+    $('[data-bs-toggle="tab"]').on('shown.bs.tab', function(e) {
+        const target = $(e.target).attr('href');
+        if (target === '#position-details') {
+            loadPositionDetails(currentPositionId);
+        } else if (target === '#position-hierarchy') {
+            loadPositionHierarchy(currentPositionId);
+        } else if (target === '#position-statistics') {
+            loadPositionStatistics(currentPositionId);
         }
-    }
-    
-    // Show SweetAlert notification
-    function showAlert(title, text, icon, confirmButtonText = 'OK') {
-        Swal.fire({
-            title: title,
-            text: text,
-            icon: icon,
-            confirmButtonText: confirmButtonText,
-            buttonsStyling: false,
-            customClass: {
-                confirmButton: 'btn btn-' + (icon === 'error' ? 'danger' : 'primary')
-            }
-        });
-    }
-    
-    // Show toast notification
-    function showToast(title, icon = 'success') {
-        const Toast = Swal.mixin({
-            toast: true,
-            position: 'top-end',
-            showConfirmButton: false,
-            timer: 3000,
-            timerProgressBar: true,
-            didOpen: (toast) => {
-                toast.addEventListener('mouseenter', Swal.stopTimer);
-                toast.addEventListener('mouseleave', Swal.resumeTimer);
-            }
-        });
+    });
+});
+
+let currentPositionId = null;
+
+// Load departments for dropdown
+async function loadDepartments() {
+    try {
+        const response = await fetch('/api/departments');
+        const departments = await response.json();
         
-        Toast.fire({
-            icon: icon,
-            title: title
-        });
-    }
-    
-    // Load initial data
-    function loadInitialData() {
-        showLoading();
+        const departmentSelect = $('#departmentId');
+        departmentSelect.empty();
+        departmentSelect.append('<option value="">Select Department</option>');
         
-        // Load departments and grades in parallel
-        Promise.all([loadDepartments(), loadGrades()])
-            .then(() => {
-                loadPositions();
-                loadStats();
-                initSelect2();
-                setupAddPositionModal();
-            })
-            .catch(error => {
-                showAlert('Error', 'Failed to load initial data: ' + error, 'error');
-            })
-            .finally(() => {
-                showLoading(false);
-            });
-    }
-    
-    // Setup add position modal dropdowns
-    function setupAddPositionModal() {
-        // Populate department dropdown
-        const $deptDropdown = $('#positionDepartment');
-        $deptDropdown.empty().append('<option value="">Select Department</option>');
         departments.forEach(dept => {
-            $deptDropdown.append(`<option value="${dept._id}">${dept.name} (${dept.code})</option>`);
+            departmentSelect.append(`<option value="${dept._id}">${dept.name} (${dept.code})</option>`);
         });
         
-        // Populate grade dropdown
-        const $gradeDropdown = $('#positionGrade');
-        $gradeDropdown.empty().append('<option value="">Select Grade</option>');
+        // Also populate in edit form
+        const editDeptSelect = $('#editDepartmentId');
+        editDeptSelect.empty();
+        editDeptSelect.append('<option value="">Select Department</option>');
+        departments.forEach(dept => {
+            editDeptSelect.append(`<option value="${dept._id}">${dept.name} (${dept.code})</option>`);
+        });
+    } catch (error) {
+        showAlert('Failed to load departments', 'danger');
+    }
+}
+
+// Load grades for dropdown
+async function loadGrades() {
+    try {
+        const response = await fetch('/api/grades');
+        const grades = await response.json();
+        
+        const gradeSelect = $('#gradeId');
+        gradeSelect.empty();
+        gradeSelect.append('<option value="">Select Grade</option>');
+        
         grades.forEach(grade => {
-            $gradeDropdown.append(`<option value="${grade._id}">${grade.name} (Level ${grade.level})</option>`);
+            gradeSelect.append(`<option value="${grade._id}">${grade.name} (Level ${grade.level})</option>`);
         });
         
-        // Populate reportingTo dropdown
-        const $reportingDropdown = $('#positionReportingTo');
-        $reportingDropdown.empty().append('<option value="">Select Reporting Position</option>');
-        positions.forEach(position => {
-            $reportingDropdown.append(`<option value="${position._id}">${position.name} (${position.code})</option>`);
+        // Also populate in edit form
+        const editGradeSelect = $('#editGradeId');
+        editGradeSelect.empty();
+        editGradeSelect.append('<option value="">Select Grade</option>');
+        grades.forEach(grade => {
+            editGradeSelect.append(`<option value="${grade._id}">${grade.name} (Level ${grade.level})</option>`);
         });
+    } catch (error) {
+        showAlert('Failed to load grades', 'danger');
     }
-    
-    // Load departments
-    function loadDepartments() {
-        return new Promise((resolve, reject) => {
-            const token = localStorage.getItem('authToken');
-            
-            $.ajax({
-                url: 'http://localhost:3000/api/departments',
-                type: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                },
-                success: function(response) {
-                    departments = response;
-                    
-                    // Populate department dropdowns
-                    const $filterDept = $('#departmentFilter');
-                    $filterDept.empty().append('<option value="">All Departments</option>');
-                    
-                    response.forEach(dept => {
-                        $filterDept.append(`<option value="${dept._id}">${dept.name} (${dept.code})</option>`);
-                    });
-                    
-                    resolve();
-                },
-                error: function(xhr) {
-                    reject(xhr.responseJSON?.error || 'Failed to load departments');
-                }
-            });
-        });
-    }
-    
-    // Load grades
-    function loadGrades() {
-        return new Promise((resolve, reject) => {
-            const token = localStorage.getItem('authToken');
-            
-            $.ajax({
-                url: 'http://localhost:3000/api/grades',
-                type: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                },
-                success: function(response) {
-                    grades = response;
-                    
-                    // Populate grade dropdowns
-                    const $filterGrade = $('#gradeFilter');
-                    $filterGrade.empty().append('<option value="">All Grades</option>');
-                    
-                    response.forEach(grade => {
-                        $filterGrade.append(`<option value="${grade._id}">${grade.name} (Level ${grade.level})</option>`);
-                    });
-                    
-                    resolve();
-                },
-                error: function(xhr) {
-                    reject(xhr.responseJSON?.error || 'Failed to load grades');
-                }
-            });
-        });
-    }
-    
-    // Load positions
-    function loadPositions() {
+}
+
+// Load positions with optional filters
+async function loadPositions(filters = {}) {
+    try {
         showLoading();
         
-        const token = localStorage.getItem('authToken');
-        const search = $('#searchInput').val();
-        const departmentId = $('#departmentFilter').val();
-        const gradeId = $('#gradeFilter').val();
-        const isActive = $('#statusFilter').val() === 'true';
-        const hasVacancies = $('#vacancyFilter').val() === 'true';
+        // Build query string from filters
+        const queryParams = new URLSearchParams();
+        if (filters.search) queryParams.append('search', filters.search);
+        if (filters.departmentId) queryParams.append('departmentId', filters.departmentId);
+        if (filters.gradeId) queryParams.append('gradeId', filters.gradeId);
+        if (filters.hasVacancies) queryParams.append('hasVacancies', filters.hasVacancies);
+        if (filters.isActive !== undefined) queryParams.append('isActive', filters.isActive);
         
-        let url = `http://localhost:3000/api/positions?page=${currentPage}&limit=${itemsPerPage}`;
+        const response = await fetch(`/api/positions?${queryParams.toString()}`);
+        const positions = await response.json();
         
-        if (search) url += `&search=${search}`;
-        if (departmentId) url += `&departmentId=${departmentId}`;
-        if (gradeId) url += `&gradeId=${gradeId}`;
-        if (isActive) url += `&isActive=true`;
-        if (hasVacancies) url += `&hasVacancies=true`;
-        
-        $.ajax({
-            url: url,
-            type: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`
-            },
-            success: function(response) {
-                positions = response;
-                renderPositionsTable(response);
-                
-                // Update reporting dropdown in add modal if it's open
-                if ($('#addPositionModal').hasClass('show')) {
-                    setupAddPositionModal();
-                }
-            },
-            error: function(xhr) {
-                showAlert('Error', 'Failed to load positions: ' + (xhr.responseJSON?.error || 'Unknown error'), 'error');
-            },
-            complete: function() {
-                showLoading(false);
-            }
-        });
+        renderPositionsTable(positions);
+        hideLoading();
+    } catch (error) {
+        hideLoading();
+        showAlert('Failed to load positions', 'danger');
+    }
+}
+
+// Render positions in table
+function renderPositionsTable(positions) {
+    const tableBody = $('#positionsTable tbody');
+    tableBody.empty();
+    
+    if (positions.length === 0) {
+        tableBody.append(`
+            <tr>
+                <td colspan="9" class="text-center py-4">No positions found</td>
+            </tr>
+        `);
+        return;
     }
     
-    // Render positions table
-    function renderPositionsTable(positions) {
-        const $tableBody = $('#positionsTableBody');
-        $tableBody.empty();
+    positions.forEach(position => {
+        const vacancyRate = position.vacancyRate || 0;
+        const vacancyClass = vacancyRate > 50 ? 'danger' : vacancyRate > 20 ? 'warning' : 'success';
         
-        if (positions.length === 0) {
-            $tableBody.append('<tr><td colspan="7" class="text-center py-4">No positions found matching your criteria</td></tr>');
+        tableBody.append(`
+            <tr data-id="${position._id}">
+                <td>${position.code}</td>
+                <td>${position.name}</td>
+                <td>${position.department?.name || 'N/A'}</td>
+                <td>${position.grade?.name || 'N/A'}</td>
+                <td>${position.capacity?.total || 0}</td>
+                <td>${position.capacity?.filled || 0}</td>
+                <td>
+                    <span class="badge bg-${vacancyClass}">
+                        ${vacancyRate}% (${position.capacity?.vacant || 0})
+                    </span>
+                </td>
+                <td>
+                    <span class="badge ${position.isActive ? 'bg-success' : 'bg-secondary'}">
+                        ${position.isActive ? 'Active' : 'Inactive'}
+                    </span>
+                </td>
+                <td>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            Actions
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a class="dropdown-item view-position" href="#" data-id="${position._id}">
+                                    <i class="fas fa-eye me-2"></i>View
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item edit-position" href="#" data-id="${position._id}">
+                                    <i class="fas fa-edit me-2"></i>Edit
+                                </a>
+                            </li>
+                            ${position.isActive ? `
+                            <li>
+                                <a class="dropdown-item deactivate-position" href="#" data-id="${position._id}">
+                                    <i class="fas fa-ban me-2"></i>Deactivate
+                                </a>
+                            </li>
+                            ` : ''}
+                        </ul>
+                    </div>
+                </td>
+            </tr>
+        `);
+    });
+    
+    // Add event listeners to action buttons
+    $('.view-position').click(function(e) {
+        e.preventDefault();
+        const positionId = $(this).data('id');
+        showPositionDetails(positionId);
+    });
+    
+    $('.edit-position').click(function(e) {
+        e.preventDefault();
+        const positionId = $(this).data('id');
+        showEditPositionModal(positionId);
+    });
+    
+    $('.deactivate-position').click(function(e) {
+        e.preventDefault();
+        const positionId = $(this).data('id');
+        deactivatePosition(positionId);
+    });
+}
+
+// Create new position
+async function createPosition() {
+    try {
+        showLoading();
+        
+        const formData = {
+            name: $('#name').val(),
+            code: $('#code').val(),
+            departmentId: $('#departmentId').val(),
+            gradeId: $('#gradeId').val(),
+            reportingTo: $('#reportingTo').val() || null,
+            jobType: $('#jobType').val(),
+            description: $('#description').val(),
+            responsibilities: $('#responsibilities').val().split('\n').filter(r => r.trim()),
+            capacity: {
+                total: parseInt($('#capacityTotal').val()) || 1
+            },
+            requirements: {
+                education: {
+                    minimum: $('#educationMinimum').val(),
+                    preferred: $('#educationPreferred').val() || null,
+                    field: $('#educationField').val() || null
+                },
+                experience: {
+                    minimum: parseInt($('#experienceMinimum').val()) || 0,
+                    preferred: parseInt($('#experiencePreferred').val()) || null,
+                    type: $('#experienceType').val()
+                }
+            }
+        };
+        
+        const response = await fetch('/api/positions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify(formData)
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Failed to create position');
+        }
+        
+        const position = await response.json();
+        
+        $('#addPositionModal').modal('hide');
+        $('#addPositionForm')[0].reset();
+        showAlert('Position created successfully!', 'success');
+        loadPositions();
+        hideLoading();
+    } catch (error) {
+        hideLoading();
+        showAlert(error.message, 'danger');
+    }
+}
+
+// Show position details in modal
+async function showPositionDetails(positionId) {
+    try {
+        showLoading();
+        currentPositionId = positionId;
+        
+        const response = await fetch(`/api/positions/${positionId}`);
+        const position = await response.json();
+        
+        // Set basic info
+        $('#positionName').text(position.name);
+        $('#positionCode').text(position.fullCode || position.code);
+        $('#positionDepartment').text(position.department?.name || 'N/A');
+        $('#positionGrade').text(position.grade?.name || 'N/A');
+        $('#positionStatus').html(`
+            <span class="badge ${position.isActive ? 'bg-success' : 'bg-secondary'}">
+                ${position.isActive ? 'Active' : 'Inactive'}
+            </span>
+        `);
+        
+        // Set capacity info
+        $('#positionCapacityTotal').text(position.capacity.total);
+        $('#positionCapacityFilled').text(position.capacity.filled);
+        $('#positionCapacityVacant').text(position.capacity.vacant);
+        $('#positionVacancyRate').text(`${position.vacancyRate}%`);
+        $('#positionOccupancyRate').text(`${position.occupancyRate}%`);
+        
+        // Set description
+        $('#positionDescription').text(position.description || 'No description provided');
+        
+        // Set requirements
+        $('#positionEducation').html(`
+            <strong>Minimum:</strong> ${formatEducationLevel(position.requirements.education.minimum)}<br>
+            ${position.requirements.education.preferred ? `<strong>Preferred:</strong> ${formatEducationLevel(position.requirements.education.preferred)}<br>` : ''}
+            ${position.requirements.education.field ? `<strong>Field:</strong> ${position.requirements.education.field}` : ''}
+        `);
+        
+        $('#positionExperience').html(`
+            <strong>Minimum:</strong> ${position.requirements.experience.minimum} years<br>
+            ${position.requirements.experience.preferred ? `<strong>Preferred:</strong> ${position.requirements.experience.preferred} years<br>` : ''}
+            <strong>Type:</strong> ${formatExperienceType(position.requirements.experience.type)}
+        `);
+        
+        // Set compensation
+        if (position.effectiveSalary) {
+            $('#positionSalary').html(`
+                <strong>Base Salary:</strong> $${position.effectiveSalary.baseSalary.toLocaleString()}<br>
+                <strong>Total Allowances:</strong> $${position.effectiveSalary.totalAllowances.toLocaleString()}<br>
+                <strong>Gross Salary:</strong> $${position.effectiveSalary.grossSalary.toLocaleString()}
+            `);
+        } else {
+            $('#positionSalary').text('Salary information not available');
+        }
+        
+        // Show the modal
+        $('#positionDetailsModal').modal('show');
+        hideLoading();
+    } catch (error) {
+        hideLoading();
+        showAlert('Failed to load position details', 'danger');
+    }
+}
+
+// Load position details for edit form
+async function showEditPositionModal(positionId) {
+    try {
+        showLoading();
+        
+        const response = await fetch(`/api/positions/${positionId}`);
+        const position = await response.json();
+        
+        // Fill form fields
+        $('#editName').val(position.name);
+        $('#editCode').val(position.code);
+        $('#editDepartmentId').val(position.departmentId).trigger('change');
+        $('#editGradeId').val(position.gradeId).trigger('change');
+        $('#editReportingTo').val(position.reportingTo || '').trigger('change');
+        $('#editJobType').val(position.jobType);
+        $('#editDescription').val(position.description);
+        $('#editResponsibilities').val(position.responsibilities?.join('\n') || '');
+        $('#editCapacityTotal').val(position.capacity.total);
+        
+        // Requirements
+        $('#editEducationMinimum').val(position.requirements.education.minimum);
+        $('#editEducationPreferred').val(position.requirements.education.preferred || '');
+        $('#editEducationField').val(position.requirements.education.field || '');
+        $('#editExperienceMinimum').val(position.requirements.experience.minimum);
+        $('#editExperiencePreferred').val(position.requirements.experience.preferred || '');
+        $('#editExperienceType').val(position.requirements.experience.type);
+        
+        // Set position ID in hidden field
+        $('#editPositionId').val(positionId);
+        
+        // Show the modal
+        $('#editPositionModal').modal('show');
+        hideLoading();
+    } catch (error) {
+        hideLoading();
+        showAlert('Failed to load position for editing', 'danger');
+    }
+}
+
+// Update position
+async function updatePosition() {
+    try {
+        showLoading();
+        
+        const positionId = $('#editPositionId').val();
+        const formData = {
+            name: $('#editName').val(),
+            code: $('#editCode').val(),
+            departmentId: $('#editDepartmentId').val(),
+            gradeId: $('#editGradeId').val(),
+            reportingTo: $('#editReportingTo').val() || null,
+            jobType: $('#editJobType').val(),
+            description: $('#editDescription').val(),
+            responsibilities: $('#editResponsibilities').val().split('\n').filter(r => r.trim()),
+            capacity: {
+                total: parseInt($('#editCapacityTotal').val()) || 1
+            },
+            requirements: {
+                education: {
+                    minimum: $('#editEducationMinimum').val(),
+                    preferred: $('#editEducationPreferred').val() || null,
+                    field: $('#editEducationField').val() || null
+                },
+                experience: {
+                    minimum: parseInt($('#editExperienceMinimum').val()) || 0,
+                    preferred: parseInt($('#editExperiencePreferred').val()) || null,
+                    type: $('#editExperienceType').val()
+                }
+            }
+        };
+        
+        const response = await fetch(`/api/positions/${positionId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify(formData)
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Failed to update position');
+        }
+        
+        const position = await response.json();
+        
+        $('#editPositionModal').modal('hide');
+        showAlert('Position updated successfully!', 'success');
+        loadPositions();
+        hideLoading();
+    } catch (error) {
+        hideLoading();
+        showAlert(error.message, 'danger');
+    }
+}
+
+// Deactivate position
+async function deactivatePosition(positionId) {
+    try {
+        const result = await Swal.fire({
+            title: 'Are you sure?',
+            text: "This will deactivate the position and it will no longer be available for new hires.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes, deactivate it!'
+        });
+        
+        if (!result.isConfirmed) return;
+        
+        showLoading();
+        
+        const response = await fetch(`/api/positions/${positionId}/deactivate`, {
+            method: 'PATCH',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Failed to deactivate position');
+        }
+        
+        showAlert('Position deactivated successfully!', 'success');
+        loadPositions();
+        hideLoading();
+    } catch (error) {
+        hideLoading();
+        showAlert(error.message, 'danger');
+    }
+}
+
+// Load position hierarchy
+async function loadPositionHierarchy(positionId) {
+    try {
+        showLoading();
+        
+        const response = await fetch(`/api/positions/${positionId}/hierarchy`);
+        const hierarchy = await response.json();
+        
+        const hierarchyContainer = $('#positionHierarchy');
+        hierarchyContainer.empty();
+        
+        if (hierarchy.length === 0) {
+            hierarchyContainer.append('<p>No hierarchy information available</p>');
             return;
         }
         
-        positions.forEach(position => {
-            const department = departments.find(d => d._id === position.departmentId) || {};
-            const grade = grades.find(g => g._id === position.gradeId) || {};
-            
-            const statusBadge = position.isActive ? 
-                `<span class="badge bg-success">Active</span>` : 
-                `<span class="badge bg-secondary">Inactive</span>`;
-                
-            const vacancyInfo = position.capacity.vacant > 0 ? 
-                `<span class="text-warning">${position.capacity.vacant} vacant</span>` : 
-                `<span class="text-success">Filled</span>`;
-            
-            const row = `
-                <tr data-id="${position._id}">
-                    <td>
-                        <strong>${position.name}</strong><br>
-                        <small class="text-muted">${position.code}</small>
-                    </td>
-                    <td>${department.name || 'N/A'}</td>
-                    <td>${grade.name || 'N/A'} (L${grade.level || '?'})</td>
-                    <td>
-                        ${position.capacity.filled}/${position.capacity.total}<br>
-                        ${vacancyInfo}
-                    </td>
-                    <td>
-                        ${grade.currency || '$'}${grade.baseSalary || '0'}<br>
-                        <small class="text-muted">${grade.currency || '$'}${grade.salaryRange?.minimum || '0'} - ${grade.currency || '$'}${grade.salaryRange?.maximum || '0'}</small>
-                    </td>
-                    <td>${statusBadge}</td>
-                    <td>
-                        <div class="dropdown">
-                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                <i class="fas fa-ellipsis-h"></i>
-                            </button>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item view-details" href="#" data-id="${position._id}"><i class="fas fa-eye me-2"></i>View Details</a></li>
-                                <li><a class="dropdown-item edit-position" href="#" data-id="${position._id}"><i class="fas fa-edit me-2"></i>Edit</a></li>
-                                <li><a class="dropdown-item update-capacity" href="#" data-id="${position._id}"><i class="fas fa-users me-2"></i>Update Capacity</a></li>
-                                <li><a class="dropdown-item view-hierarchy" href="#" data-id="${position._id}"><i class="fas fa-sitemap me-2"></i>View Hierarchy</a></li>
-                                <li><a class="dropdown-item view-statistics" href="#" data-id="${position._id}"><i class="fas fa-chart-bar me-2"></i>View Statistics</a></li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item text-danger deactivate-position" href="#" data-id="${position._id}"><i class="fas fa-ban me-2"></i>Deactivate</a></li>
-                            </ul>
-                        </div>
-                    </td>
-                </tr>
-            `;
-            
-            $tableBody.append(row);
-        });
+        let html = '<div class="org-hierarchy">';
         
-        // Add event listeners for action buttons
-        addPositionActionListeners();
-    }
-    
-    // Add event listeners for position actions
-    function addPositionActionListeners() {
-        $('.view-details').on('click', function(e) {
-            e.preventDefault();
-            const positionId = $(this).data('id');
-            showPositionDetails(positionId);
-        });
-        
-        $('.edit-position').on('click', function(e) {
-            e.preventDefault();
-            const positionId = $(this).data('id');
-            showEditPositionModal(positionId);
-        });
-        
-        $('.update-capacity').on('click', function(e) {
-            e.preventDefault();
-            const positionId = $(this).data('id');
-            showCapacityModal(positionId);
-        });
-        
-        $('.view-hierarchy').on('click', function(e) {
-            e.preventDefault();
-            const positionId = $(this).data('id');
-            showHierarchy(positionId);
-        });
-        
-        $('.view-statistics').on('click', function(e) {
-            e.preventDefault();
-            const positionId = $(this).data('id');
-            showStatistics(positionId);
-        });
-        
-        $('.deactivate-position').on('click', function(e) {
-            e.preventDefault();
-            const positionId = $(this).data('id');
-            showDeactivateModal(positionId);
-        });
-    }
-    
-    // Load stats
-    function loadStats() {
-        const token = localStorage.getItem('authToken');
-        
-        $.ajax({
-            url: 'http://localhost:3000/api/positions',
-            type: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`
-            },
-            success: function(positions) {
-                const totalPositions = positions.length;
-                const activePositions = positions.filter(p => p.isActive).length;
-                const positionsWithVacancies = positions.filter(p => p.isActive && p.capacity.vacant > 0).length;
-                
-                const statsHtml = `
-                    <div class="col-md-4">
-                        <div class="card stat-card">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <h5 class="stat-value">${totalPositions}</h5>
-                                        <p class="stat-label">Total Positions</p>
-                                    </div>
-                                    <div class="stat-icon bg-primary">
-                                        <i class="fas fa-briefcase"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="card stat-card">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <h5 class="stat-value">${activePositions}</h5>
-                                        <p class="stat-label">Active Positions</p>
-                                    </div>
-                                    <div class="stat-icon bg-success">
-                                        <i class="fas fa-check-circle"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="card stat-card">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <h5 class="stat-value">${positionsWithVacancies}</h5>
-                                        <p class="stat-label">Positions with Vacancies</p>
-                                    </div>
-                                    <div class="stat-icon bg-warning">
-                                        <i class="fas fa-user-plus"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                
-                $('#positionsStats').html(statsHtml);
-            },
-            error: function(xhr) {
-                console.error('Failed to load position statistics:', xhr.responseJSON?.error || 'Unknown error');
-            }
-        });
-    }
-    
-    // Add position
-    function addPosition() {
-        const $form = $('#addPositionForm');
-        const $submitBtn = $('#savePositionBtn');
-        $submitBtn.prop('disabled', true);
-        $submitBtn.find('.spinner-border').removeClass('d-none');
-        
-        const token = localStorage.getItem('authToken');
-        const formData = $form.serializeArray();
-        const positionData = {};
-        
-        // Convert form data to object
-        formData.forEach(item => {
-            // Handle nested objects
-            if (item.name.includes('.')) {
-                const parts = item.name.split('.');
-                if (!positionData[parts[0]]) positionData[parts[0]] = {};
-                positionData[parts[0]][parts[1]] = item.value;
-            } else {
-                positionData[item.name] = item.value;
-            }
-        });
-        
-        // Handle responsibilities array
-        const responsibilities = [];
-        $('.responsibility-input').each(function() {
-            if ($(this).val()) responsibilities.push($(this).val());
-        });
-        positionData.responsibilities = responsibilities;
-        
-        // Handle capacity object
-        positionData.capacity = {
-            total: parseInt(positionData.capacity.total),
-            filled: 0,
-            vacant: parseInt(positionData.capacity.total)
-        };
-        
-        $.ajax({
-            url: 'http://localhost:3000/api/positions',
-            type: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            },
-            data: JSON.stringify(positionData),
-            success: function(response) {
-                $('#addPositionModal').modal('hide');
-                showToast('Position created successfully!');
-                loadPositions();
-                loadStats();
-                resetAddPositionForm();
-            },
-            error: function(xhr) {
-                const errorMsg = xhr.responseJSON?.error || 'Failed to create position';
-                showAlert('Error', errorMsg, 'error');
-            },
-            complete: function() {
-                $submitBtn.prop('disabled', false);
-                $submitBtn.find('.spinner-border').addClass('d-none');
-            }
-        });
-    }
-    
-    // Reset add position form
-    function resetAddPositionForm() {
-        $('#addPositionForm')[0].reset();
-        $('#responsibilitiesContainer').html(`
-            <div class="input-group mb-2">
-                <input type="text" class="form-control responsibility-input" name="responsibilities[]">
-                <button type="button" class="btn btn-outline-danger remove-responsibility" disabled>
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-        `);
-        
-        // Reinitialize Select2
-        $('#positionDepartment, #positionGrade, #positionReportingTo').val('').trigger('change');
-    }
-    
-    // Add responsibility field
-    function addResponsibilityField() {
-        const $container = $('#responsibilitiesContainer');
-        const $newField = $(`
-            <div class="input-group mb-2">
-                <input type="text" class="form-control responsibility-input" name="responsibilities[]">
-                <button type="button" class="btn btn-outline-danger remove-responsibility">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-        `);
-        
-        $container.append($newField);
-    }
-    
-    // Show position details
-    function showPositionDetails(positionId) {
-        showLoading();
-        
-        const token = localStorage.getItem('authToken');
-        const position = positions.find(p => p._id === positionId);
-        
-        if (!position) return;
-        
-        const department = departments.find(d => d._id === position.departmentId) || {};
-        const grade = grades.find(g => g._id === position.gradeId) || {};
-        const reportingTo = positions.find(p => p._id === position.reportingTo) || {};
-        
-        let detailsHtml = `
-            <div class="row">
-                <div class="col-md-6">
-                    <h5>${position.name}</h5>
-                    <p class="text-muted">${position.code}</p>
-                    
-                    <div class="mb-3">
-                        <h6>Basic Information</h6>
-                        <ul class="list-group list-group-flush">
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                <span>Department:</span>
-                                <span>${department.name || 'N/A'}</span>
-                            </li>
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                <span>Grade:</span>
-                                <span>${grade.name || 'N/A'} (Level ${grade.level || '?'})</span>
-                            </li>
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                <span>Reports To:</span>
-                                <span>${reportingTo.name || 'None'}</span>
-                            </li>
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                <span>Job Type:</span>
-                                <span>${position.jobType || 'N/A'}</span>
-                            </li>
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                <span>Status:</span>
-                                <span class="badge ${position.isActive ? 'bg-success' : 'bg-secondary'}">
-                                    ${position.isActive ? 'Active' : 'Inactive'}
-                                </span>
-                            </li>
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                <span>Capacity:</span>
-                                <span>${position.capacity.filled} filled / ${position.capacity.total} total</span>
-                            </li>
-                        </ul>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <h6>Salary Information</h6>
-                        <ul class="list-group list-group-flush">
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                <span>Base Salary:</span>
-                                <span>${grade.currency || '$'}${grade.baseSalary || '0'}</span>
-                            </li>
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                <span>Salary Range:</span>
-                                <span>${grade.currency || '$'}${grade.salaryRange?.minimum || '0'} - ${grade.currency || '$'}${grade.salaryRange?.maximum || '0'}</span>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-                
-                <div class="col-md-6">
-                    <div class="mb-3">
-                        <h6>Description</h6>
-                        <p>${position.description || 'No description provided'}</p>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <h6>Responsibilities</h6>
-                        <ul class="list-group list-group-flush">
-                            ${position.responsibilities && position.responsibilities.length > 0 ? 
-                                position.responsibilities.map(resp => `<li class="list-group-item">${resp}</li>`).join('') : 
-                                '<li class="list-group-item text-muted">No responsibilities defined</li>'}
-                        </ul>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <h6>Requirements</h6>
-                        <ul class="list-group list-group-flush">
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                <span>Minimum Education:</span>
-                                <span>${formatEducationLevel(position.requirements?.education?.minimum)}</span>
-                            </li>
-                            ${position.requirements?.education?.preferred ? `
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                <span>Preferred Education:</span>
-                                <span>${formatEducationLevel(position.requirements.education.preferred)}</span>
-                            </li>` : ''}
-                            ${position.requirements?.education?.field ? `
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                <span>Education Field:</span>
-                                <span>${position.requirements.education.field}</span>
-                            </li>` : ''}
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                <span>Minimum Experience:</span>
-                                <span>${position.requirements?.experience?.minimum || 0} years</span>
-                            </li>
-                            ${position.requirements?.experience?.preferred ? `
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                <span>Preferred Experience:</span>
-                                <span>${position.requirements.experience.preferred} years</span>
-                            </li>` : ''}
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        $('#positionDetailsContent').html(detailsHtml);
-        $('#positionDetailsModal').modal('show');
-        showLoading(false);
-    }
-    
-    // Format education level
-    function formatEducationLevel(level) {
-        if (!level) return 'Not specified';
-        
-        const levels = {
-            'high_school': 'High School',
-            'diploma': 'Diploma',
-            'bachelor': "Bachelor's Degree",
-            'master': "Master's Degree",
-            'phd': 'PhD'
-        };
-        
-        return levels[level] || level;
-    }
-    
-    // Show edit position modal
-    function showEditPositionModal(positionId) {
-        showLoading();
-        
-        const token = localStorage.getItem('authToken');
-        const position = positions.find(p => p._id === positionId);
-        
-        if (!position) return;
-        
-        // Get full position details
-        $.ajax({
-            url: `http://localhost:3000/api/positions/${positionId}`,
-            type: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`
-            },
-            success: function(position) {
-                // Populate the edit form
-                $('#editPositionId').val(position._id);
-                
-                let editFormHtml = $('#addPositionForm').html();
-                $('#editPositionForm .modal-body').html(editFormHtml);
-                
-                // Set form values
-                $('#editPositionForm [name="name"]').val(position.name);
-                $('#editPositionForm [name="code"]').val(position.code);
-                $('#editPositionForm [name="departmentId"]').val(position.departmentId).trigger('change');
-                $('#editPositionForm [name="gradeId"]').val(position.gradeId).trigger('change');
-                $('#editPositionForm [name="reportingTo"]').val(position.reportingTo || '').trigger('change');
-                $('#editPositionForm [name="jobType"]').val(position.jobType).trigger('change');
-                $('#editPositionForm [name="capacity.total"]').val(position.capacity.total);
-                $('#editPositionForm [name="status"]').val(position.status).trigger('change');
-                $('#editPositionForm [name="description"]').val(position.description);
-                
-                // Set requirements
-                if (position.requirements?.education) {
-                    $('#editPositionForm [name="requirements.education.minimum"]').val(position.requirements.education.minimum).trigger('change');
-                    $('#editPositionForm [name="requirements.education.preferred"]').val(position.requirements.education.preferred || '').trigger('change');
-                    $('#editPositionForm [name="requirements.education.field"]').val(position.requirements.education.field || '');
-                }
-                
-                if (position.requirements?.experience) {
-                    $('#editPositionForm [name="requirements.experience.minimum"]').val(position.requirements.experience.minimum);
-                    $('#editPositionForm [name="requirements.experience.preferred"]').val(position.requirements.experience.preferred || '');
-                    $('#editPositionForm [name="requirements.experience.type"]').val(position.requirements.experience.type || 'relevant').trigger('change');
-                }
-                
-                // Set responsibilities
-                const $responsibilitiesContainer = $('#editPositionForm #responsibilitiesContainer');
-                $responsibilitiesContainer.empty();
-                
-                if (position.responsibilities && position.responsibilities.length > 0) {
-                    position.responsibilities.forEach(resp => {
-                        const $field = $(`
-                            <div class="input-group mb-2">
-                                <input type="text" class="form-control responsibility-input" name="responsibilities[]" value="${resp}">
-                                <button type="button" class="btn btn-outline-danger remove-responsibility">
-                                    <i class="fas fa-times"></i>
-                                </button>
-                            </div>
-                        `);
-                        $responsibilitiesContainer.append($field);
-                    });
-                } else {
-                    $responsibilitiesContainer.append(`
-                        <div class="input-group mb-2">
-                            <input type="text" class="form-control responsibility-input" name="responsibilities[]">
-                            <button type="button" class="btn btn-outline-danger remove-responsibility" disabled>
-                                <i class="fas fa-times"></i>
-                            </button>
-                        </div>
-                    `);
-                }
-                
-                // Reinitialize Select2
-                $('#editPositionForm .select2').select2({
-                    width: '100%',
-                    theme: 'bootstrap-5',
-                    dropdownParent: $('#editPositionModal')
-                });
-                
-                // Reattach event listeners
-                $('#editPositionForm #addResponsibility').on('click', function() {
-                    addResponsibilityField('edit');
-                });
-                
-                $('#editPositionForm').on('click', '.remove-responsibility', function() {
-                    $(this).closest('.input-group').remove();
-                });
-                
-                $('#editPositionModal').modal('show');
-            },
-            error: function(xhr) {
-                showAlert('Error', 'Failed to load position details: ' + (xhr.responseJSON?.error || 'Unknown error'), 'error');
-            },
-            complete: function() {
-                showLoading(false);
-            }
-        });
-    }
-    
-    // Update position
-    function updatePosition() {
-        const $form = $('#editPositionForm');
-        const $submitBtn = $('#updatePositionBtn');
-        $submitBtn.prop('disabled', true);
-        $submitBtn.find('.spinner-border').removeClass('d-none');
-        
-        const token = localStorage.getItem('authToken');
-        const positionId = $('#editPositionId').val();
-        const formData = $form.serializeArray();
-        const positionData = {};
-        
-        // Convert form data to object
-        formData.forEach(item => {
-            // Skip the id field
-            if (item.name === 'id') return;
-            
-            // Handle nested objects
-            if (item.name.includes('.')) {
-                const parts = item.name.split('.');
-                if (!positionData[parts[0]]) positionData[parts[0]] = {};
-                positionData[parts[0]][parts[1]] = item.value;
-            } else {
-                positionData[item.name] = item.value;
-            }
-        });
-        
-        // Handle responsibilities array
-        const responsibilities = [];
-        $('#editPositionForm .responsibility-input').each(function() {
-            if ($(this).val()) responsibilities.push($(this).val());
-        });
-        positionData.responsibilities = responsibilities;
-        
-        // Handle capacity object (don't update filled/vacant here)
-        positionData.capacity = {
-            total: parseInt(positionData.capacity.total)
-        };
-        
-        $.ajax({
-            url: `http://localhost:3000/api/positions/${positionId}`,
-            type: 'PUT',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            },
-            data: JSON.stringify(positionData),
-            success: function(response) {
-                $('#editPositionModal').modal('hide');
-                showToast('Position updated successfully!');
-                loadPositions();
-            },
-            error: function(xhr) {
-                showAlert('Error', 'Failed to update position: ' + (xhr.responseJSON?.error || 'Unknown error'), 'error');
-            },
-            complete: function() {
-                $submitBtn.prop('disabled', false);
-                $submitBtn.find('.spinner-border').addClass('d-none');
-            }
-        });
-    }
-    
-    // Show capacity modal
-    function showCapacityModal(positionId) {
-        const position = positions.find(p => p._id === positionId);
-        
-        if (!position) return;
-        
-        $('#capacityPositionId').val(positionId);
-        $('#capacityChange').val(1);
-        $('#currentCapacityDisplay').html(`
-            ${position.capacity.filled} filled / ${position.capacity.total} total (${position.capacity.vacant} vacant)
-        `);
-        
-        $('#capacityModal').modal('show');
-    }
-    
-    // Update capacity
-    function updateCapacity() {
-        const $form = $('#capacityForm');
-        const $submitBtn = $form.find('button[type="submit"]');
-        $submitBtn.prop('disabled', true);
-        $submitBtn.find('.spinner-border').removeClass('d-none');
-        
-        const token = localStorage.getItem('authToken');
-        const positionId = $('#capacityPositionId').val();
-        const change = parseInt($('#capacityChange').val()) || 0;
-        
-        $.ajax({
-            url: `http://localhost:3000/api/positions/${positionId}/capacity`,
-            type: 'PATCH',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            },
-            data: JSON.stringify({ change }),
-            success: function(response) {
-                $('#capacityModal').modal('hide');
-                showToast('Position capacity updated successfully!');
-                loadPositions();
-                loadStats();
-            },
-            error: function(xhr) {
-                showAlert('Error', 'Failed to update capacity: ' + (xhr.responseJSON?.error || 'Unknown error'), 'error');
-            },
-            complete: function() {
-                $submitBtn.prop('disabled', false);
-                $submitBtn.find('.spinner-border').addClass('d-none');
-            }
-        });
-    }
-    
-    // Show deactivate modal
-    function showDeactivateModal(positionId) {
-        const position = positions.find(p => p._id === positionId);
-        
-        if (!position) return;
-        
-        $('#deactivatePositionId').val(positionId);
-        
-        // Check if position has active employees
-        const token = localStorage.getItem('authToken');
-        
-        $.ajax({
-            url: `http://localhost:3000/api/employees?positionId=${positionId}&status=active`,
-            type: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`
-            },
-            success: function(employees) {
-                if (employees.length > 0) {
-                    $('#deactivatePositionWarning').show();
-                    $('#deactivateWarningText').text(`
-                        This position has ${employees.length} active employee(s). 
-                        You must reassign them before deactivating.
-                    `);
-                    $('#deactivatePositionForm button[type="submit"]').prop('disabled', true);
-                } else {
-                    $('#deactivatePositionWarning').hide();
-                    $('#deactivatePositionForm button[type="submit"]').prop('disabled', false);
-                }
-            },
-            error: function() {
-                $('#deactivatePositionWarning').hide();
-            }
-        });
-        
-        $('#deactivatePositionModal').modal('show');
-    }
-    
-    // Deactivate position
-    function deactivatePosition() {
-        const $form = $('#deactivatePositionForm');
-        const $submitBtn = $form.find('button[type="submit"]');
-        $submitBtn.prop('disabled', true);
-        $submitBtn.find('.spinner-border').removeClass('d-none');
-        
-        const token = localStorage.getItem('authToken');
-        const positionId = $('#deactivatePositionId').val();
-        
-        $.ajax({
-            url: `http://localhost:3000/api/positions/${positionId}/deactivate`,
-            type: 'PATCH',
-            headers: {
-                'Authorization': `Bearer ${token}`
-            },
-            success: function(response) {
-                $('#deactivatePositionModal').modal('hide');
-                showToast('Position deactivated successfully!');
-                loadPositions();
-                loadStats();
-            },
-            error: function(xhr) {
-                showAlert('Error', 'Failed to deactivate position: ' + (xhr.responseJSON?.error || 'Unknown error'), 'error');
-            },
-            complete: function() {
-                $submitBtn.prop('disabled', false);
-                $submitBtn.find('.spinner-border').addClass('d-none');
-            }
-        });
-    }
-    
-    // Show hierarchy
-    function showHierarchy(positionId) {
-        showLoading();
-        
-        const token = localStorage.getItem('authToken');
-        
-        $.ajax({
-            url: `http://localhost:3000/api/positions/${positionId}/hierarchy`,
-            type: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`
-            },
-            success: function(hierarchy) {
-                let hierarchyHtml = `
-                    <div class="org-chart">
-                        <ul>
-                            ${buildHierarchyTree(hierarchy)}
-                        </ul>
-                    </div>
-                `;
-                
-                $('#hierarchyChart').html(hierarchyHtml);
-                $('#hierarchyModal').modal('show');
-            },
-            error: function(xhr) {
-                showAlert('Error', 'Failed to load hierarchy: ' + (xhr.responseJSON?.error || 'Unknown error'), 'error');
-            },
-            complete: function() {
-                showLoading(false);
-            }
-        });
-    }
-    
-    // Build hierarchy tree
-    function buildHierarchyTree(hierarchy) {
-        let html = '';
-        
-        hierarchy.forEach((item, index) => {
-            const isLast = index === hierarchy.length - 1;
+        hierarchy.forEach((position, index) => {
+            const isCurrent = index === hierarchy.length - 1;
+            const levelClass = `level-${position.level}`;
             
             html += `
-                <li>
-                    <div class="node ${item._id === hierarchy[hierarchy.length - 1]._id ? 'current' : ''}">
-                        <span>${item.name}</span>
-                        <small class="text-muted">${item.code}</small>
+                <div class="org-node ${levelClass} ${isCurrent ? 'current' : ''}">
+                    <div class="org-node-content">
+                        <h5>${position.name}</h5>
+                        <p class="text-muted">${position.code}</p>
                     </div>
-                    ${!isLast ? '<ul><li><div class="node-connector"></div></li></ul>' : ''}
-                </li>
+                </div>
             `;
-        });
-        
-        return html;
-    }
-    
-    // Show statistics
-    function showStatistics(positionId) {
-        showLoading();
-        
-        const token = localStorage.getItem('authToken');
-        
-        // Get position details for salary info
-        $.ajax({
-            url: `http://localhost:3000/api/positions/${positionId}`,
-            type: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`
-            },
-            success: function(position) {
-                // Get statistics
-                $.ajax({
-                    url: `http://localhost:3000/api/positions/${positionId}/statistics`,
-                    type: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    },
-                    success: function(stats) {
-                        // Update capacity stats
-                        $('#totalCapacityStat').text(stats.capacity.total);
-                        $('#filledCapacityStat').text(stats.capacity.filled);
-                        $('#vacantCapacityStat').text(stats.capacity.vacant);
-                        
-                        // Update progress bars
-                        const filledPercent = (stats.capacity.filled / stats.capacity.total) * 100;
-                        const vacantPercent = (stats.capacity.vacant / stats.capacity.total) * 100;
-                        
-                        $('#filledProgress').css('width', `${filledPercent}%`);
-                        $('#vacantProgress').css('width', `${vacantPercent}%`);
-                        
-                        // Update employee stats
-                        $('#activeEmployeesStat').text(stats.activeEmployees);
-                        $('#totalEmployeesStat').text(stats.totalEmployees);
-                        $('#avgTenureStat').text(stats.averageTenure.toFixed(1));
-                        
-                        // Update salary stats
-                        let salaryHtml = '';
-                        
-                        if (position.effectiveSalary) {
-                            salaryHtml = `
-                                <tr>
-                                    <td>Base Salary</td>
-                                    <td>${position.grade.currency || '$'}${position.effectiveSalary.baseSalary}</td>
-                                </tr>
-                                <tr>
-                                    <td>Transport Allowance</td>
-                                    <td>${position.grade.currency || '$'}${position.effectiveSalary.allowances.transport || '0'}</td>
-                                </tr>
-                                <tr>
-                                    <td>Housing Allowance</td>
-                                    <td>${position.grade.currency || '$'}${position.effectiveSalary.allowances.housing || '0'}</td>
-                                </tr>
-                                <tr>
-                                    <td>Medical Allowance</td>
-                                    <td>${position.grade.currency || '$'}${position.effectiveSalary.allowances.medical || '0'}</td>
-                                </tr>
-                                <tr>
-                                    <td>Other Allowances</td>
-                                    <td>${position.grade.currency || '$'}${position.effectiveSalary.allowances.other || '0'}</td>
-                                </tr>
-                                <tr class="table-active">
-                                    <td><strong>Total Gross Salary</strong></td>
-                                    <td><strong>${position.grade.currency || '$'}${position.effectiveSalary.grossSalary}</strong></td>
-                                </tr>
-                            `;
-                        } else {
-                            salaryHtml = '<tr><td colspan="2" class="text-center">Salary information not available</td></tr>';
-                        }
-                        
-                        $('#salaryStatsBody').html(salaryHtml);
-                        
-                        $('#statisticsModal').modal('show');
-                    },
-                    error: function(xhr) {
-                        showAlert('Error', 'Failed to load statistics: ' + (xhr.responseJSON?.error || 'Unknown error'), 'error');
-                    },
-                    complete: function() {
-                        showLoading(false);
-                    }
-                });
-            },
-            error: function(xhr) {
-                showAlert('Error', 'Failed to load position details: ' + (xhr.responseJSON?.error || 'Unknown error'), 'error');
-                showLoading(false);
+            
+            if (index < hierarchy.length - 1) {
+                html += '<div class="org-connector"></div>';
             }
         });
+        
+        html += '</div>';
+        hierarchyContainer.append(html);
+        hideLoading();
+    } catch (error) {
+        hideLoading();
+        hierarchyContainer.append('<p>Failed to load hierarchy</p>');
+    }
+}
+
+// Load position statistics
+async function loadPositionStatistics(positionId) {
+    try {
+        showLoading();
+        
+        const response = await fetch(`/api/positions/${positionId}/statistics`);
+        const stats = await response.json();
+        
+        // Update statistics display
+        $('#statCapacityTotal').text(stats.capacity.total);
+        $('#statCapacityFilled').text(stats.capacity.filled);
+        $('#statCapacityVacant').text(stats.capacity.vacant);
+        $('#statOccupancyRate').text(`${stats.occupancyRate}%`);
+        $('#statVacancyRate').text(`${stats.vacancyRate}%`);
+        $('#statActiveEmployees').text(stats.activeEmployees);
+        $('#statTotalEmployees').text(stats.totalEmployees);
+        $('#statAvgTenure').text(stats.averageTenure.toFixed(1));
+        
+        // Render chart
+        renderStatisticsChart(stats);
+        hideLoading();
+    } catch (error) {
+        hideLoading();
+        $('#positionStatistics').append('<p>Failed to load statistics</p>');
+    }
+}
+
+// Render statistics chart
+function renderStatisticsChart(stats) {
+    const ctx = $('#statsChart')[0].getContext('2d');
+    
+    // Destroy previous chart if exists
+    if (window.statsChart) {
+        window.statsChart.destroy();
     }
     
-    // Initialize the page
-    loadInitialData();
-    
-    // Event listeners
-    $('#filterForm').on('submit', function(e) {
-        e.preventDefault();
-        currentPage = 1;
-        loadPositions();
+    window.statsChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Total', 'Filled', 'Vacant'],
+            datasets: [{
+                label: 'Capacity',
+                data: [stats.capacity.total, stats.capacity.filled, stats.capacity.vacant],
+                backgroundColor: [
+                    'rgba(54, 162, 235, 0.5)',
+                    'rgba(75, 192, 192, 0.5)',
+                    'rgba(255, 99, 132, 0.5)'
+                ],
+                borderColor: [
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(255, 99, 132, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
     });
+}
+
+// Helper functions
+function formatEducationLevel(level) {
+    const levels = {
+        'high_school': 'High School',
+        'diploma': 'Diploma',
+        'bachelor': "Bachelor's Degree",
+        'master': "Master's Degree",
+        'phd': 'PhD'
+    };
+    return levels[level] || level;
+}
+
+function formatExperienceType(type) {
+    const types = {
+        'any': 'Any',
+        'relevant': 'Relevant',
+        'management': 'Management',
+        'technical': 'Technical',
+        'leadership': 'Leadership'
+    };
+    return types[type] || type;
+}
+
+function showAlert(message, type) {
+    const alertsContainer = $('#alertsContainer');
+    const alert = $(`
+        <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `);
     
-    $('#addPositionForm').on('submit', function(e) {
-        e.preventDefault();
-        addPosition();
-    });
+    alertsContainer.append(alert);
+    setTimeout(() => alert.alert('close'), 5000);
+}
+
+function showLoading() {
+    $('#loadingOverlay').fadeIn();
+}
+
+function hideLoading() {
+    $('#loadingOverlay').fadeOut();
+}
+
+// Apply filters
+$('#applyFilters').click(function() {
+    const filters = {
+        search: $('#searchInput').val(),
+        departmentId: $('#filterDepartment').val(),
+        gradeId: $('#filterGrade').val(),
+        hasVacancies: $('#filterVacancies').is(':checked'),
+        isActive: $('#filterActive').is(':checked')
+    };
     
-    $('#editPositionForm').on('submit', function(e) {
-        e.preventDefault();
-        updatePosition();
-    });
+    loadPositions(filters);
+});
+
+// Reset filters
+$('#resetFilters').click(function() {
+    $('#searchInput').val('');
+    $('#filterDepartment').val('').trigger('change');
+    $('#filterGrade').val('').trigger('change');
+    $('#filterVacancies').prop('checked', false);
+    $('#filterActive').prop('checked', true);
     
-    $('#capacityForm').on('submit', function(e) {
-        e.preventDefault();
-        updateCapacity();
-    });
-    
-    $('#deactivatePositionForm').on('submit', function(e) {
-        e.preventDefault();
-        deactivatePosition();
-    });
-    
-    $('#addResponsibility').on('click', function() {
-        addResponsibilityField();
-    });
-    
-    $(document).on('click', '.remove-responsibility', function() {
-        $(this).closest('.input-group').remove();
-    });
-    
-    // When add position modal is shown, ensure dropdowns are populated
-    $('#addPositionModal').on('shown.bs.modal', function() {
-        setupAddPositionModal();
-    });
+    loadPositions();
 });
