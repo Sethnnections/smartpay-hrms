@@ -15,7 +15,7 @@ router.get('/admin', (req, res) => {
         currentPage: 'dashboard',
         user: {
             name: 'Administrator',
-            email: 'admin@smartpay.com',
+            email: 'admin@teampay.com',
             avatar: 'AD'
         }
     });
@@ -27,7 +27,7 @@ router.get('/admin/employees', (req, res) => {
         currentPage: 'employees',
         user: {
             name: 'Administrator',
-            email: 'admin@smartpay.com',
+            email: 'admin@teampay.com',
             avatar: 'AD'
         }
     });
@@ -40,7 +40,7 @@ router.get('/admin/departments', (req, res) => {
         layout:false,
         user: {
             name: 'Administrator',
-            email: 'admin@smartpay.com',
+            email: 'admin@teampay.com',
             avatar: 'AD'
         }
     });
@@ -53,7 +53,7 @@ router.get('/admin/grades', (req, res) => {
         layout: false,
         user: {
             name: 'Administrator',
-            email: 'admin@smartpay.com',
+            email: 'admin@teampay.com',
             avatar: 'AD'
         }
     });
@@ -65,7 +65,7 @@ router.get('/admin/positions', (req, res) => {
         layout:false,
         user: {
             name: 'Administrator',
-            email: 'admin@smartpay.com',
+            email: 'admin@teampay.com',
             avatar: 'AD'
         }
     });
@@ -77,7 +77,7 @@ router.get('/admin/payroll', (req, res) => {
         currentPage: 'payroll',
         user: {
             name: 'Administrator',
-            email: 'admin@smartpay.com',
+            email: 'admin@teampay.com',
             avatar: 'AD'
         }
     });
@@ -89,7 +89,7 @@ router.get('/admin/payslips', (req, res) => {
         currentPage: 'payslips',
         user: {
             name: 'Administrator',
-            email: 'admin@smartpay.com',
+            email: 'admin@teampay.com',
             avatar: 'AD'
         }
     });
@@ -101,7 +101,7 @@ router.get('/admin/reports', (req, res) => {
         currentPage: 'reports',
         user: {
             name: 'Administrator',
-            email: 'admin@smartpay.com',
+            email: 'admin@teampay.com',
             avatar: 'AD'
         }
     });
@@ -113,7 +113,7 @@ router.get('/admin/exports', (req, res) => {
         currentPage: 'exports',
         user: {
             name: 'Administrator',
-            email: 'admin@smartpay.com',
+            email: 'admin@teampay.com',
             avatar: 'AD'
         }
     });
@@ -125,7 +125,7 @@ router.get('/admin/settings', (req, res) => {
         currentPage: 'settings',
         user: {
             name: 'Administrator',
-            email: 'admin@smartpay.com',
+            email: 'admin@teampay.com',
             avatar: 'AD'
         }
     });
@@ -137,7 +137,7 @@ router.get('/admin/users', (req, res) => {
         currentPage: 'users',
         user: {
             name: 'Administrator 2',
-            email: 'admin@smartpay.com',
+            email: 'admin@teampay.com',
             avatar: 'AD'
         },
         layout: false // Use no layout for error page
