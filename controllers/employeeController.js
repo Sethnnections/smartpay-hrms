@@ -168,6 +168,8 @@ async function generateEmployeeId() {
 }
 
 // Get all employees with filtering, pagination, and sorting
+// Update your getAllEmployees function in employeeController.js to include stats
+
 exports.getAllEmployees = async (req, res) => {
   try {
     // Extract query parameters
@@ -242,10 +244,10 @@ exports.getAllEmployees = async (req, res) => {
 
     // Execute query with pagination
     const employees = await Employee.find(query)
-      .populate('position', 'name code')
-      .populate('department', 'name code')
-      .populate('grade', 'name code level')
-      .populate('manager', 'personalInfo.firstName personalInfo.lastName employeeId')
+      .populate('employmentInfo.positionId', 'name code')
+      .populate('employmentInfo.departmentId', 'name code')
+      .populate('employmentInfo.gradeId', 'name code level')
+      .populate('employmentInfo.managerId', 'personalInfo.firstName personalInfo.lastName employeeId')
       .sort(sort)
       .limit(Number(limit))
       .skip((Number(page) - 1) * Number(limit));
@@ -253,9 +255,63 @@ exports.getAllEmployees = async (req, res) => {
     // Count total documents for pagination info
     const total = await Employee.countDocuments(query);
 
+    // Calculate stats
+    const [
+      totalEmployees,
+      activeEmployees,
+      totalDepartments,
+      departmentsWithEmployees,
+      totalPositions,
+      filledPositions,
+      averageTenureData,
+      newHiresThisYear
+    ] = await Promise.all([
+      Employee.countDocuments(),
+      Employee.countDocuments({ 'employmentInfo.status': 'active' }),
+      Department.countDocuments(),
+      Employee.distinct('employmentInfo.departmentId', { 'employmentInfo.status': 'active' }),
+      Position.countDocuments(),
+      Position.countDocuments({ 'capacity.filled': { $gt: 0 } }),
+      Employee.aggregate([
+        {
+          $match: { 'employmentInfo.status': 'active' }
+        },
+        {
+          $group: {
+            _id: null,
+            avgTenure: {
+              $avg: {
+                $divide: [
+                  { $subtract: [new Date(), '$employmentInfo.startDate'] },
+                  1000 * 60 * 60 * 24 * 365.25 // Convert to years
+                ]
+              }
+            }
+          }
+        }
+      ]),
+      Employee.countDocuments({
+        'employmentInfo.startDate': {
+          $gte: new Date(new Date().getFullYear(), 0, 1) // Start of current year
+        }
+      })
+    ]);
+
+    const stats = {
+      totalEmployees,
+      activeEmployees,
+      totalDepartments,
+      departmentsWithEmployees: departmentsWithEmployees.length,
+      totalPositions,
+      filledPositions,
+      averageTenure: averageTenureData[0]?.avgTenure ? Math.round(averageTenureData[0].avgTenure * 10) / 10 : 0,
+      newHiresThisYear
+    };
+
     return res.status(200).json({
       success: true,
       data: employees,
+      stats,
       pagination: {
         total,
         page: Number(page),

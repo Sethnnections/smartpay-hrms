@@ -25,6 +25,7 @@ router.get('/admin/employees', (req, res) => {
     res.render('admin/employees', {
         title: 'Employees',
         currentPage: 'employees',
+        layout: false, 
         user: {
             name: 'Administrator',
             email: 'admin@teampay.com',

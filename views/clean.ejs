@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TPS - Employees Management</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/admin.css">
+    
+    <!-- Page-specific CSS -->
+    <link rel="stylesheet" href="/css/departments.css">
+</head>
+<body>
+    <!-- Sidebar Overlay for Mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Sidebar -->
+    <%- include('./partials/sidebar', { currentPage: 'employees' }) %>
+
+    <!-- Main Content -->
+    <div class="main-content" id="mainContent">
+        <!-- Header -->
+        <%- include('./partials/header', { 
+            title: 'Employee Management', 
+            user: typeof user !== 'undefined' ? user : { name: 'User', email: '', avatar: 'U' } 
+        }) %>
+
+        <!-- Page Content -->
+        <main class="dashboard-content">
+            <div class="container-fluid px-4">
+             
+
+            </div>
+        </main>
+
+
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <!-- Axios -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.2/axios.min.js"></script>
+    <!-- Org Chart JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/orgchart/3.8.1/js/jquery.orgchart.min.js"></script>
+    
+    <!-- Custom JS -->
+    <script src="/js/admin.js"></script>
+    
+</body>
+</html>

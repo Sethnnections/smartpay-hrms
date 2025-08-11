@@ -1,161 +1,1049 @@
+<!DOCTYPE html>
+<html lang="en">
 
-<!-- Page Header -->
-<div class="page-header">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <p class="text-muted">Manage your organization's workforce</p>
-        </div>
-        <button class="btn btn-primary">
-            <i class="fas fa-plus me-2"></i>Add Employee
-        </button>
-    </div>
-</div>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TPS - Employees Management</title>
 
-<!-- Employee Stats -->
-<div class="row mb-4">
-    <div class="col-md-3">
-        <div class="stat-card">
-            <div class="stat-header">
-                <p class="stat-title">Active Employees</p>
-                <div class="stat-icon">
-                    <i class="fas fa-user-check"></i>
-                </div>
-            </div>
-            <div class="stat-value">247</div>
-            <div class="stat-trend">
-                <i class="fas fa-arrow-up"></i>
-                <span>+12 this month</span>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="stat-card">
-            <div class="stat-header">
-                <p class="stat-title">On Leave</p>
-                <div class="stat-icon">
-                    <i class="fas fa-calendar-times"></i>
-                </div>
-            </div>
-            <div class="stat-value">8</div>
-            <div class="stat-trend">
-                <i class="fas fa-minus"></i>
-                <span>2 fewer than last week</span>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="stat-card">
-            <div class="stat-header">
-                <p class="stat-title">New Hires</p>
-                <div class="stat-icon">
-                    <i class="fas fa-user-plus"></i>
-                </div>
-            </div>
-            <div class="stat-value">5</div>
-            <div class="stat-trend">
-                <i class="fas fa-arrow-up"></i>
-                <span>This month</span>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="stat-card">
-            <div class="stat-header">
-                <p class="stat-title">Avg. Tenure</p>
-                <div class="stat-icon">
-                    <i class="fas fa-clock"></i>
-                </div>
-            </div>
-            <div class="stat-value">3.2y</div>
-            <div class="stat-trend">
-                <i class="fas fa-arrow-up"></i>
-                <span>+0.3 years</span>
-            </div>
-        </div>
-    </div>
-</div>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-<!-- Employee Table -->
-<div class="card">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="mb-0">Employee List</h5>
-        <div class="d-flex gap-2">
-            <input type="text" class="form-control" placeholder="Search employees..." style="width: 200px;">
-            <select class="form-select" style="width: 150px;">
-                <option>All Departments</option>
-                <option>IT</option>
-                <option>HR</option>
-                <option>Finance</option>
-            </select>
-        </div>
-    </div>
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th>Employee</th>
-                        <th>Position</th>
-                        <th>Department</th>
-                        <th>Hire Date</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>
-                            <div class="d-flex align-items-center">
-                                <div class="user-avatar me-3">JD</div>
-                                <div>
-                                    <div class="fw-medium">John Doe</div>
-                                    <small class="text-muted">john.doe@company.com</small>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/admin.css">
+
+    <!-- Page-specific CSS -->
+    <link rel="stylesheet" href="/css/departments.css">
+
+    <!-- SweetAlert2 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+
+</head>
+
+<body>
+    <!-- Sidebar Overlay for Mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Sidebar -->
+    <%- include('./partials/sidebar', { currentPage: 'employees' }) %>
+
+        <!-- Main Content -->
+        <div class="main-content" id="mainContent">
+            <!-- Header -->
+            <%- include('./partials/header', { title: 'Employee Management' , user: typeof user !=='undefined' ? user :
+                { name: 'User' , email: '' , avatar: 'U' } }) %>
+
+                <!-- Page Content -->
+                <main class="dashboard-content">
+                    <div class="container-fluid ">
+                        <div class="row">
+                            <!-- Main Content -->
+
+                            <!-- Tab Navigation -->
+                            <ul class="nav nav-tabs nav-tabs-custom mb-4" id="employeeTabs" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active" id="employees-tab" data-bs-toggle="tab"
+                                        data-bs-target="#employees" type="button" role="tab">
+                                        <i class="fas fa-users me-2"></i>Employees
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="add-employee-tab" data-bs-toggle="tab"
+                                        data-bs-target="#add-employee" type="button" role="tab">
+                                        <i class="fas fa-user-plus me-2"></i>Add Employee
+                                    </button>
+                                </li>
+                            </ul>
+
+                            <!-- Tab Content -->
+                            <div class="tab-content" id="employeeTabsContent">
+                                <!-- Employees List Section -->
+                                <div class="tab-pane fade show active" id="employees" role="tabpanel">
+                                    <div class="card mb-4">
+                                        <div class="card-header">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <h5 class="mb-0">Employees</h5>
+                                                <div>
+                                                    <input type="text" class="form-control form-control-sm"
+                                                        id="employee-search" placeholder="Search employees...">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="table-responsive">
+                                                <table class="table table-hover" id="employees-table">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>ID</th>
+                                                            <th>Name</th>
+                                                            <th>Email</th>
+                                                            <th>Department</th>
+                                                            <th>Position</th>
+                                                            <th>Grade</th>
+                                                            <th>Status</th>
+                                                            <th>Actions</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="employees-table-body">
+                                                        <!-- Employees will be loaded here -->
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                            <nav aria-label="Page navigation">
+                                                <ul class="pagination justify-content-center" id="employees-pagination">
+                                                    <!-- Pagination will be loaded here -->
+                                                </ul>
+                                            </nav>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Add Employee Section -->
+                                <div class="tab-pane fade" id="add-employee" role="tabpanel">
+                                    <div class="card mb-4">
+                                        <div class="card-header">
+                                            <h5 class="mb-0">Add New Employee</h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <form id="add-employee-form">
+                                                <!-- Your existing form content remains the same -->
+                                                <div class="row mb-3">
+                                                    <div class="col-md-6">
+                                                        <label for="user-select" class="form-label">Select User</label>
+                                                        <select class="form-select" id="user-select" required>
+                                                            <option value="" selected disabled>Select a user</option>
+                                                            <!-- Users will be loaded here -->
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label for="employee-id" class="form-label">Employee ID</label>
+                                                        <input type="text" class="form-control" id="employee-id"
+                                                            placeholder="Will be auto-generated if empty">
+                                                    </div>
+                                                </div>
+
+                                                <div class="row mb-3">
+                                                    <div class="col-md-4">
+                                                        <label for="first-name" class="form-label">First Name</label>
+                                                        <input type="text" class="form-control" id="first-name"
+                                                            required>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label for="middle-name" class="form-label">Middle Name</label>
+                                                        <input type="text" class="form-control" id="middle-name">
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label for="last-name" class="form-label">Last Name</label>
+                                                        <input type="text" class="form-control" id="last-name" required>
+                                                    </div>
+                                                </div>
+
+                                                <div class="row mb-3">
+                                                    <div class="col-md-4">
+                                                        <label for="date-of-birth" class="form-label">Date of
+                                                            Birth</label>
+                                                        <input type="date" class="form-control" id="date-of-birth"
+                                                            required>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label for="gender" class="form-label">Gender</label>
+                                                        <select class="form-select" id="gender" required>
+                                                            <option value="" selected disabled>Select gender</option>
+                                                            <option value="male">Male</option>
+                                                            <option value="female">Female</option>
+                                                            <option value="other">Other</option>
+                                                            <option value="prefer_not_to_say">Prefer not to say</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label for="nationality" class="form-label">Nationality</label>
+                                                        <input type="text" class="form-control" id="nationality"
+                                                            required>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Add these to your form in the personal info section -->
+                                                <div class="row mb-3">
+                                                    <div class="col-md-12">
+                                                        <h6>Address Information</h6>
+                                                    </div>
+                                                </div>
+                                                <div class="row mb-3">
+                                                    <div class="col-md-6">
+                                                        <label for="street-address" class="form-label">Street
+                                                            Address</label>
+                                                        <input type="text" class="form-control" id="street-address"
+                                                            required>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label for="city" class="form-label">City</label>
+                                                        <input type="text" class="form-control" id="city" required>
+                                                    </div>
+                                                </div>
+                                                <div class="row mb-3">
+                                                    <div class="col-md-4">
+                                                        <label for="state" class="form-label">State</label>
+                                                        <input type="text" class="form-control" id="state" required>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label for="zip-code" class="form-label">Zip Code</label>
+                                                        <input type="text" class="form-control" id="zip-code" required>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label for="country" class="form-label">Country</label>
+                                                        <input type="text" class="form-control" id="country"
+                                                            value="United States" required>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Add these to your form for emergency contact -->
+                                                <div class="row mb-3">
+                                                    <div class="col-md-12">
+                                                        <h6>Emergency Contact Information</h6>
+                                                    </div>
+                                                </div>
+                                                <div class="row mb-3">
+                                                    <div class="col-md-4">
+                                                        <label for="emergency-contact-name" class="form-label">Full
+                                                            Name</label>
+                                                        <input type="text" class="form-control"
+                                                            id="emergency-contact-name" required>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label for="emergency-contact-relationship"
+                                                            class="form-label">Relationship</label>
+                                                        <input type="text" class="form-control"
+                                                            id="emergency-contact-relationship" required>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label for="emergency-contact-phone" class="form-label">Phone
+                                                            Number</label>
+                                                        <input type="tel" class="form-control"
+                                                            id="emergency-contact-phone" required>
+                                                    </div>
+                                                </div>
+
+                                                <div class="row mb-3">
+                                                    <div class="col-md-6">
+                                                        <label for="email" class="form-label">Email</label>
+                                                        <input type="email" class="form-control" id="email" required>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label for="phone-number" class="form-label">Phone
+                                                            Number</label>
+                                                        <input type="tel" class="form-control" id="phone-number"
+                                                            required>
+                                                    </div>
+                                                </div>
+
+                                                <div class="row mb-3">
+                                                    <div class="col-md-4">
+                                                        <label for="department" class="form-label">Department</label>
+                                                        <select class="form-select" id="department" required>
+                                                            <option value="" selected disabled>Select department
+                                                            </option>
+                                                            <!-- Departments will be loaded here -->
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label for="position" class="form-label">Position</label>
+                                                        <select class="form-select" id="position" required>
+                                                            <option value="" selected disabled>Select position</option>
+                                                            <!-- Positions will be loaded here -->
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label for="grade" class="form-label">Grade</label>
+                                                        <select class="form-select" id="grade" required>
+                                                            <option value="" selected disabled>Select grade</option>
+                                                            <!-- Grades will be loaded here -->
+                                                        </select>
+                                                    </div>
+                                                </div>
+
+                                                <div class="row mb-3">
+                                                    <div class="col-md-6">
+                                                        <label for="salary" class="form-label">Salary</label>
+                                                        <input type="number" class="form-control" id="salary" min="0"
+                                                            step="0.01" required>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label for="employment-type" class="form-label">Employment
+                                                            Type</label>
+                                                        <select class="form-select" id="employment-type" required>
+                                                            <option value="" selected disabled>Select employment type
+                                                            </option>
+                                                            <option value="full-time">Full-time</option>
+                                                            <option value="part-time">Part-time</option>
+                                                            <option value="contract">Contract</option>
+                                                            <option value="temporary">Temporary</option>
+                                                            <option value="intern">Intern</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <!-- Bank Information Section -->
+                                                <div class="row mb-3">
+                                                    <div class="col-md-12">
+                                                        <h6>Bank Information</h6>
+                                                    </div>
+                                                </div>
+                                                <div class="row mb-3">
+                                                    <div class="col-md-4">
+                                                        <label for="bank-name" class="form-label">Bank Name</label>
+                                                        <input type="text" class="form-control" id="bank-name" required>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label for="account-name" class="form-label">Account
+                                                            Name</label>
+                                                        <input type="text" class="form-control" id="account-name"
+                                                            required>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label for="account-number" class="form-label">Account
+                                                            Number</label>
+                                                        <input type="text" class="form-control" id="account-number"
+                                                            required>
+                                                    </div>
+                                                </div>
+                                                <div class="row mb-3">
+                                                    <div class="col-md-4">
+                                                        <label for="routing-number" class="form-label">Routing
+                                                            Number</label>
+                                                        <input type="text" class="form-control" id="routing-number">
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label for="bank-code" class="form-label">Bank Code</label>
+                                                        <input type="text" class="form-control" id="bank-code">
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label for="iban" class="form-label">IBAN</label>
+                                                        <input type="text" class="form-control" id="iban">
+                                                    </div>
+                                                </div>
+
+                                                <div class="row mb-3">
+                                                    <div class="col-md-6">
+                                                        <label for="start-date" class="form-label">Start Date</label>
+                                                        <input type="date" class="form-control" id="start-date"
+                                                            required>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label for="probation-period" class="form-label">Probation
+                                                            Period (months)</label>
+                                                        <input type="number" class="form-control" id="probation-period"
+                                                            min="1" value="3">
+                                                    </div>
+                                                </div>
+                                                <div class="text-end">
+                                                    <button type="button" class="btn btn-secondary me-2"
+                                                        id="cancel-add-employee">Cancel</button>
+                                                    <button type="submit" class="btn btn-primary" id="submit-employee">
+                                                        <span id="submit-employee-text">Add Employee</span>
+                                                        <span class="loading-spinner d-none"
+                                                            id="submit-employee-spinner"></span>
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                        </td>
-                        <td>Software Engineer</td>
-                        <td>IT</td>
-                        <td>Jan 15, 2023</td>
-                        <td><span class="badge bg-success">Active</span></td>
-                        <td>
-                            <div class="btn-group btn-group-sm">
-                                <button class="btn btn-outline-primary" title="View">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                                <button class="btn btn-outline-warning" title="Edit">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button class="btn btn-outline-danger" title="Delete">
-                                    <i class="fas fa-trash"></i>
-                                </button>
+                        </div>
+
+                    </div>
+                </main>
+
+                <div class="modal fade" id="employeeDetailsModal" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="employeeDetailsModalTitle">Employee Details</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                    aria-label="Close"></button>
                             </div>
+                            <div class="modal-body" id="employeeDetailsModalBody">
+                                <!-- Employee details will be loaded here -->
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bootstrap JS -->
+                <script
+                    src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+                <!-- Org Chart JS -->
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/orgchart/3.8.1/js/jquery.orgchart.min.js"></script>
+
+                <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+                <!-- SweetAlert2 -->
+                <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+                <!-- Axios -->
+                <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+                <!-- Moment.js -->
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+
+                <script>
+                    // Update your JavaScript to handle tab changes if needed
+                    $(document).ready(function () {
+                        // Initialize tabs
+                        const tabEl = document.querySelector('button[data-bs-toggle="tab"]');
+                        if (tabEl) {
+                            tabEl.addEventListener('shown.bs.tab', function (event) {
+                                const activeTab = event.target.getAttribute('data-bs-target');
+                                if (activeTab === '#employees') {
+                                    loadEmployees();
+                                }
+                            });
+                        }
+
+                        // Your existing JavaScript code...
+                    });
+                </script>
+                <script>
+                    // Global variables
+                    let currentPage = 1;
+                    const itemsPerPage = 10;
+                    let totalEmployees = 0;
+                    let departments = [];
+                    let positions = [];
+                    let grades = [];
+                    let users = [];
+
+                    // Initialize the page
+                    $(document).ready(function () {
+                        // Check if user is logged in
+                        const authToken = localStorage.getItem('authToken');
+                        if (!authToken) {
+                            window.location.href = '/login.html';
+                            return;
+                        }
+
+                        // Set up Axios defaults
+                        axios.defaults.headers.common['Authorization'] = `Bearer ${authToken}`;
+
+                        // Load initial data
+                        loadEmployees();
+                        loadDepartments();
+                        loadPositions();
+                        loadGrades();
+                        loadUsers();
+
+                        // Set up event listeners
+                        $('#employees-link').click(function (e) {
+                            e.preventDefault();
+                            showEmployeesSection();
+                        });
+
+                        $('#add-employee-link').click(function (e) {
+                            e.preventDefault();
+                            showAddEmployeeSection();
+                        });
+
+                        $('#refresh-btn').click(function () {
+                            loadEmployees();
+                        });
+
+                        $('#cancel-add-employee').click(function () {
+                            showEmployeesSection();
+                        });
+
+                        $('#employee-search').on('input', function () {
+                            loadEmployees();
+                        });
+
+                        $('#department').change(function () {
+                            updatePositionsDropdown();
+                        });
+
+                        $('#position').change(function () {
+                            updateGradeDropdown();
+                            updateSalaryField();
+                        });
+
+                        $('#grade').change(function () {
+                            updateSalaryField();
+                        });
+
+                        $('#add-employee-form').submit(function (e) {
+                            e.preventDefault();
+                            addEmployee();
+                        });
+                    });
+
+                    // Function to show employees section
+                    function showEmployeesSection() {
+                        $('#page-title').text('Employee Management');
+                        $('#employees-section').removeClass('d-none');
+                        $('#add-employee-section').addClass('d-none');
+                    }
+
+                    // Function to show add employee section
+                    function showAddEmployeeSection() {
+                        $('#page-title').text('Add New Employee');
+                        $('#employees-section').addClass('d-none');
+                        $('#add-employee-section').removeClass('d-none');
+                    }
+
+                    // Function to load employees with pagination
+                    function loadEmployees(page = 1) {
+                        currentPage = page;
+                        const searchTerm = $('#employee-search').val();
+
+                        showLoading('#employees-table-body', 'Loading employees...');
+
+                        axios.get(`/api/employees?page=${page}&limit=${itemsPerPage}&search=${searchTerm}`)
+                            .then(response => {
+                                const employees = response.data.data;
+                                totalEmployees = response.data.pagination.total;
+
+                                renderEmployeesTable(employees);
+                                renderPagination();
+                            })
+                            .catch(error => {
+                                console.error('Error loading employees:', error);
+                                showError('#employees-table-body', 'Failed to load employees. Please try again.');
+                            });
+                    }
+
+                    // Function to render employees table
+                    function renderEmployeesTable(employees) {
+                        const tableBody = $('#employees-table-body');
+                        tableBody.empty();
+
+                        if (employees.length === 0) {
+                            tableBody.append('<tr><td colspan="8" class="text-center">No employees found</td></tr>');
+                            return;
+                        }
+
+                        employees.forEach(employee => {
+                            const row = `
+                    <tr>
+                        <td>${employee.employeeId}</td>
+                        <td>${employee.personalInfo.firstName} ${employee.personalInfo.lastName}</td>
+                        <td>${employee.personalInfo.email}</td>
+                        <td>${employee.department?.name || 'N/A'}</td>
+                        <td>${employee.position?.name || 'N/A'}</td>
+                        <td>${employee.grade?.name || 'N/A'}</td>
+                        <td>
+                            <span class="badge ${employee.employmentInfo.status === 'active' ? 'bg-success' : 'bg-secondary'}">
+                                ${employee.employmentInfo.status}
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-info view-employee" data-id="${employee._id}">
+                                <i class="fas fa-eye"></i>
+                            </button>
                         </td>
                     </tr>
-                    <!-- More employee rows would be dynamically generated here -->
-                </tbody>
-            </table>
-        </div>
-    </div>
-    <div class="card-footer d-flex justify-content-between align-items-center">
-        <small class="text-muted">Showing 1-10 of 247 employees</small>
-        <nav>
-            <ul class="pagination pagination-sm mb-0">
-                <li class="page-item disabled">
-                    <span class="page-link">Previous</span>
+                `;
+                            tableBody.append(row);
+                        });
+
+                        // Add event listener to view buttons
+                        $('.view-employee').click(function () {
+                            const employeeId = $(this).data('id');
+                            viewEmployeeDetails(employeeId);
+                        });
+                    }
+
+                    // Function to render pagination
+                    function renderPagination() {
+                        const totalPages = Math.ceil(totalEmployees / itemsPerPage);
+                        const pagination = $('#employees-pagination');
+                        pagination.empty();
+
+                        if (totalPages <= 1) return;
+
+                        // Previous button
+                        pagination.append(`
+                <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                    <a class="page-link" href="#" ${currentPage === 1 ? 'tabindex="-1" aria-disabled="true"' : ''}>
+                        Previous
+                    </a>
                 </li>
-                <li class="page-item active">
-                    <span class="page-link">1</span>
+            `);
+
+                        // Page numbers
+                        for (let i = 1; i <= totalPages; i++) {
+                            pagination.append(`
+                    <li class="page-item ${i === currentPage ? 'active' : ''}">
+                        <a class="page-link" href="#">${i}</a>
+                    </li>
+                `);
+                        }
+
+                        // Next button
+                        pagination.append(`
+                <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+                    <a class="page-link" href="#" ${currentPage === totalPages ? 'tabindex="-1" aria-disabled="true"' : ''}>
+                        Next
+                    </a>
                 </li>
-                <li class="page-item">
-                    <a class="page-link" href="#">2</a>
-                </li>
-                <li class="page-item">
-                    <a class="page-link" href="#">3</a>
-                </li>
-                <li class="page-item">
-                    <a class="page-link" href="#">Next</a>
-                </li>
-            </ul>
-        </nav>
-    </div>
-</div>
+            `);
+
+                        // Add event listeners to pagination links
+                        $('.page-link').click(function (e) {
+                            e.preventDefault();
+                            const text = $(this).text().toLowerCase();
+                            let newPage = currentPage;
+
+                            if (text === 'previous') {
+                                newPage = Math.max(1, currentPage - 1);
+                            } else if (text === 'next') {
+                                newPage = Math.min(totalPages, currentPage + 1);
+                            } else {
+                                newPage = parseInt(text);
+                            }
+
+                            if (newPage !== currentPage) {
+                                loadEmployees(newPage);
+                            }
+                        });
+                    }
+
+                    // Function to view employee details
+                    function viewEmployeeDetails(employeeId) {
+                        showLoading('#employeeDetailsModalBody', 'Loading employee details...');
+
+                        axios.get(`/api/employees/${employeeId}`)
+                            .then(response => {
+                                const employee = response.data.data;
+                                renderEmployeeDetails(employee);
+                                $('#employeeDetailsModal').modal('show');
+                            })
+                            .catch(error => {
+                                console.error('Error loading employee details:', error);
+                                showError('#employeeDetailsModalBody', 'Failed to load employee details. Please try again.');
+                                $('#employeeDetailsModal').modal('show');
+                            });
+                    }
+
+                    // Function to render employee details
+                    function renderEmployeeDetails(employee) {
+                        const modalBody = $('#employeeDetailsModalBody');
+                        modalBody.empty();
+
+                        const details = `
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <h6>Personal Information</h6>
+                            <p><strong>Name:</strong> ${employee.personalInfo.firstName} ${employee.personalInfo.middleName || ''} ${employee.personalInfo.lastName}</p>
+                            <p><strong>Date of Birth:</strong> ${new Date(employee.personalInfo.dateOfBirth).toLocaleDateString()}</p>
+                            <p><strong>Gender:</strong> ${employee.personalInfo.gender}</p>
+                            <p><strong>Nationality:</strong> ${employee.personalInfo.nationality}</p>
+                            <p><strong>ID Number:</strong> ${employee.personalInfo.idNumber}</p>
+                            <p><strong>Email:</strong> ${employee.personalInfo.email}</p>
+                            <p><strong>Phone:</strong> ${employee.personalInfo.phoneNumber}</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <h6>Employment Information</h6>
+                            <p><strong>Employee ID:</strong> ${employee.employeeId}</p>
+                            <p><strong>Department:</strong> ${employee.department?.name || 'N/A'}</p>
+                            <p><strong>Position:</strong> ${employee.position?.name || 'N/A'}</p>
+                            <p><strong>Grade:</strong> ${employee.grade?.name || 'N/A'}</p>
+                            <p><strong>Salary:</strong> $${employee.employmentInfo.currentSalary.toLocaleString()}</p>
+                            <p><strong>Start Date:</strong> ${new Date(employee.employmentInfo.startDate).toLocaleDateString()}</p>
+                            <p><strong>Status:</strong> ${employee.employmentInfo.status}</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <h6>Bank Information</h6>
+                            <p><strong>Bank Name:</strong> ${employee.bankInfo.bankName}</p>
+                            <p><strong>Account Name:</strong> ${employee.bankInfo.accountName}</p>
+                            <p><strong>Account Number:</strong> ${employee.bankInfo.accountNumber}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+                        modalBody.append(details);
+                    }
+
+                    // Function to load departments
+                    function loadDepartments() {
+                        axios.get('/api/departments')
+                            .then(response => {
+                                departments = response.data;
+                                renderDepartmentsDropdown();
+                            })
+                            .catch(error => {
+                                console.error('Error loading departments:', error);
+                                showSwalError('Failed to load departments. Please try again.');
+                            });
+                    }
+
+                    // Function to render departments dropdown
+                    function renderDepartmentsDropdown() {
+                        const dropdown = $('#department');
+                        dropdown.empty();
+                        dropdown.append('<option value="" selected disabled>Select department</option>');
+
+                        departments.forEach(dept => {
+                            dropdown.append(`<option value="${dept._id}">${dept.name}</option>`);
+                        });
+                    }
+
+                    // Function to load positions
+                    function loadPositions() {
+                        axios.get('/api/positions')
+                            .then(response => {
+                                positions = response.data;
+                                renderPositionsDropdown();
+                            })
+                            .catch(error => {
+                                console.error('Error loading positions:', error);
+                                showSwalError('Failed to load positions. Please try again.');
+                            });
+                    }
+
+                    // Function to render positions dropdown
+                    function renderPositionsDropdown() {
+                        const dropdown = $('#position');
+                        dropdown.empty();
+                        dropdown.append('<option value="" selected disabled>Select position</option>');
+
+                        positions.forEach(pos => {
+                            dropdown.append(`<option value="${pos._id}" data-department="${pos.departmentId}">${pos.name}</option>`);
+                        });
+                    }
+
+                    // Function to update positions dropdown based on selected department
+                    function updatePositionsDropdown() {
+                        const departmentId = $('#department').val();
+                        const dropdown = $('#position');
+
+                        dropdown.empty();
+                        dropdown.append('<option value="" selected disabled>Select position</option>');
+
+                        if (!departmentId) {
+                            return;
+                        }
+
+                        const filteredPositions = positions.filter(pos => pos.departmentId === departmentId);
+
+                        if (filteredPositions.length === 0) {
+                            dropdown.append('<option value="" disabled>No positions available for this department</option>');
+                            return;
+                        }
+
+                        filteredPositions.forEach(pos => {
+                            dropdown.append(`<option value="${pos._id}">${pos.name}</option>`);
+                        });
+                    }
+
+                    // Function to load grades
+                    function loadGrades() {
+                        axios.get('/api/grades')
+                            .then(response => {
+                                grades = response.data;
+                                renderGradesDropdown();
+                            })
+                            .catch(error => {
+                                console.error('Error loading grades:', error);
+                                showSwalError('Failed to load grades. Please try again.');
+                            });
+                    }
+
+                    // Function to render grades dropdown
+                    function renderGradesDropdown() {
+                        const dropdown = $('#grade');
+                        dropdown.empty();
+                        dropdown.append('<option value="" selected disabled>Select grade</option>');
+
+                        grades.forEach(grade => {
+                            dropdown.append(`<option value="${grade._id}">${grade.name} ($${grade.salaryRange.minimum} - $${grade.salaryRange.maximum})</option>`);
+                        });
+                    }
+
+                    // Function to update grade dropdown based on selected position
+                    function updateGradeDropdown() {
+                        const positionId = $('#position').val();
+                        const dropdown = $('#grade');
+
+                        if (!positionId) {
+                            dropdown.val('');
+                            return;
+                        }
+
+                        const selectedPosition = positions.find(pos => pos._id === positionId);
+                        if (selectedPosition && selectedPosition.gradeId) {
+                            dropdown.val(selectedPosition.gradeId);
+                        }
+                    }
+
+                    // Function to update salary field based on selected grade
+                    function updateSalaryField() {
+                        const gradeId = $('#grade').val();
+
+                        if (!gradeId) {
+                            $('#salary').val('');
+                            return;
+                        }
+
+                        const selectedGrade = grades.find(grade => grade._id === gradeId);
+                        if (selectedGrade) {
+                            // Set salary to the midpoint of the grade range
+                            const midpoint = (selectedGrade.salaryRange.minimum + selectedGrade.salaryRange.maximum) / 2;
+                            $('#salary').val(midpoint.toFixed(2));
+                        }
+                    }
+
+                    // Function to load users
+                    function loadUsers() {
+                        axios.get('/api/auth/users')
+                            .then(response => {
+                                users = response.data.users;
+                                renderUsersDropdown();
+                            })
+                            .catch(error => {
+                                console.error('Error loading users:', error);
+                                showSwalError('Failed to load users. Please try again.');
+                            });
+                    }
+
+                    // Function to render users dropdown
+                    function renderUsersDropdown() {
+                        const dropdown = $('#user-select');
+                        dropdown.empty();
+                        dropdown.append('<option value="" selected disabled>Select a user</option>');
+
+                        users.forEach(user => {
+                            dropdown.append(`<option value="${user._id}">${user.email} (${user.role})</option>`);
+                        });
+                    }
+
+                    // Function to add a new employee
+                    // Function to add a new employee
+                    function addEmployee() {
+                        const submitBtn = $('#submit-employee');
+                        const submitText = $('#submit-employee-text');
+                        const spinner = $('#submit-employee-spinner');
+
+                        // Show loading state
+                        submitBtn.prop('disabled', true);
+                        submitText.addClass('d-none');
+                        spinner.removeClass('d-none');
+
+                        // Get form data
+                        const userId = $('#user-select').val();
+                        const employeeId = $('#employee-id').val() || generateEmployeeId();
+                        const firstName = $('#first-name').val();
+                        const middleName = $('#middle-name').val();
+                        const lastName = $('#last-name').val();
+                        const dateOfBirth = $('#date-of-birth').val();
+                        const gender = $('#gender').val();
+                        const nationality = $('#nationality').val();
+                        const email = $('#email').val();
+                        const phoneNumber = $('#phone-number').val();
+                        const departmentId = $('#department').val();
+                        const positionId = $('#position').val();
+                        const gradeId = $('#grade').val();
+                        const salary = parseFloat($('#salary').val());
+                        const employmentType = $('#employment-type').val();
+                        const startDate = $('#start-date').val();
+                        const probationPeriod = parseInt($('#probation-period').val());
+
+                        // Address fields
+                        const street = $('#street-address').val();
+                        const city = $('#city').val();
+                        const state = $('#state').val();
+                        const zipCode = $('#zip-code').val();
+                        const country = $('#country').val();
+
+                        // Emergency contact fields
+                        const emergencyContactName = $('#emergency-contact-name').val();
+                        const emergencyContactRelationship = $('#emergency-contact-relationship').val();
+                        const emergencyContactPhone = $('#emergency-contact-phone').val();
+
+                        //Bank information fields
+                        const bankName = $('#bank-name').val();
+                        const accountName = $('#account-name').val();
+                        const accountNumber = $('#account-number').val();
+                        const routingNumber = $('#routing-number').val();
+                        const bankCode = $('#bank-code').val();
+                        const iban = $('#iban').val();
+
+                        if (employeeId && !/^[A-Z0-9-]+$/.test(employeeId)) {
+                            showValidationError('Employee ID must contain only uppercase letters, numbers, and hyphens');
+                            return;
+                        }
+
+                        // Validate required fields
+                        if (!dateOfBirth || new Date().getFullYear() - new Date(dateOfBirth).getFullYear() < 16) {
+                            showValidationError('Employee must be at least 16 years old');
+                            return;
+                        }
+
+                        // Validate account number (numeric only)
+                        if (!/^\d+$/.test(accountNumber)) {
+                            showValidationError('Account number must contain only numbers');
+                            return;
+                        }
+
+                        // Validate IBAN format if provided
+                        if (iban && !/^[A-Z0-9]+$/.test(iban)) {
+                            showValidationError('IBAN must contain only uppercase letters and numbers');
+                            return;
+                        }
+
+                        // Prepare employee data with all required fields
+                        const employeeData = {
+                            userId: userId,
+                            employeeId: employeeId,
+                            personalInfo: {
+                                firstName: firstName,
+                                middleName: middleName,
+                                lastName: lastName,
+                                dateOfBirth: dateOfBirth,
+                                gender: gender,
+                                nationality: nationality,
+                                idNumber: 'TEAMPAY_ID_' + Math.random().toString(36).substr(2, 9), // Temporary until you add ID field
+                                phoneNumber: phoneNumber,
+                                email: email,
+                                address: {
+                                    street: street,
+                                    city: city,
+                                    state: state,
+                                    zipCode: zipCode,
+                                    country: country || 'United States'
+                                }
+                            },
+                            employmentInfo: {
+                                positionId: positionId,
+                                departmentId: departmentId,
+                                gradeId: gradeId,
+                                currentSalary: salary,
+                                employmentType: employmentType,
+                                startDate: startDate,
+                                isOnProbation: true,
+                                probationEndDate: new Date(new Date(startDate).setMonth(new Date(startDate).getMonth() + probationPeriod)).toISOString(),
+                                status: 'active'
+                            },
+                            bankInfo: {
+                                bankName: bankName,
+                                accountName: accountName,
+                                accountNumber: accountNumber,
+                                routingNumber: routingNumber || undefined,
+                                bankCode: bankCode || undefined,
+                                iban: iban ? iban.toUpperCase() : undefined
+                            },
+                            emergencyContact: {
+                                name: emergencyContactName,
+                                relationship: emergencyContactRelationship,
+                                phoneNumber: emergencyContactPhone
+                            }
+                        };
+
+                        // Send request to create employee
+                        axios.post('/api/employees', employeeData)
+                            .then(response => {
+                                // Reset form
+                                $('#add-employee-form')[0].reset();
+
+                                // Show success message
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Success',
+                                    text: 'Employee created successfully!',
+                                    confirmButtonText: 'OK'
+                                }).then(() => {
+                                    // Return to employees list
+                                    showEmployeesSection();
+                                    // Refresh employees list
+                                    loadEmployees();
+                                });
+                            })
+                            .catch(error => {
+                                console.error('Error creating employee:', error);
+                                let errorMessage = 'Failed to create employee. Please try again.';
+
+                                if (error.response && error.response.data && error.response.data.message) {
+                                    errorMessage = error.response.data.message;
+                                }
+
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Error',
+                                    text: errorMessage,
+                                    confirmButtonText: 'OK'
+                                });
+                            })
+                            .finally(() => {
+                                // Reset button state
+                                submitBtn.prop('disabled', false);
+                                submitText.removeClass('d-none');
+                                spinner.addClass('d-none');
+                            });
+                    }
+
+                    function generateEmployeeId() {
+                        const randomNum = Math.floor(1000 + Math.random() * 9000);
+                        return `TEAMPAY${randomNum}`;
+                    }
+
+                    // Helper function to show validation error
+                    function showValidationError(message) {
+                        const submitBtn = $('#submit-employee');
+                        const submitText = $('#submit-employee-text');
+                        const spinner = $('#submit-employee-spinner');
+
+                        // Reset button state
+                        submitBtn.prop('disabled', false);
+                        submitText.removeClass('d-none');
+                        spinner.addClass('d-none');
+
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Validation Error',
+                            text: message,
+                            confirmButtonText: 'OK'
+                        });
+                    }
+                    // Helper function to show loading state
+                    function showLoading(selector, message) {
+                        $(selector).html(`
+                <div class="text-center py-4">
+                    <div class="loading-spinner text-primary"></div>
+                    <p class="mt-2">${message}</p>
+                </div>
+            `);
+                    }
+
+                    // Helper function to show error state
+                    function showError(selector, message) {
+                        $(selector).html(`
+                <div class="text-center py-4 text-danger">
+                    <i class="fas fa-exclamation-circle fa-2x"></i>
+                    <p class="mt-2">${message}</p>
+                </div>
+            `);
+                    }
+
+                    // Helper function to show SweetAlert error
+                    function showSwalError(message) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: message,
+                            confirmButtonText: 'OK'
+                        });
+                    }
+                </script>
+
+                <!-- Custom JS -->
+                <script src="/js/admin.js"></script>
+
+</body>
+
+</html>
