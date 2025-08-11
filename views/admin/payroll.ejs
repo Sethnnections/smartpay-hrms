@@ -33,7 +33,7 @@
   <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
   <!-- Sidebar -->
-  <%- include('./partials/sidebar', { currentPage: 'Payroll' }) %>
+  <%- include('./partials/sidebar', { currentPage: 'payroll' }) %>
 
   <!-- Main -->
   <div class="main-content" id="mainContent">
@@ -107,6 +107,32 @@
             </div>
           </div>
         </div>
+        <!-- Bank Instruction generator -->
+<div class="card mt-3 p-3">
+  <div class="row g-2 align-items-end">
+    <div class="col-md-3">
+      <label class="form-label">Payroll Month</label>
+      <input id="bankMonth" type="month" class="form-control" />
+    </div>
+
+    <div class="col-md-3">
+      <label class="form-label">Or Start Date</label>
+      <input id="bankStart" type="date" class="form-control" />
+    </div>
+
+    <div class="col-md-3">
+      <label class="form-label">End Date</label>
+      <input id="bankEnd" type="date" class="form-control" />
+    </div>
+
+    <div class="col-md-3 d-grid">
+      <button id="downloadBankPdfBtn" class="btn btn-success">
+        <i class="fa fa-download me-2"></i> Generate & Download Bank PDF
+      </button>
+    </div>
+  </div>
+</div>
+
 
         <!-- Filters -->
         <div class="card mb-3 p-3">
@@ -403,6 +429,70 @@
         await loadPayrolls();
         bindUI();
       });
+
+      // Download bank PDF// call this when user clicks the button
+document.getElementById('downloadBankPdfBtn').addEventListener('click', async function () {
+  const token = localStorage.getItem('authToken');
+  const month = document.getElementById('bankMonth').value;
+  const startDate = document.getElementById('bankStart').value;
+  const endDate = document.getElementById('bankEnd').value;
+
+  // validation
+  if (!month && !(startDate && endDate)) {
+    Swal.fire('Validation', 'Select a payroll month OR a start and end date', 'warning');
+    return;
+  }
+
+  // prepare payload
+  const payload = month ? { month } : { startDate, endDate };
+
+  // call endpoint, expect binary
+  try {
+    Swal.fire({ title: 'Generating PDF...', didOpen: () => Swal.showLoading(), allowOutsideClick: false });
+    const response = await axios.post('/api/payroll/bank-instruction', payload, {
+      headers: { Authorization: `Bearer ${token}` },
+      responseType: 'blob', // important
+      timeout: 120000
+    });
+    Swal.close();
+
+    // response should be blob (pdf)
+    const blob = new Blob([response.data], { type: 'application/pdf' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const label = month ? month : `${startDate}_to_${endDate}`;
+    a.href = url;
+    a.download = `bank_instruction_${label}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+
+    Swal.fire({ icon: 'success', title: 'Downloaded', text: 'Bank instruction PDF downloaded.' });
+  } catch (err) {
+    Swal.close();
+    // If server returned JSON error (e.g., no payrolls), show message
+    let msg = 'Failed to generate PDF';
+    try {
+      const reader = new FileReader();
+      reader.onload = function () {
+        try {
+          const json = JSON.parse(reader.result);
+          if (json && json.error) msg = json.error;
+        } catch (e) { /* not JSON */ }
+        Swal.fire('Error', msg, 'error');
+      };
+      if (err.response && err.response.data) {
+        reader.readAsText(err.response.data);
+      } else {
+        Swal.fire('Error', msg, 'error');
+      }
+    } catch (e) {
+      Swal.fire('Error', 'Failed to generate PDF', 'error');
+    }
+  }
+});
+
     })();
   </script>
 

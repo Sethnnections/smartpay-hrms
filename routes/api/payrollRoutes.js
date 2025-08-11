@@ -65,6 +65,34 @@ router.post('/batch-payment', requireAdmin, async (req, res) => {
   }
 });
 
+// Add to top if needed:
+// const { authenticateToken } = require('../../utils/auth'); // already present earlier
+// (we'll check role manually here so finance or admin can generate)
+
+router.post('/bank-instruction', authenticateToken, async (req, res) => {
+  try {
+    // security: only finance or admin can generate the bank instruction
+    if (!req.user || !['admin', 'finance'].includes(req.user.role)) {
+      return res.status(403).json({ error: 'Access denied. Finance/Admin role required.' });
+    }
+
+    // Accept either { month } OR { startDate, endDate } in body
+    const { month, startDate, endDate } = req.body;
+
+    // call controller streaming function
+    await payrollController.generateBankInstructionPDF(res, { month, startDate, endDate }, req.user);
+    // function will stream and end the response
+  } catch (error) {
+    console.error('bank-instruction route error', error);
+    if (!res.headersSent) {
+      res.status(error.statusCode || 500).json({ error: error.message });
+    } else {
+      try { res.end(); } catch (e) { /* ignore */ }
+    }
+  }
+});
+
+
 // Generate all payslips for a month (HR/Admin only)
 
 router.post('/payslips/generate-all', requireHROrAdmin, async (req, res) => {
