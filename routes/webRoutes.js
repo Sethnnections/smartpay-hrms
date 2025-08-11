@@ -76,6 +76,7 @@ router.get('/admin/payroll', (req, res) => {
     res.render('admin/payroll', {
         title: 'Process Payroll',
         currentPage: 'payroll',
+        layout:false,
         user: {
             name: 'Administrator',
             email: 'admin@teampay.com',

@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TPS - Payroll Management</title>
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Font Awesome -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- DataTables CSS -->
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css"/>
+  <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.bootstrap5.min.css"/>
+
+    <link rel="stylesheet" href="/css/admin.css">
+    <!-- Page-specific CSS -->
+    <link rel="stylesheet" href="/css/departments.css">
+  <style>
+    body { font-family: 'Inter', sans-serif; background:#f8f9fa; }
+    .card-animated { transition: transform .22s ease, box-shadow .22s ease; }
+    .card-animated:hover { transform: translateY(-6px); box-shadow: 0 8px 30px rgba(0,0,0,.08); }
+    .btn-processing { position: relative; }
+    .btn-processing .spinner-border { width: 1rem; height: 1rem; border-width: .12rem; margin-right: .5rem; }
+    .small-muted { font-size: .85rem; color:#6c757d; }
+    .table td, .table th { vertical-align: middle; }
+  </style>
+</head>
+<body>
+  <!-- Sidebar Overlay (if you have a sidebar partial) -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <!-- Sidebar -->
+  <%- include('./partials/sidebar', { currentPage: 'Payroll' }) %>
+
+  <!-- Main -->
+  <div class="main-content" id="mainContent">
+    <%- include('./partials/header', { title: 'Payroll Management', user: typeof user !== 'undefined' ? user : { name: 'User' } }) %>
+
+    <main class="dashboard-content py-4">
+      <div class="container-fluid">
+        <!-- Top: Summary + Action -->
+        <div class="row mb-3">
+          <div class="col-lg-9">
+            <div class="row g-3">
+              <div class="col-md-4">
+                <div class="card card-animated p-3">
+                  <div class="d-flex justify-content-between">
+                    <div>
+                      <small class="small-muted">Total Payrolls</small>
+                      <h4 id="totalPayrolls" class="mb-0">0</h4>
+                    </div>
+                    <div class="align-self-center">
+                      <i class="fa fa-file-invoice fa-2x text-primary"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="card card-animated p-3">
+                  <div class="d-flex justify-content-between">
+                    <div>
+                      <small class="small-muted">Processed Employees</small>
+                      <h4 id="processedEmployees" class="mb-0">0</h4>
+                    </div>
+                    <div class="align-self-center">
+                      <i class="fa fa-users fa-2x text-success"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="card card-animated p-3">
+                  <div class="d-flex justify-content-between">
+                    <div>
+                      <small class="small-muted">Pending Payments</small>
+                      <h4 id="pendingPayments" class="mb-0">0</h4>
+                    </div>
+                    <div class="align-self-center">
+                      <i class="fa fa-clock fa-2x text-warning"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-3">
+            <div class="card p-3 h-100">
+              <div>
+                <small class="small-muted">Quick Actions</small>
+                <h6 class="mb-3">Generate payroll</h6>
+                <div class="mb-2">
+                  <label class="form-label">Payroll Month</label>
+                  <input id="actionPayrollMonth" type="month" class="form-control" />
+                </div>
+                <div class="d-grid">
+                  <button id="actionGenerateBtn" class="btn btn-primary btn-processing">
+                    <span class="spinner-area d-none"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span></span>
+                    <i class="fa fa-cogs me-2"></i>
+                    Generate Payroll
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="card mb-3 p-3">
+          <div class="row g-2 align-items-end">
+            <div class="col-md-3">
+              <label class="form-label">Filter Month</label>
+              <input id="filterMonth" type="month" class="form-control" />
+            </div>
+
+            <div class="col-md-3">
+              <label class="form-label">Department</label>
+              <select id="filterDepartment" class="form-select">
+                <option value="">-- All Departments --</option>
+                <!-- populated dynamically -->
+              </select>
+            </div>
+
+            <div class="col-md-3">
+              <label class="form-label">Status</label>
+              <select id="filterStatus" class="form-select">
+                <option value="">-- Any --</option>
+                <option value="pending">pending</option>
+                <option value="paid">paid</option>
+                <option value="rejected">rejected</option>
+              </select>
+            </div>
+
+            <div class="col-md-3 d-grid">
+              <button id="clearFiltersBtn" class="btn btn-outline-secondary">Clear Filters</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <div class="card p-3">
+          <div class="table-responsive">
+            <table id="payrollTable" class="table table-striped table-hover" style="width:100%">
+              <thead class="table-light">
+                <tr>
+                  <th>Employee</th>
+                  <th>Employee ID</th>
+                  <th>Department</th>
+                  <th>Month</th>
+                  <th>Gross</th>
+                  <th>Net</th>
+                  <th>Payment Status</th>
+                  <th>Processed By</th>
+                  <th>Created At</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- SCRIPTS: jQuery first -->
+  <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+  <!-- Bootstrap bundle -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+
+  <!-- DataTables + Buttons + dependencies -->
+  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+  <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+  <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.bootstrap5.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+  <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+
+  <!-- Utilities -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.2/axios.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+
+  <script>
+    (function () {
+      const token = localStorage.getItem('authToken'); // adjust if you use a different key/source
+      if (!token) {
+        console.warn('No auth token found in localStorage under "authToken".');
+      }
+
+      // Helpers
+      const authHeader = () => ({ Authorization: `Bearer ${token}` });
+      const $generateBtn = $('#actionGenerateBtn');
+      const $generateSpinner = $generateBtn.find('.spinner-area');
+
+      let payrollTable;
+
+      // Initialize DataTable with empty data; will populate later
+      function initTable() {
+        payrollTable = $('#payrollTable').DataTable({
+          data: [],
+          columns: [
+            { data: 'employeeId.personalInfo', render: (p) => `${p?.firstName ?? ''} ${p?.lastName ?? ''}` },
+            { data: 'employeeId.employeeId', defaultContent: '' },
+            { data: 'employeeId.employmentInfo.departmentId.name', defaultContent: '' },
+            { data: 'payrollMonth' },
+            { data: 'grossPay', render: (v) => formatCurrency(v) },
+            { data: 'netPay', render: (v) => formatCurrency(v) },
+            { data: 'payment.status', render: (s) => renderStatus(s) },
+            { data: 'processedBy.email', defaultContent: '' },
+            { data: 'createdAt', render: (d) => d ? moment(d).format('YYYY-MM-DD HH:mm') : '' }
+          ],
+          responsive: true,
+          pageLength: 10,
+          lengthMenu: [10, 25, 50, 100],
+          dom: 'Bfltip',
+          buttons: [
+            { extend: 'excelHtml5', text: '<i class="fa fa-file-excel"></i> Excel' },
+            { extend: 'csvHtml5', text: '<i class="fa fa-file-csv"></i> CSV' },
+            { extend: 'pdfHtml5', text: '<i class="fa fa-file-pdf"></i> PDF' }
+          ],
+          order: [[8, 'desc']] // newest first by createdAt
+        });
+      }
+
+      function formatCurrency(val) {
+        if (val == null) return '-';
+        return '$' + Number(val).toFixed(2).toLocaleString();
+      }
+
+      function renderStatus(status) {
+        if (!status) return '<span class="badge bg-secondary">unknown</span>';
+        const cls = status === 'pending' ? 'warning' : status === 'paid' ? 'success' : 'danger';
+        return `<span class="badge bg-${cls}">${status}</span>`;
+      }
+
+      // Fetch departments for filter
+      async function loadDepartments() {
+        try {
+          const res = await axios.get('/api/departments', { headers: authHeader() });
+          const departments = Array.isArray(res.data) ? res.data : res.data.departments ?? [];
+          const $select = $('#filterDepartment');
+          $select.empty().append('<option value="">-- All Departments --</option>');
+          departments.forEach(d => {
+            $select.append(`<option value="${d._id}">${escapeHtml(d.name)} (${escapeHtml(d.code)})</option>`);
+          });
+        } catch (err) {
+          console.error('Failed to load departments', err);
+          // not critical — show silent toast
+          Swal.fire({ icon: 'warning', title: 'Departments', text: 'Could not load departments for filters' , timer: 2500, toast: true, position: 'top-end', showConfirmButton: false});
+        }
+      }
+
+      // Fetch payrolls initially and on demand
+      async function loadPayrolls() {
+        try {
+          Swal.fire({ title: 'Loading payrolls...', didOpen: () => Swal.showLoading(), allowOutsideClick: false, showConfirmButton: false });
+          const res = await axios.get('/api/payroll/', { headers: authHeader() });
+          Swal.close();
+
+          const payrolls = res.data?.payrolls ?? [];
+
+          // Update summary cards
+          $('#totalPayrolls').text(res.data?.pagination?.totalRecords ?? payrolls.length);
+          $('#processedEmployees').text(payrolls.length);
+          $('#pendingPayments').text((payrolls.filter(p => p.payment?.status === 'pending')).length);
+
+          // Replace DataTable data
+          payrollTable.clear();
+          payrollTable.rows.add(payrolls);
+          payrollTable.draw();
+        } catch (err) {
+          console.error('Failed to load payrolls', err);
+          Swal.fire({ icon: 'error', title: 'Error', text: 'Failed to load payrolls' });
+        }
+      }
+
+      // Generate payroll for a month — prevents double submit
+      let isGenerating = false;
+      async function generatePayrollForMonth(month) {
+        if (!month) return Swal.fire('Validation', 'Please select a payroll month', 'warning');
+
+        if (isGenerating) return; // safeguard
+        isGenerating = true;
+        $generateBtn.prop('disabled', true);
+        $generateSpinner.removeClass('d-none');
+        $generateBtn.addClass('disabled');
+
+        try {
+          // nice animation / modal
+          Swal.fire({ title: 'Processing payroll', html: `Generating payroll for <strong>${month}</strong>...`, didOpen: () => Swal.showLoading(), allowOutsideClick: false });
+          const res = await axios.post('/api/payroll/process', { month }, { headers: authHeader() });
+
+          Swal.close();
+          isGenerating = false;
+          $generateBtn.prop('disabled', false);
+          $generateSpinner.addClass('d-none');
+          $generateBtn.removeClass('disabled');
+
+          // handle response shapes: success true, processedCount etc.
+          const data = res.data;
+          if (data?.success) {
+            const processed = data.processedCount ?? 0;
+            if (processed > 0) {
+              Swal.fire({ icon: 'success', title: 'Payroll Processed', text: `${data.message} (${processed} employees)` , timer: 3500 });
+            } else {
+              Swal.fire({ icon: 'info', title: 'No Changes', text: data.message ?? 'No employees were processed for that month.'});
+            }
+            // reload payrolls
+            await loadPayrolls();
+          } else {
+            Swal.fire({ icon: 'warning', title: 'Processing result', text: data?.message ?? 'Payroll API returned non-success' });
+          }
+        } catch (err) {
+          console.error('Payroll generation failed', err);
+          isGenerating = false;
+          $generateBtn.prop('disabled', false);
+          $generateSpinner.addClass('d-none');
+          $generateBtn.removeClass('disabled');
+
+          // check for response
+          const serverMessage = err?.response?.data?.message;
+          Swal.fire({ icon: 'error', title: 'Failed', text: serverMessage ?? 'Payroll processing failed' });
+        }
+      }
+
+      // Escapes simple html to avoid injection when populating selects
+      function escapeHtml(s) {
+        if (!s) return '';
+        return s.replace(/[&<>"'`=\/]/g, function (c) {
+          return {
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+            '/': '&#x2F;', '=': '&#x3D;', '`': '&#x60;'
+          }[c];
+        });
+      }
+
+      // Filters: month, departmentId (department _id), status
+      function applyFiltersToTable() {
+        const month = $('#filterMonth').val();
+        const deptId = $('#filterDepartment').val();
+        const status = $('#filterStatus').val();
+
+        // Clear all column searches and perform combined filter via DataTables' search plugin
+        // We'll use row().visible for complete control
+        payrollTable.rows().every(function () {
+          const row = this.data();
+          let visible = true;
+
+          if (month) {
+            visible = visible && (row.payrollMonth === month);
+          }
+          if (deptId) {
+            const rowDeptId = row.employeeId?.employmentInfo?.departmentId?._id ?? '';
+            visible = visible && (rowDeptId === deptId);
+          }
+          if (status) {
+            const st = row.payment?.status ?? '';
+            visible = visible && (st === status);
+          }
+
+          // show/hide row
+          this.node().style.display = visible ? '' : 'none';
+        });
+
+        // redraw while preserving pagination
+        payrollTable.draw(false);
+      }
+
+      // Clear filters
+      function clearFilters() {
+        $('#filterMonth').val('');
+        $('#filterDepartment').val('');
+        $('#filterStatus').val('');
+        payrollTable.rows().every(function () { this.node().style.display = ''; });
+        payrollTable.draw(false);
+      }
+
+      // Hook UI events
+      function bindUI() {
+        $('#filterMonth').on('change', applyFiltersToTable);
+        $('#filterDepartment').on('change', applyFiltersToTable);
+        $('#filterStatus').on('change', applyFiltersToTable);
+        $('#clearFiltersBtn').on('click', clearFilters);
+
+        $('#actionGenerateBtn').on('click', async function () {
+          const month = $('#actionPayrollMonth').val() || $('#filterMonth').val();
+          await generatePayrollForMonth(month);
+        });
+
+        // Support double-click/process by right-click? Not necessary — disabling handles it
+      }
+
+      // INIT
+      $(document).ready(async function () {
+        initTable();
+        await loadDepartments();
+        await loadPayrolls();
+        bindUI();
+      });
+    })();
+  </script>
+
+  <!-- optional custom admin script -->
+  <script src="/js/admin.js"></script>
+</body>
+</html>
