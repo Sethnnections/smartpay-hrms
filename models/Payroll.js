@@ -214,6 +214,40 @@ payrollSchema.virtual('approvalStatus').get(function() {
   return 'pending';
 });
 
+// Static method: Calculate progressive tax
+payrollSchema.statics.calculateProgressiveTax = function(grossPay) {
+  let tax = 0;
+  let effectiveRate = 0;
+  
+  if (grossPay <= 150000) {
+    // 0% tax bracket
+    tax = 0;
+    effectiveRate = 0;
+  } else if (grossPay <= 500000) {
+    // 25% tax bracket for amount above 150,000
+    tax = (grossPay - 150000) * 0.25;
+    effectiveRate = (tax / grossPay) * 100;
+  } else if (grossPay <= 2550000) {
+    // 30% tax bracket for amount above 500,000
+    // Tax on first 500,000: (500,000 - 150,000) * 0.25 = 87,500
+    const taxOnFirstBracket = (500000 - 150000) * 0.25;
+    const taxOnSecondBracket = (grossPay - 500000) * 0.30;
+    tax = taxOnFirstBracket + taxOnSecondBracket;
+    effectiveRate = (tax / grossPay) * 100;
+  } else {
+    // 35% tax bracket for amount above 2,550,000
+    // Tax on first bracket: (500,000 - 150,000) * 0.25 = 87,500
+    // Tax on second bracket: (2,550,000 - 500,000) * 0.30 = 615,000
+    const taxOnFirstBracket = (500000 - 150000) * 0.25;
+    const taxOnSecondBracket = (2550000 - 500000) * 0.30;
+    const taxOnThirdBracket = (grossPay - 2550000) * 0.35;
+    tax = taxOnFirstBracket + taxOnSecondBracket + taxOnThirdBracket;
+    effectiveRate = (tax / grossPay) * 100;
+  }
+  
+  return { amount: Math.round(tax * 100) / 100, rate: Math.round(effectiveRate * 100) / 100 };
+};
+
 // Pre-save calculations
 payrollSchema.pre('save', function(next) {
   // Calculate prorated salary based on days worked
@@ -233,10 +267,12 @@ payrollSchema.pre('save', function(next) {
   // Calculate gross pay
   this.grossPay = this.salary.prorated + this.allowances.total + this.overtime.amount + this.bonuses.total;
   
-  // Calculate tax amount
-  this.deductions.tax.amount = (this.grossPay * this.deductions.tax.rate) / 100;
+  // Calculate progressive tax amount using the new method
+  const taxCalculation = this.constructor.calculateProgressiveTax(this.grossPay);
+  this.deductions.tax.amount = taxCalculation.amount;
+  this.deductions.tax.rate = taxCalculation.rate;
   
-  // Calculate pension amount
+  // Calculate pension amount (keep existing logic)
   this.deductions.pension.amount = (this.grossPay * this.deductions.pension.rate) / 100;
   
   // Calculate total deductions
@@ -305,10 +341,12 @@ payrollSchema.statics.processAllEmployees = async function(month, processedBy) {
     // Calculate gross pay
     const grossPay = proratedSalary + allowancesTotal + overtimeAmount;
     
-    // Calculate deductions
-    const taxAmount = (grossPay * grade.payrollSettings.payeePercent) / 100;
+    // Calculate progressive tax using the new method
+    const taxCalculation = this.calculateProgressiveTax(grossPay);
+    
+    // Calculate pension deduction
     const pensionAmount = (grossPay * grade.payrollSettings.pensionPercent) / 100;
-    const totalDeductions = taxAmount + pensionAmount;
+    const totalDeductions = taxCalculation.amount + pensionAmount;
     
     // Calculate net pay
     const netPay = Math.max(0, grossPay - totalDeductions);
@@ -343,8 +381,8 @@ payrollSchema.statics.processAllEmployees = async function(month, processedBy) {
       },
       deductions: {
         tax: {
-          rate: grade.payrollSettings.payeePercent,
-          amount: taxAmount
+          rate: taxCalculation.rate,
+          amount: taxCalculation.amount
         },
         pension: {
           rate: grade.payrollSettings.pensionPercent,

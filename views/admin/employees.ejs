@@ -528,9 +528,9 @@
                         <td>${employee.employeeId}</td>
                         <td>${employee.personalInfo.firstName} ${employee.personalInfo.lastName}</td>
                         <td>${employee.personalInfo.email}</td>
-                        <td>${employee.department?.name || 'N/A'}</td>
-                        <td>${employee.position?.name || 'N/A'}</td>
-                        <td>${employee.grade?.name || 'N/A'}</td>
+                        <td>${employee.employmentInfo.departmentId?.name || 'N/A'}</td>
+                        <td>${employee.employmentInfo.positionId?.name || 'N/A'}</td>
+                        <td>${employee.employmentInfo.gradeId?.name || 'N/A'}</td>
                         <td>
                             <span class="badge ${employee.employmentInfo.status === 'active' ? 'bg-success' : 'bg-secondary'}">
                                 ${employee.employmentInfo.status}

@@ -43,8 +43,8 @@ const gradeSchema = new mongoose.Schema({
   currency: {
     type: String,
     required: [true, 'Currency is required'],
-    default: 'MKW',
-    enum: ['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'NGN', 'KES', 'GHS', 'ZAR', 'MKW']
+    default: 'MWK',
+    enum: ['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'NGN', 'KES', 'GHS', 'ZAR', 'MWK']
   },
   payrollSettings: {
     payeePercent: {
