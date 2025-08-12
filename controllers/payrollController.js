@@ -958,4 +958,506 @@ payrollController.generateBankInstructionPDF = async function (res, options = {}
   }
 };
 
+
+// Add to payrollController.js
+
+// Enhanced Generate Payslip function
+payrollController.generatePayslip = async (payrollId) => {
+  try {
+    const payroll = await Payroll.findById(payrollId)
+      .populate({
+        path: 'employeeId',
+        populate: [
+          { path: 'employmentInfo.departmentId', select: 'name' },
+          { path: 'employmentInfo.positionId', select: 'title' },
+          { path: 'employmentInfo.gradeId', select: 'name level' }
+        ]
+      });
+
+    if (!payroll) {
+      throw new Error('Payroll record not found');
+    }
+
+    // Generate payslip PDF
+    const payslipPath = await payrollController._generatePayslipPDF(payroll);
+    
+    // Update payroll record
+    payroll.payslip = {
+      generated: true,
+      path: payslipPath,
+      generatedAt: new Date()
+    };
+    
+    await payroll.save();
+    
+    return {
+      success: true,
+      message: 'Payslip generated successfully',
+      path: payslipPath,
+      payrollId: payroll._id
+    };
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Internal PDF generation function
+payrollController._generatePayslipPDF = async (payroll) => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const employee = payroll.employeeId;
+      const personalInfo = employee.personalInfo || {};
+      const employmentInfo = employee.employmentInfo || {};
+      
+      // Create directory if not exists
+      const payslipDir = path.join(process.cwd(), 'payslips', payroll.employeeId._id.toString());
+      if (!fs.existsSync(payslipDir)) {
+        fs.mkdirSync(payslipDir, { recursive: true });
+      }
+      
+      const filename = `payslip_${payroll.payrollMonth}.pdf`;
+      const filePath = path.join(payslipDir, filename);
+      
+      // Create PDF document
+      const doc = new PDFDocument({ size: 'A4', margin: 30 });
+      const stream = fs.createWriteStream(filePath);
+      doc.pipe(stream);
+      
+      // Company branding
+      const COMPANY_NAME = process.env.COMPANY_NAME || 'Norah Tech Supplies Ltd.';
+      const COMPANY_LOGO = process.env.COMPANY_LOGO_PATH || path.join(process.cwd(), 'public', 'logo.png');
+      
+      // Payslip styling
+      const colors = {
+        primary: '#0a1f3a',
+        secondary: '#0f2a4d',
+        accent: '#e86029',
+        text: '#333333',
+        lightGray: '#f5f5f5'
+      };
+      
+      // Header with logo and company info
+      if (fs.existsSync(COMPANY_LOGO)) {
+        doc.image(COMPANY_LOGO, 30, 30, { width: 60 });
+      }
+      
+      doc.fontSize(18)
+         .fillColor(colors.primary)
+         .text(COMPANY_NAME, 100, 35)
+         .fontSize(10)
+         .fillColor(colors.text)
+         .text('Monthly Payslip', 100, 60);
+      
+      // Employee info section
+      doc.fontSize(12)
+         .fillColor(colors.primary)
+         .text('Employee Information', 30, 120)
+         .moveDown(0.5);
+      
+      doc.fontSize(10)
+         .fillColor(colors.text)
+         .text(`Name: ${personalInfo.firstName} ${personalInfo.lastName}`, { indent: 20 })
+         .text(`Employee ID: ${employee.employeeId}`, { indent: 20 })
+         .text(`Department: ${employmentInfo.departmentId?.name || 'N/A'}`, { indent: 20 })
+         .text(`Position: ${employmentInfo.positionId?.title || 'N/A'}`, { indent: 20 })
+         .text(`Grade: ${employmentInfo.gradeId?.name || 'N/A'} (Level ${employmentInfo.gradeId?.level || 'N/A'})`, { indent: 20 })
+         .moveDown();
+      
+      // Pay period info
+      doc.fontSize(12)
+         .fillColor(colors.primary)
+         .text('Pay Period Information', 30, doc.y)
+         .moveDown(0.5);
+      
+      doc.fontSize(10)
+         .fillColor(colors.text)
+         .text(`Payroll Month: ${payroll.payrollMonth}`, { indent: 20 })
+         .text(`Period: ${moment(payroll.payPeriod.startDate).format('DD MMM YYYY')} - ${moment(payroll.payPeriod.endDate).format('DD MMM YYYY')}`, { indent: 20 })
+         .text(`Working Days: ${payroll.payPeriod.workingDays}`, { indent: 20 })
+         .text(`Days Worked: ${payroll.payPeriod.daysWorked} (${payroll.attendanceRate}%)`, { indent: 20 })
+         .moveDown();
+      
+      // Earnings section
+      doc.fontSize(12)
+         .fillColor(colors.primary)
+         .text('Earnings', 30, doc.y)
+         .moveDown(0.5);
+      
+      const earnings = [
+        { name: 'Basic Salary', amount: payroll.salary.prorated },
+        { name: 'Transport Allowance', amount: payroll.allowances.transport },
+        { name: 'Housing Allowance', amount: payroll.allowances.housing },
+        { name: 'Medical Allowance', amount: payroll.allowances.medical },
+        { name: 'Meal Allowance', amount: payroll.allowances.meals },
+        { name: 'Communication Allowance', amount: payroll.allowances.communication },
+        { name: 'Other Allowance', amount: payroll.allowances.other },
+        { name: 'Overtime Pay', amount: payroll.overtime.amount },
+        { name: 'Performance Bonus', amount: payroll.bonuses.performance },
+        { name: 'Annual Bonus', amount: payroll.bonuses.annual },
+        { name: 'Other Bonus', amount: payroll.bonuses.other }
+      ].filter(item => item.amount > 0);
+      
+      earnings.forEach(item => {
+        doc.fontSize(10)
+           .fillColor(colors.text)
+           .text(item.name, 50, doc.y)
+           .text(`${payroll.currency} ${item.amount.toLocaleString()}`, 400, doc.y, { width: 100, align: 'right' })
+           .moveDown(0.3);
+      });
+      
+      // Total earnings
+      doc.fontSize(11)
+         .fillColor(colors.primary)
+         .text('Total Earnings', 350, doc.y)
+         .text(`${payroll.currency} ${payroll.grossPay.toLocaleString()}`, 400, doc.y, { width: 100, align: 'right' })
+         .moveDown();
+      
+      // Deductions section
+      doc.fontSize(12)
+         .fillColor(colors.primary)
+         .text('Deductions', 30, doc.y)
+         .moveDown(0.5);
+      
+      const deductions = [
+        { name: 'PAYE Tax', amount: payroll.deductions.tax.amount },
+        { name: 'Pension Contribution', amount: payroll.deductions.pension.amount },
+        ...((payroll.deductions.loans || []).map(loan => ({ name: `Loan: ${loan.name}`, amount: loan.amount }))),
+        ...((payroll.deductions.other || []).map(item => ({ name: item.name, amount: item.amount })))
+      ].filter(item => item.amount > 0);
+      
+      deductions.forEach(item => {
+        doc.fontSize(10)
+           .fillColor(colors.text)
+           .text(item.name, 50, doc.y)
+           .text(`${payroll.currency} ${item.amount.toLocaleString()}`, 400, doc.y, { width: 100, align: 'right' })
+           .moveDown(0.3);
+      });
+      
+      // Total deductions
+      doc.fontSize(11)
+         .fillColor(colors.primary)
+         .text('Total Deductions', 350, doc.y)
+         .text(`${payroll.currency} ${payroll.deductions.total.toLocaleString()}`, 400, doc.y, { width: 100, align: 'right' })
+         .moveDown();
+      
+      // Net pay section
+      doc.fontSize(14)
+         .fillColor(colors.accent)
+         .text('Net Pay', 350, doc.y + 20)
+         .text(`${payroll.currency} ${payroll.netPay.toLocaleString()}`, 400, doc.y, { width: 100, align: 'right' })
+         .moveDown();
+      
+      // Payment info
+      doc.fontSize(10)
+         .fillColor(colors.text)
+         .text(`Payment Method: ${payroll.payment.method}`, 30, doc.y + 20)
+         .text(`Payment Status: ${payroll.payment.status}`, 30, doc.y)
+         .text(`Payment Date: ${payroll.payment.paidAt ? moment(payroll.payment.paidAt).format('DD MMM YYYY') : 'Pending'}`, 30, doc.y)
+         .moveDown();
+      
+      // Footer
+      doc.fontSize(8)
+         .fillColor(colors.text)
+         .text('This is a computer generated document and does not require a signature.', 30, doc.page.height - 50)
+         .text(`Generated on ${moment().format('DD MMM YYYY HH:mm')}`, 30, doc.page.height - 30);
+      
+      doc.end();
+      
+      stream.on('finish', () => resolve(filePath));
+      stream.on('error', reject);
+    } catch (error) {
+      reject(error);
+    }
+  });
+};
+
+// Add this function to download payslip
+payrollController.downloadPayslip = async (payrollId, res) => {
+  try {
+    const payroll = await Payroll.findById(payrollId);
+    
+    if (!payroll || !payroll.payslip.generated) {
+      throw new Error('Payslip not found or not generated');
+    }
+    
+    const filePath = path.join(process.cwd(), payroll.payslip.path);
+    
+    if (!fs.existsSync(filePath)) {
+      throw new Error('Payslip file not found');
+    }
+    
+    const filename = `payslip_${payroll.employeeId}_${payroll.payrollMonth}.pdf`;
+    
+    res.setHeader('Content-disposition', `attachment; filename=${filename}`);
+    res.setHeader('Content-type', 'application/pdf');
+    
+    const fileStream = fs.createReadStream(filePath);
+    fileStream.pipe(res);
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Add this function to your payrollController.js
+
+// Stream payslip PDF directly to response
+payrollController.generatePayslipPDF = async (res, payroll) => {
+  try {
+    const employee = payroll.employeeId;
+    const personalInfo = employee.personalInfo || {};
+    const employmentInfo = employee.employmentInfo || {};
+    
+    // Create PDF document
+    const doc = new PDFDocument({ size: 'A4', margin: 40 });
+    doc.pipe(res);
+    
+    // Company branding
+    const COMPANY_NAME = process.env.COMPANY_NAME || 'Norah Tech Supplies Ltd.';
+    const COMPANY_ADDRESS = process.env.COMPANY_ADDRESS || 'Umoyo Building, Blantyre, Malawi';
+    const COMPANY_LOGO = process.env.COMPANY_LOGO_PATH || path.join(process.cwd(), 'public', 'logo.png');
+    
+    // Enhanced styling
+    const colors = {
+      primary: '#0a1f3a',
+      secondary: '#0f2a4d', 
+      accent: '#e86029',
+      text: '#333333',
+      lightGray: '#f8fafc',
+      border: '#e2e8f0'
+    };
+    
+    // Header section with enhanced design
+    if (fs.existsSync(COMPANY_LOGO)) {
+      try {
+        doc.image(COMPANY_LOGO, 40, 40, { width: 60 });
+      } catch (err) {
+        console.error('Logo loading error:', err);
+      }
+    }
+    
+    // Company header
+    doc.fontSize(20)
+       .fillColor(colors.primary)
+       .font('Helvetica-Bold')
+       .text(COMPANY_NAME, 120, 45)
+       .fontSize(10)
+       .fillColor(colors.text)
+       .font('Helvetica')
+       .text(COMPANY_ADDRESS, 120, 70)
+       .fontSize(14)
+       .fillColor(colors.accent)
+       .font('Helvetica-Bold')
+       .text('PAYSLIP', 120, 90);
+    
+    // Right-aligned document info
+    doc.fontSize(10)
+       .fillColor(colors.text)
+       .font('Helvetica')
+       .text(`Period: ${payroll.payrollMonth}`, 400, 45, { align: 'right', width: 150 })
+       .text(`Generated: ${moment().format('DD MMM YYYY')}`, 400, 60, { align: 'right', width: 150 });
+    
+    // Employee Information Section
+    let currentY = 140;
+    
+    // Section header
+    doc.rect(40, currentY, 515, 25)
+       .fillAndStroke(colors.primary, colors.primary);
+    
+    doc.fontSize(12)
+       .fillColor('#ffffff')
+       .font('Helvetica-Bold')
+       .text('EMPLOYEE INFORMATION', 50, currentY + 8);
+    
+    currentY += 35;
+    
+    // Employee details in two columns
+    const leftColumn = 50;
+    const rightColumn = 300;
+    
+    doc.fontSize(10)
+       .fillColor(colors.text)
+       .font('Helvetica');
+    
+    // Left column
+    doc.text('Employee Name:', leftColumn, currentY)
+       .font('Helvetica-Bold')
+       .text(`${personalInfo.firstName || ''} ${personalInfo.lastName || ''}`, leftColumn + 100, currentY)
+       .font('Helvetica')
+       .text('Employee ID:', leftColumn, currentY + 15)
+       .font('Helvetica-Bold')
+       .text(employee.employeeId || 'N/A', leftColumn + 100, currentY + 15)
+       .font('Helvetica')
+       .text('Department:', leftColumn, currentY + 30)
+       .font('Helvetica-Bold')
+       .text(employmentInfo.departmentId?.name || 'N/A', leftColumn + 100, currentY + 30);
+    
+    // Right column
+    doc.font('Helvetica')
+       .text('Position:', rightColumn, currentY)
+       .font('Helvetica-Bold')
+       .text(employmentInfo.positionId?.title || 'N/A', rightColumn + 70, currentY)
+       .font('Helvetica')
+       .text('Grade:', rightColumn, currentY + 15)
+       .font('Helvetica-Bold')
+       .text(`${employmentInfo.gradeId?.name || 'N/A'} (Level ${employmentInfo.gradeId?.level || 'N/A'})`, rightColumn + 70, currentY + 15)
+       .font('Helvetica')
+       .text('Days Worked:', rightColumn, currentY + 30)
+       .font('Helvetica-Bold')
+       .text(`${payroll.payPeriod.daysWorked}/${payroll.payPeriod.workingDays}`, rightColumn + 70, currentY + 30);
+    
+    currentY += 70;
+    
+    // Pay Details Section
+    doc.rect(40, currentY, 515, 25)
+       .fillAndStroke(colors.secondary, colors.secondary);
+    
+    doc.fontSize(12)
+       .fillColor('#ffffff')
+       .font('Helvetica-Bold')
+       .text('PAY DETAILS', 50, currentY + 8);
+    
+    currentY += 35;
+    
+    // Earnings table
+    doc.fontSize(11)
+       .fillColor(colors.primary)
+       .font('Helvetica-Bold')
+       .text('EARNINGS', leftColumn, currentY);
+    
+    currentY += 20;
+    
+    const earnings = [
+      { name: 'Basic Salary', amount: payroll.salary.prorated },
+      { name: 'Transport Allowance', amount: payroll.allowances.transport },
+      { name: 'Housing Allowance', amount: payroll.allowances.housing },
+      { name: 'Medical Allowance', amount: payroll.allowances.medical },
+      { name: 'Meal Allowance', amount: payroll.allowances.meals },
+      { name: 'Communication Allowance', amount: payroll.allowances.communication },
+      { name: 'Other Allowance', amount: payroll.allowances.other },
+      { name: 'Overtime Pay', amount: payroll.overtime.amount },
+      { name: 'Performance Bonus', amount: payroll.bonuses.performance },
+      { name: 'Annual Bonus', amount: payroll.bonuses.annual },
+      { name: 'Other Bonus', amount: payroll.bonuses.other }
+    ].filter(item => item.amount > 0);
+    
+    doc.fontSize(9)
+       .fillColor(colors.text)
+       .font('Helvetica');
+    
+    earnings.forEach(item => {
+      doc.text(item.name, leftColumn + 10, currentY)
+         .text(`${payroll.currency} ${item.amount.toLocaleString()}`, 450, currentY, { align: 'right', width: 100 });
+      currentY += 15;
+    });
+    
+    // Gross pay total
+    currentY += 5;
+    doc.fontSize(10)
+       .fillColor(colors.primary)
+       .font('Helvetica-Bold')
+       .text('GROSS PAY', leftColumn + 10, currentY)
+       .text(`${payroll.currency} ${payroll.grossPay.toLocaleString()}`, 450, currentY, { align: 'right', width: 100 });
+    
+    currentY += 30;
+    
+    // Deductions section
+    doc.fontSize(11)
+       .fillColor(colors.primary)
+       .font('Helvetica-Bold')
+       .text('DEDUCTIONS', leftColumn, currentY);
+    
+    currentY += 20;
+    
+    const deductions = [
+      { name: `PAYE Tax (${payroll.deductions.tax.rate}%)`, amount: payroll.deductions.tax.amount },
+      { name: `Pension (${payroll.deductions.pension.rate}%)`, amount: payroll.deductions.pension.amount },
+      ...((payroll.deductions.loans || []).map(loan => ({ name: `Loan: ${loan.name}`, amount: loan.amount }))),
+      ...((payroll.deductions.other || []).map(item => ({ name: item.name, amount: item.amount })))
+    ].filter(item => item.amount > 0);
+    
+    doc.fontSize(9)
+       .fillColor(colors.text)
+       .font('Helvetica');
+    
+    deductions.forEach(item => {
+      doc.text(item.name, leftColumn + 10, currentY)
+         .text(`${payroll.currency} ${item.amount.toLocaleString()}`, 450, currentY, { align: 'right', width: 100 });
+      currentY += 15;
+    });
+    
+    // Total deductions
+    currentY += 5;
+    doc.fontSize(10)
+       .fillColor(colors.primary)
+       .font('Helvetica-Bold')
+       .text('TOTAL DEDUCTIONS', leftColumn + 10, currentY)
+       .text(`${payroll.currency} ${payroll.deductions.total.toLocaleString()}`, 450, currentY, { align: 'right', width: 100 });
+    
+    currentY += 30;
+    
+    // Net Pay section with highlight
+    doc.rect(40, currentY, 515, 40)
+       .fillAndStroke(colors.lightGray, colors.border);
+    
+    doc.fontSize(16)
+       .fillColor(colors.accent)
+       .font('Helvetica-Bold')
+       .text('NET PAY', leftColumn + 10, currentY + 12)
+       .text(`${payroll.currency} ${payroll.netPay.toLocaleString()}`, 450, currentY + 12, { align: 'right', width: 100 });
+    
+    currentY += 60;
+    
+    // Payment Information
+    doc.fontSize(10)
+       .fillColor(colors.text)
+       .font('Helvetica')
+       .text(`Payment Method: ${payroll.payment.method || 'Bank Transfer'}`, leftColumn, currentY)
+       .text(`Payment Status: ${payroll.payment.status.toUpperCase()}`, leftColumn, currentY + 15)
+       .text(`Payment Date: ${payroll.payment.paidAt ? moment(payroll.payment.paidAt).format('DD MMM YYYY') : 'Pending'}`, leftColumn, currentY + 30);
+    
+    // Adjustments if any
+    if (payroll.adjustments && payroll.adjustments.length > 0) {
+      currentY += 60;
+      doc.fontSize(11)
+         .fillColor(colors.primary)
+         .font('Helvetica-Bold')
+         .text('ADJUSTMENTS', leftColumn, currentY);
+      
+      currentY += 20;
+      
+      payroll.adjustments.forEach(adj => {
+        const sign = adj.type === 'addition' ? '+' : '-';
+        doc.fontSize(9)
+           .fillColor(colors.text)
+           .font('Helvetica')
+           .text(`${adj.reason}`, leftColumn + 10, currentY)
+           .text(`${sign}${payroll.currency} ${adj.amount.toLocaleString()}`, 450, currentY, { align: 'right', width: 100 });
+        currentY += 15;
+      });
+    }
+    
+    // Footer
+    const footerY = doc.page.height - 80;
+    
+    doc.rect(40, footerY, 515, 40)
+       .fillAndStroke(colors.primary, colors.primary);
+    
+    doc.fontSize(8)
+       .fillColor('#ffffff')
+       .font('Helvetica')
+       .text('This is a computer-generated document and does not require a signature.', 50, footerY + 8)
+       .text(`Generated on ${moment().format('DD MMM YYYY [at] HH:mm')}`, 50, footerY + 22)
+       .text('For queries, contact HR department.', 400, footerY + 8, { align: 'right', width: 145 })
+       .text('CONFIDENTIAL', 400, footerY + 22, { align: 'right', width: 145 });
+    
+    doc.end();
+    
+  } catch (error) {
+    console.error('PDF generation error:', error);
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Failed to generate PDF' });
+    }
+  }
+};
+
 module.exports = payrollController;

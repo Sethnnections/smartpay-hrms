@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TPS - Payslips Management</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- SweetAlert2 -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/11.7.12/sweetalert2.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/admin.css">
+    
+    <!-- Page-specific CSS -->
+    <link rel="stylesheet" href="/css/departments.css">
+    <style>
+        .payslip-card {
+            transition: all 0.3s ease;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .payslip-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+        }
+        .payslip-status {
+            font-size: 0.8rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 50px;
+        }
+        .status-paid {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+        .status-pending {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+        .status-processing {
+            background-color: #dbeafe;
+            color: #1e40af;
+        }
+        .loading-spinner {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+        .spinner-border {
+            width: 3rem;
+            height: 3rem;
+        }
+        .month-selector {
+            max-width: 200px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Spinner -->
+    <div class="loading-spinner" id="loadingSpinner">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+
+    <!-- Sidebar Overlay for Mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Sidebar -->
+    <%- include('./partials/sidebar', { currentPage: 'payslips' }) %>
+
+    <!-- Main Content -->
+    <div class="main-content" id="mainContent">
+        <!-- Header -->
+        <%- include('./partials/header', { 
+            title: 'Payslips', 
+            user: typeof user !== 'undefined' ? user : { name: 'User', email: '', avatar: 'U' } 
+        }) %>
+
+        <!-- Page Content -->
+        <main class="dashboard-content">
+            <div class="container-fluid px-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 class="mb-0">Employee Payslips</h2>
+                    <div class="d-flex gap-2">
+                        <select class="form-select month-selector" id="monthSelector">
+                            <!-- Options will be populated by JavaScript -->
+                        </select>
+                        <button class="btn btn-primary" id="generateAllBtn">
+                            <i class="fas fa-file-pdf me-2"></i>Generate All
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="payslipsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Employee</th>
+                                        <th>Payroll Month</th>
+                                        <th>Gross Pay</th>
+                                        <th>Deductions</th>
+                                        <th>Net Pay</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="payslipsTableBody">
+                                    <!-- Table content will be populated by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <!-- Axios -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.2/axios.min.js"></script>
+    <!-- SweetAlert2 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/11.7.12/sweetalert2.all.min.js"></script>
+    
+    <!-- Custom JS -->
+    <script src="/js/admin.js"></script>
+    
+    <script>
+        // Get token from localStorage
+        const authToken = localStorage.getItem('authToken');
+        if (!authToken) {
+            window.location.href = '/login';
+        }
+
+        // Set up Axios defaults
+        axios.interceptors.request.use(config => {
+        const token = localStorage.getItem('authToken');
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+        }, error => {
+        return Promise.reject(error);
+        });
+
+        // Configure Axios defaults
+        axios.defaults.baseURL = '/api';
+        axios.defaults.headers.common['Authorization'] = `Bearer ${authToken}`;
+        axios.defaults.headers.post['Content-Type'] = 'application/json';
+
+        // DOM Elements
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const monthSelector = document.getElementById('monthSelector');
+        const generateAllBtn = document.getElementById('generateAllBtn');
+        const payslipsTableBody = document.getElementById('payslipsTableBody');
+
+        // Current month in YYYY-MM format
+        const currentMonth = new Date().toISOString().slice(0, 7);
+        
+        // Months for dropdown (last 12 months)
+        function populateMonthSelector() {
+            const months = [];
+            const date = new Date();
+            
+            for (let i = 0; i < 12; i++) {
+                const month = date.toISOString().slice(0, 7);
+                months.push(month);
+                date.setMonth(date.getMonth() - 1);
+            }
+            
+            monthSelector.innerHTML = months.map(month => 
+                `<option value="${month}" ${month === currentMonth ? 'selected' : ''}>
+                    ${formatMonth(month)}
+                </option>`
+            ).join('');
+        }
+        
+        function formatMonth(month) {
+            const [year, monthNum] = month.split('-');
+            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+                              'July', 'August', 'September', 'October', 'November', 'December'];
+            return `${monthNames[parseInt(monthNum) - 1]} ${year}`;
+        }
+        
+        // Show loading spinner
+        function showLoading() {
+            loadingSpinner.style.display = 'flex';
+        }
+        
+        // Hide loading spinner
+        function hideLoading() {
+            loadingSpinner.style.display = 'none';
+        }
+        
+        // Format currency
+        function formatCurrency(amount, currency = 'MWK') {
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: currency,
+                minimumFractionDigits: 2
+            }).format(amount).replace(currency, '').trim();
+        }
+        
+        // Get status badge class
+        function getStatusClass(status) {
+            switch (status) {
+                case 'paid': return 'status-paid';
+                case 'pending': return 'status-pending';
+                case 'processing': return 'status-processing';
+                default: return 'status-pending';
+            }
+        }
+        
+        // Fetch payslips for selected month
+        async function fetchPayslips(month) {
+            showLoading();
+            try {
+                const response = await axios.get('/payroll', {
+                    params: { month }
+                });
+                
+                renderPayslips(response.data.payrolls);
+            } catch (error) {
+                console.error('Error fetching payslips:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: error.response?.data?.error || 'Failed to fetch payslips'
+                });
+            } finally {
+                hideLoading();
+            }
+        }
+        function getCurrentUserRole() {
+            try {
+                const userData = JSON.parse(localStorage.getItem('user'));
+                return userData?.role || 'employee';
+            } catch {
+                return 'employee';
+            }
+        }
+        // Render payslips in table
+        function renderPayslips(payslips) {
+            const userRole = getCurrentUserRole();
+
+            payslipsTableBody.innerHTML = payslips.map(payslip => `
+                <tr>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div class="avatar me-3">
+                                ${payslip.employeeId?.personalInfo?.firstName?.charAt(0) || 'E'}
+                            </div>
+                            <div>
+                                <h6 class="mb-0">${payslip.employeeId?.personalInfo?.firstName || ''} ${payslip.employeeId?.personalInfo?.lastName || ''}</h6>
+                                <small class="text-muted">${payslip.employeeId?.employeeId || ''}</small>
+                            </div>
+                        </div>
+                    </td>
+                    <td>${formatMonth(payslip.payrollMonth)}</td>
+                    <td>${formatCurrency(payslip.grossPay, payslip.currency)}</td>
+                    <td>${formatCurrency(payslip.deductions.total, payslip.currency)}</td>
+                    <td>${formatCurrency(payslip.netPay, payslip.currency)}</td>
+                    <td>
+                        <span class="payslip-status ${getStatusClass(payslip.payment.status)}">
+                            ${payslip.payment.status.toUpperCase()}
+                        </span>
+                    </td>
+                   <td>
+                        <div class="d-flex gap-2">
+                        <!-- View payslip button 
+                        <button class="btn btn-sm btn-outline-primary view-payslip" data-id="${payslip._id}">
+                            <i class="fas fa-eye"></i>
+                        </button> -->
+                        <button class="btn btn-sm btn-outline-success download-payslip" data-id="${payslip._id}" ${!payslip.payslip.generated ? 'disabled' : ''}>
+                            <i class="fas fa-download"></i>
+                        </button>
+                        ${['admin', 'hr'].includes(userRole) ? `
+                        <button class="btn btn-sm btn-outline-secondary generate-payslip" data-id="${payslip._id}" ${payslip.payslip.generated ? 'disabled' : ''}>
+                            <i class="fas fa-file-pdf"></i>
+                        </button>
+                        ` : ''}
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+            
+            // Add event listeners to buttons
+            document.querySelectorAll('.view-payslip').forEach(btn => {
+                btn.addEventListener('click', () => viewPayslip(btn.dataset.id));
+            });
+            
+            document.querySelectorAll('.download-payslip').forEach(btn => {
+                btn.addEventListener('click', () => downloadPayslip(btn.dataset.id));
+            });
+            
+            document.querySelectorAll('.generate-payslip').forEach(btn => {
+                btn.addEventListener('click', () => generatePayslip(btn.dataset.id));
+            });
+        }
+        async function viewPayslip(payslipId) {
+  showLoading();
+  try {
+    const token = localStorage.getItem('authToken');
+    
+    // Create a form to send the token securely
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = `/api/payroll/${payslipId}/payslip-view`;
+    form.target = '_blank';
+    form.style.display = 'none';
+    
+    // Add token as hidden input
+    const tokenInput = document.createElement('input');
+    tokenInput.type = 'hidden';
+    tokenInput.name = 'token';
+    tokenInput.value = token;
+    form.appendChild(tokenInput);
+    
+    // Add view parameter
+    const viewInput = document.createElement('input');
+    viewInput.type = 'hidden';
+    viewInput.name = 'view';
+    viewInput.value = 'true';
+    form.appendChild(viewInput);
+    
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+    
+  } catch (error) {
+    console.error('Error viewing payslip:', error);
+    Swal.fire({
+      icon: 'error',
+      title: 'Error',
+      text: error.response?.data?.error || 'Failed to view payslip'
+    });
+  } finally {
+    hideLoading();
+  }
+}
+
+// Download payslip - Updated function
+async function downloadPayslip(payslipId) {
+  showLoading();
+  try {
+    const token = localStorage.getItem('authToken');
+    
+    // Use fetch with proper headers
+    const response = await fetch(`/api/payroll/${payslipId}/payslip?download=true`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    // Get the blob and create download link
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `payslip_${payslipId}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+    
+  } catch (error) {
+    console.error('Error downloading payslip:', error);
+    Swal.fire({
+      icon: 'error',
+      title: 'Error',
+      text: error.response?.data?.error || 'Failed to download payslip'
+    });
+  } finally {
+    hideLoading();
+  }
+}
+            
+        // Generate payslip
+        async function generatePayslip(payslipId) {
+            showLoading();
+            try {
+                const result = await axios.post(`/payroll/${payslipId}/payslip`);
+                
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Payslip Generated',
+                    text: result.data.message,
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+                
+                // Refresh the table
+                fetchPayslips(monthSelector.value);
+            } catch (error) {
+                console.error('Error generating payslip:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: error.response?.data?.error || 'Failed to generate payslip'
+                });
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        // Generate all payslips for selected month
+        async function generateAllPayslips() {
+            const month = monthSelector.value;
+            
+            const result = await Swal.fire({
+                title: 'Generate All Payslips?',
+                text: `This will generate PDF payslips for all employees for ${formatMonth(month)}. Continue?`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Generate All',
+                cancelButtonText: 'Cancel',
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33'
+            });
+            
+            if (result.isConfirmed) {
+                showLoading();
+                try {
+                    const response = await axios.post('/payroll/payslips/generate-all', { month });
+                    
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Payslips Generated',
+                        html: `
+                            <p>Successfully generated ${response.data.successCount} payslips.</p>
+                            ${response.data.failureCount > 0 ? 
+                              `<p class="text-danger">Failed to generate ${response.data.failureCount} payslips.</p>` : ''}
+                        `,
+                        timer: 3000,
+                        showConfirmButton: false
+                    });
+                    
+                    // Refresh the table
+                    fetchPayslips(month);
+                } catch (error) {
+                    console.error('Error generating all payslips:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: error.response?.data?.error || 'Failed to generate payslips'
+                    });
+                } finally {
+                    hideLoading();
+                }
+            }
+        }
+        
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', () => {
+            populateMonthSelector();
+            fetchPayslips(currentMonth);
+            
+            // Event listeners
+            monthSelector.addEventListener('change', () => {
+                fetchPayslips(monthSelector.value);
+            });
+            
+            generateAllBtn.addEventListener('click', generateAllPayslips);
+        });
+    </script>
+</body>
+</html>

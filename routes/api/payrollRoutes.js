@@ -2,6 +2,41 @@ const express = require('express');
 const router = express.Router();
 const payrollController = require('../../controllers/payrollController');
 const { authenticateToken, requireAdmin, requireHROrAdmin } = require('../../utils/auth');
+const Payroll = require('../../models/Payroll');
+
+// Middleware to handle flexible authentication
+// This allows both token in header and query parameter
+// Useful for frontend apps that may not always send headers
+
+
+
+const flexibleAuth = (req, res, next) => {
+  let token = null;
+  
+  // Try to get token from Authorization header first
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+    token = req.headers.authorization.split(' ')[1];
+  }
+  // If no header token, try query parameter
+  else if (req.query.token) {
+    token = req.query.token;
+  }
+  
+  if (!token) {
+    return res.status(401).json({ error: 'No token provided' });
+  }
+  
+  try {
+    const jwt = require('jsonwebtoken');
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decoded;
+    next();
+  } catch (error) {
+    console.error('Token verification error:', error);
+    return res.status(403).json({ error: 'Invalid token' });
+  }
+};
+
 
 router.use(authenticateToken);
 
@@ -93,19 +128,83 @@ router.post('/bank-instruction', authenticateToken, async (req, res) => {
 });
 
 
-// Generate all payslips for a month (HR/Admin only)
-
-router.post('/payslips/generate-all', requireHROrAdmin, async (req, res) => {
+// Download/View payslip - Updated route
+router.get('/:id/payslip', flexibleAuth, async (req, res) => {
   try {
-    const { month } = req.body;
+    const { id } = req.params;
+    const { view, download } = req.query;
     
-    if (!month) {
-      return res.status(400).json({ 
-        error: 'Month is required in format YYYY-MM' 
+    const payroll = await Payroll.findById(id)
+      .populate({
+        path: 'employeeId',
+        populate: [
+          { path: 'employmentInfo.departmentId', select: 'name' },
+          { path: 'employmentInfo.positionId', select: 'title' },
+          { path: 'employmentInfo.gradeId', select: 'name level' }
+        ]
       });
+    
+    if (!payroll) {
+      return res.status(404).json({ error: 'Payroll not found' });
     }
 
-    const result = await payrollController.generateAllPayslips(month);
+    // Check permissions - employees can only access their own payslips
+    if (req.user.role === 'employee') {
+      // You'll need to populate the userId field or have a way to link user to employee
+      if (payroll.employeeId.userId && payroll.employeeId.userId.toString() !== req.user.id) {
+        return res.status(403).json({ error: 'Access denied' });
+      }
+    }
+
+    if (view || download) {
+      // Set appropriate headers
+      if (download) {
+        res.setHeader('Content-disposition', `attachment; filename=payslip_${id}.pdf`);
+      } else {
+        res.setHeader('Content-disposition', `inline; filename=payslip_${id}.pdf`);
+      }
+      res.setHeader('Content-type', 'application/pdf');
+      
+      // Stream the PDF
+      await payrollController.generatePayslipPDF(res, payroll);
+    } else {
+      // Return payslip metadata
+      res.json({
+        success: true,
+        payslip: payroll.payslip,
+        employee: {
+          name: `${payroll.employeeId.personalInfo?.firstName} ${payroll.employeeId.personalInfo?.lastName}`,
+          id: payroll.employeeId.employeeId
+        },
+        month: payroll.payrollMonth,
+        netPay: payroll.netPay,
+        currency: payroll.currency
+      });
+    }
+  } catch (error) {
+    console.error('Payslip route error:', error);
+    if (!res.headersSent) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+});
+
+// Generate individual payslip - Updated route
+router.post('/:id/payslip', authenticateToken, async (req, res) => {
+  try {
+    const payroll = await payrollController.getPayrollDetails(req.params.id);
+    
+    // Check access permissions
+    if (req.user.role === 'employee') {
+      await payroll.populate('employeeId', 'userId');
+      if (payroll.employeeId.userId && payroll.employeeId.userId.toString() !== req.user.id) {
+        return res.status(403).json({ error: 'Access denied' });
+      }
+    } else if (!['admin', 'hr'].includes(req.user.role)) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const result = await payrollController.generatePayslip(req.params.id);
     res.json(result);
   } catch (error) {
     res.status(error.statusCode || 500).json({ error: error.message });

@@ -89,6 +89,7 @@ router.get('/admin/payslips', (req, res) => {
     res.render('admin/payslips', {
         title: 'Payslips',
         currentPage: 'payslips',
+        layout:false,
         user: {
             name: 'Administrator',
             email: 'admin@teampay.com',
