@@ -551,8 +551,23 @@ payrollController.generateBankInstructionPDF = async function (res, options = {}
     const COMPANY_ADDRESS = process.env.COMPANY_ADDRESS || 'Umoyo Building, Blantyre, Malawi';
     const BANK_NAME = process.env.BANK_NAME || 'National Bank of Malawi';
     const LOGO_PATH = process.env.COMPANY_LOGO_PATH || path.join(process.cwd(), 'public', 'logo.png');
-    const BRAND_COLOR = process.env.COMPANY_BRAND_COLOR || '#0b6b3b';
-    const SECONDARY_COLOR = process.env.COMPANY_SECONDARY_COLOR || '#2c3e50';
+    
+    // Updated brand colors
+    const COLORS = {
+      primary: '#0a1f3a',        // Deep navy blue
+      secondary: '#0f2a4d',      // Lighter navy blue
+      golden: '#e86029',         // Golden yellow/orange
+      goldenLight: '#f7d7b3',    // Light golden
+      bgWhite: '#ffffff',        // Pure white
+      textPrimary: '#1e293b',    // Dark text
+      textSecondary: '#64748b',  // Gray text
+      borderColor: '#e2e8f0',    // Light border
+      success: '#059669',        // Green for paid
+      warning: '#d97706',        // Orange for pending
+      info: '#0284c7',           // Blue for processing
+      lightGray: '#f8fafc'       // Very light gray
+    };
+    
     const ACC_CURRENCY = payrolls[0].currency || process.env.COMPANY_CURRENCY || 'MWK';
 
     // Prepare PDF filename
@@ -566,33 +581,44 @@ payrollController.generateBankInstructionPDF = async function (res, options = {}
     // Create PDF doc with better margins and layout
     const doc = new PDFDocument({ 
       size: 'A4', 
-      layout: 'portrait', // Changed to portrait for better readability
-      margin: 30,
-      bufferPages: true // For better page handling
+      layout: 'portrait',
+      margin: 40,
+      bufferPages: true
     });
     doc.pipe(res);
 
-    // ----- Header with Watermark -----
-    // Add watermark background
-    doc.fillColor('#f5f5f5')
-       .fontSize(60)
-       .text('CONFIDENTIAL', 50, 250, {
-         opacity: 0.1,
-         rotate: -30,
+    // ----- Enhanced Header with Gradient Background -----
+    // Add subtle watermark background
+    doc.fillColor(COLORS.lightGray)
+       .fontSize(80)
+       .text('BANK INSTRUCTION', 50, 300, {
+         opacity: 0.03,
+         rotate: -25,
          align: 'center'
-       })
-       .fillColor('black');
+       });
 
-    // Header with logo and company info
-    const headerTop = 30;
-    const headerLeft = 30;
+    // Header background gradient effect (simulated with rectangles)
+    const headerHeight = 120;
+    doc.rect(0, 0, doc.page.width, headerHeight)
+       .fillAndStroke(COLORS.primary, COLORS.primary);
+    
+    // Add subtle gradient effect
+    doc.rect(0, headerHeight - 20, doc.page.width, 20)
+       .fillAndStroke(COLORS.secondary, COLORS.secondary);
+
+    const headerTop = 25;
+    const headerLeft = 40;
     const headerRight = doc.page.width - 200;
 
-    // Logo (if exists)
+    // Logo (if exists) with white background circle
     if (fs.existsSync(LOGO_PATH)) {
       try {
-        doc.image(LOGO_PATH, headerLeft, headerTop, { 
-          width: 80,
+        // White circle background for logo
+        doc.circle(headerLeft + 40, headerTop + 40, 35)
+           .fillAndStroke(COLORS.bgWhite, COLORS.borderColor);
+        
+        doc.image(LOGO_PATH, headerLeft + 10, headerTop + 10, { 
+          width: 60,
           align: 'left'
         });
       } catch (err) {
@@ -600,114 +626,174 @@ payrollController.generateBankInstructionPDF = async function (res, options = {}
       }
     }
 
-    // Company info block
-    doc.fillColor(BRAND_COLOR)
-       .fontSize(14)
+    // Company info block with elegant typography
+    doc.fillColor(COLORS.bgWhite)
+       .fontSize(18)
        .font('Helvetica-Bold')
-       .text(COMPANY_NAME, headerLeft + 90, headerTop + 5)
-       .fillColor('black')
+       .text(COMPANY_NAME, headerLeft + 90, headerTop + 15)
+       .fontSize(11)
+       .font('Helvetica')
+       .fillColor(COLORS.goldenLight)
+       .text('BANK PAYMENT INSTRUCTION', headerLeft + 90, headerTop + 40)
+       .fontSize(10)
+       .fillColor(COLORS.bgWhite)
+       .text(`Payment Period: ${fileLabel}`, headerLeft + 90, headerTop + 58);
+
+    // Right-aligned details in elegant card style
+    const cardWidth = 180;
+    const cardHeight = 70;
+    doc.rect(headerRight - 10, headerTop, cardWidth, cardHeight)
+       .fillAndStroke(COLORS.bgWhite, COLORS.borderColor);
+    
+    doc.fontSize(8)
+       .fillColor(COLORS.textSecondary)
+       .text('DOCUMENT DETAILS', headerRight, headerTop + 8, { align: 'center', width: cardWidth - 20 })
+       .fontSize(9)
+       .fillColor(COLORS.textPrimary)
+       .text(`Generated: ${moment().format('DD MMM YYYY, h:mm A')}`, headerRight, headerTop + 22, { align: 'center', width: cardWidth - 20 })
+       .text(`By: ${requestedBy?.name || requestedBy?.email || 'System'}`, headerRight, headerTop + 36, { align: 'center', width: cardWidth - 20 })
+       .text(`Status: CONFIDENTIAL`, headerRight, headerTop + 50, { align: 'center', width: cardWidth - 20 });
+
+    // Main content area starts here
+    let currentY = headerHeight + 30;
+
+    // Bank details section with modern card design
+    const cardY = currentY;
+    const cardLeft = 40;
+    const cardRight = doc.page.width - 40;
+    const sectionHeight = 100;
+
+    // Left card - Bank Details
+    doc.rect(cardLeft, cardY, (cardRight - cardLeft) / 2 - 10, sectionHeight)
+       .fillAndStroke(COLORS.bgWhite, COLORS.borderColor);
+    
+    // Card header
+    doc.rect(cardLeft, cardY, (cardRight - cardLeft) / 2 - 10, 25)
+       .fillAndStroke(COLORS.secondary, COLORS.secondary);
+    
+    doc.fontSize(11)
+       .fillColor(COLORS.bgWhite)
+       .font('Helvetica-Bold')
+       .text('BANK DETAILS', cardLeft + 15, cardY + 8);
+
+    // Card content
+    doc.fontSize(9)
+       .fillColor(COLORS.textPrimary)
+       .font('Helvetica')
+       .text(`Bank Name: ${BANK_NAME}`, cardLeft + 15, cardY + 35)
+       .text(`Account Name: ${COMPANY_NAME}`, cardLeft + 15, cardY + 48)
+       .text(`Account Number: ${COMPANY_ACCOUNT}`, cardLeft + 15, cardY + 61)
+       .text(`Currency: ${ACC_CURRENCY}`, cardLeft + 15, cardY + 74);
+
+    // Right card - Payment Summary
+    const rightCardX = cardLeft + (cardRight - cardLeft) / 2 + 10;
+    doc.rect(rightCardX, cardY, (cardRight - cardLeft) / 2 - 10, sectionHeight)
+       .fillAndStroke(COLORS.bgWhite, COLORS.borderColor);
+    
+    // Card header
+    doc.rect(rightCardX, cardY, (cardRight - cardLeft) / 2 - 10, 25)
+       .fillAndStroke(COLORS.golden, COLORS.golden);
+    
+    doc.fontSize(11)
+       .fillColor(COLORS.bgWhite)
+       .font('Helvetica-Bold')
+       .text('PAYMENT SUMMARY', rightCardX + 15, cardY + 8);
+
+    // Payment summary content
+    const totalAmount = payrolls.reduce((sum, p) => sum + (p.netPay || 0), 0);
+    doc.fontSize(12)
+       .fillColor(COLORS.textPrimary)
+       .font('Helvetica-Bold')
+       .text(`${payrolls.length}`, rightCardX + 15, cardY + 38)
        .fontSize(9)
        .font('Helvetica')
-       .text('Bank Payment Instruction', headerLeft + 90, headerTop + 25)
-       .text(`Period: ${fileLabel}`, headerLeft + 90, headerTop + 38);
+       .fillColor(COLORS.textSecondary)
+       .text('Total Employees', rightCardX + 15, cardY + 52)
+       .fontSize(14)
+       .fillColor(COLORS.golden)
+       .font('Helvetica-Bold')
+       .text(`${ACC_CURRENCY} ${totalAmount.toLocaleString()}`, rightCardX + 15, cardY + 68)
+       .fontSize(8)
+       .fillColor(COLORS.textSecondary)
+       .font('Helvetica')
+       .text('Total Amount', rightCardX + 15, cardY + 84);
 
-    // Right-aligned details
-    doc.fontSize(9)
-       .text(`Generated: ${moment().format('DD MMM YYYY, h:mm A')}`, headerRight, headerTop + 5, { align: 'right' })
-       .text(`By: ${requestedBy?.name || requestedBy?.email || 'System'}`, headerRight, headerTop + 18, { align: 'right' })
-       .text(`Page 1 of 1`, headerRight, headerTop + 31, { align: 'right' });
+    currentY = cardY + sectionHeight + 30;
 
-    // Header divider line
-    doc.moveTo(headerLeft, headerTop + 55)
-       .lineTo(doc.page.width - headerLeft, headerTop + 55)
-       .lineWidth(1)
-       .stroke(BRAND_COLOR);
-
-    // Bank details section
-    const bankDetailsTop = headerTop + 70;
-    doc.fontSize(10)
-       .fillColor(SECONDARY_COLOR)
-       .text('BANK DETAILS', headerLeft, bankDetailsTop)
-       .fillColor('black')
-       .text(`Bank Name: ${BANK_NAME}`, headerLeft, bankDetailsTop + 15)
-       .text(`Account Name: ${COMPANY_NAME}`, headerLeft, bankDetailsTop + 30)
-       .text(`Account Number: ${COMPANY_ACCOUNT}`, headerLeft, bankDetailsTop + 45)
-       .text(`Currency: ${ACC_CURRENCY}`, headerLeft, bankDetailsTop + 60);
-
-    // Payment summary
-    const totalAmount = payrolls.reduce((sum, p) => sum + (p.netPay || 0), 0);
-    doc.text(`Total Employees: ${payrolls.length}`, headerRight, bankDetailsTop + 15, { align: 'right' })
-       .text(`Total Amount: ${ACC_CURRENCY} ${totalAmount.toLocaleString()}`, headerRight, bankDetailsTop + 30, { align: 'right' });
-
-    // Table header
-    const tableTop = bankDetailsTop + 85;
-    const startX = headerLeft;
+    // Enhanced Table Design
+    const tableTop = currentY;
+    const startX = 40;
     let y = tableTop;
     const tableWidth = doc.page.width - (startX * 2);
 
-    // Column widths
+    // Column widths (optimized for better spacing)
     const col = {
-      no: 25,
-      name: 120,
-      department: 80,
+      no: 30,
+      name: 130,
+      department: 85,
       bank: 90,
-      acct: 90,
-      amount: 60,
-      status: 50
+      acct: 95,
+      amount: 70,
+      status: 55
     };
 
-    // Draw table header
-    doc.rect(startX, y, tableWidth, 20)
-       .fillAndStroke(BRAND_COLOR, BRAND_COLOR)
-       .fillColor('white')
-       .fontSize(9)
+    // Modern table header with gradient effect
+    doc.rect(startX, y, tableWidth, 30)
+       .fillAndStroke(COLORS.primary, COLORS.primary);
+    
+    // Add subtle highlight bar
+    doc.rect(startX, y + 25, tableWidth, 5)
+       .fillAndStroke(COLORS.golden, COLORS.golden);
+
+    doc.fillColor(COLORS.bgWhite)
+       .fontSize(10)
        .font('Helvetica-Bold');
 
-    let cx = startX + 5;
-    doc.text('#', cx, y + 5, { width: col.no, align: 'center' }); cx += col.no;
-    doc.text('EMPLOYEE NAME', cx, y + 5, { width: col.name, align: 'left' }); cx += col.name;
-    doc.text('DEPARTMENT', cx, y + 5, { width: col.department, align: 'left' }); cx += col.department;
-    doc.text('BANK NAME', cx, y + 5, { width: col.bank, align: 'left' }); cx += col.bank;
-    doc.text('ACCOUNT NO.', cx, y + 5, { width: col.acct, align: 'left' }); cx += col.acct;
-    doc.text(`AMOUNT (${ACC_CURRENCY})`, cx, y + 5, { width: col.amount, align: 'right' }); cx += col.amount;
-    doc.text('STATUS', cx, y + 5, { width: col.status, align: 'center' });
+    let cx = startX + 8;
+    doc.text('#', cx, y + 8, { width: col.no, align: 'center' }); cx += col.no;
+    doc.text('EMPLOYEE NAME', cx, y + 8, { width: col.name, align: 'left' }); cx += col.name;
+    doc.text('DEPARTMENT', cx, y + 8, { width: col.department, align: 'left' }); cx += col.department;
+    doc.text('BANK NAME', cx, y + 8, { width: col.bank, align: 'left' }); cx += col.bank;
+    doc.text('ACCOUNT NO.', cx, y + 8, { width: col.acct, align: 'left' }); cx += col.acct;
+    doc.text(`AMOUNT`, cx, y + 4, { width: col.amount, align: 'right' }); 
+    doc.fontSize(8).text(`(${ACC_CURRENCY})`, cx, y + 16, { width: col.amount, align: 'right' }); cx += col.amount;
+    doc.fontSize(10).text('STATUS', cx, y + 8, { width: col.status, align: 'center' });
 
-    // Reset styles for table rows
-    doc.fillColor('black')
-       .font('Helvetica')
-       .fontSize(8);
-    y += 20;
+    y += 30;
 
     // Helper to add new page if needed
-    function checkPageBreak(heightNeeded = 20) {
-      if (y + heightNeeded > doc.page.height - 50) {
+    function checkPageBreak(heightNeeded = 25) {
+      if (y + heightNeeded > doc.page.height - 80) {
         addFooter();
         doc.addPage();
         y = 50;
+        
         // Redraw table header on new page
-        doc.rect(startX, y, tableWidth, 20)
-           .fillAndStroke(BRAND_COLOR, BRAND_COLOR)
-           .fillColor('white')
-           .fontSize(9)
+        doc.rect(startX, y, tableWidth, 30)
+           .fillAndStroke(COLORS.primary, COLORS.primary);
+        
+        doc.rect(startX, y + 25, tableWidth, 5)
+           .fillAndStroke(COLORS.golden, COLORS.golden);
+
+        doc.fillColor(COLORS.bgWhite)
+           .fontSize(10)
            .font('Helvetica-Bold');
         
-        let hx = startX + 5;
-        doc.text('#', hx, y + 5, { width: col.no, align: 'center' }); hx += col.no;
-        doc.text('EMPLOYEE NAME', hx, y + 5, { width: col.name, align: 'left' }); hx += col.name;
-        doc.text('DEPARTMENT', hx, y + 5, { width: col.department, align: 'left' }); hx += col.department;
-        doc.text('BANK NAME', hx, y + 5, { width: col.bank, align: 'left' }); hx += col.bank;
-        doc.text('ACCOUNT NO.', hx, y + 5, { width: col.acct, align: 'left' }); hx += col.acct;
-        doc.text(`AMOUNT (${ACC_CURRENCY})`, hx, y + 5, { width: col.amount, align: 'right' }); hx += col.amount;
-        doc.text('STATUS', hx, y + 5, { width: col.status, align: 'center' });
+        let hx = startX + 8;
+        doc.text('#', hx, y + 8, { width: col.no, align: 'center' }); hx += col.no;
+        doc.text('EMPLOYEE NAME', hx, y + 8, { width: col.name, align: 'left' }); hx += col.name;
+        doc.text('DEPARTMENT', hx, y + 8, { width: col.department, align: 'left' }); hx += col.department;
+        doc.text('BANK NAME', hx, y + 8, { width: col.bank, align: 'left' }); hx += col.bank;
+        doc.text('ACCOUNT NO.', hx, y + 8, { width: col.acct, align: 'left' }); hx += col.acct;
+        doc.text(`AMOUNT`, hx, y + 4, { width: col.amount, align: 'right' }); 
+        doc.fontSize(8).text(`(${ACC_CURRENCY})`, hx, y + 16, { width: col.amount, align: 'right' }); hx += col.amount;
+        doc.fontSize(10).text('STATUS', hx, y + 8, { width: col.status, align: 'center' });
         
-        doc.fillColor('black')
-           .font('Helvetica')
-           .fontSize(8);
-        y += 20;
+        y += 30;
       }
     }
 
-    // Draw table rows
+    // Enhanced table rows
     for (let i = 0; i < payrolls.length; i++) {
       const p = payrolls[i];
       const emp = p.employeeId || {};
@@ -715,79 +801,147 @@ payrollController.generateBankInstructionPDF = async function (res, options = {}
       const dept = emp.employmentInfo?.departmentId || {};
       
       const fullname = `${personal.firstName || ''} ${personal.lastName || ''}`.trim();
-      const bankName = (emp.bankDetails?.bankName || p.bankName || '—').substring(0, 20);
+      const bankName = (emp.bankDetails?.bankName || p.bankName || '—').substring(0, 18);
       const accountNo = emp.bankDetails?.accountNumber || p.employeeBankAccount || '—';
       const amount = Number(p.netPay || 0);
       const status = p.payment?.status || 'pending';
 
       checkPageBreak();
 
-      // Alternate row colors
-      if (i % 2 === 0) {
-        doc.rect(startX, y, tableWidth, 15).fill('#f9f9f9');
-      }
+      // Enhanced alternating row colors with subtle borders
+      const rowColor = i % 2 === 0 ? COLORS.lightGray : COLORS.bgWhite;
+      doc.rect(startX, y, tableWidth, 20)
+         .fillAndStroke(rowColor, COLORS.borderColor);
 
-      let rx = startX + 5;
-      doc.fillColor('black').text(String(i + 1), rx, y + 3, { width: col.no, align: 'center' }); rx += col.no;
-      doc.text(fullname, rx, y + 3, { width: col.name, align: 'left' }); rx += col.name;
-      doc.text(dept.name || '—', rx, y + 3, { width: col.department, align: 'left' }); rx += col.department;
-      doc.text(bankName, rx, y + 3, { width: col.bank, align: 'left' }); rx += col.bank;
-      doc.text(accountNo, rx, y + 3, { width: col.acct, align: 'left' }); rx += col.acct;
-      doc.text(amount.toLocaleString(), rx, y + 3, { width: col.amount, align: 'right' }); rx += col.amount;
+      // Row content with improved typography
+      doc.fillColor(COLORS.textPrimary)
+         .fontSize(9)
+         .font('Helvetica');
+
+      let rx = startX + 8;
+      doc.text(String(i + 1), rx, y + 6, { width: col.no, align: 'center' }); rx += col.no;
       
-      // Status badge
-      const statusColor = status === 'paid' ? '#28a745' : 
-                         status === 'approved' ? '#17a2b8' : 
-                         status === 'processing' ? '#ffc107' : '#6c757d';
+      // Employee name in bold
+      doc.font('Helvetica-Bold')
+         .text(fullname, rx, y + 6, { width: col.name, align: 'left' }); rx += col.name;
+      
+      doc.font('Helvetica')
+         .fillColor(COLORS.textSecondary)
+         .text(dept.name || '—', rx, y + 6, { width: col.department, align: 'left' }); rx += col.department;
+      
+      doc.fillColor(COLORS.textPrimary)
+         .text(bankName, rx, y + 6, { width: col.bank, align: 'left' }); rx += col.bank;
+      
+      // Account number in monospace-like styling
+      doc.font('Helvetica-Bold')
+         .text(accountNo, rx, y + 6, { width: col.acct, align: 'left' }); rx += col.acct;
+      
+      // Amount in golden color and bold
+      doc.fillColor(COLORS.golden)
+         .font('Helvetica-Bold')
+         .text(amount.toLocaleString(), rx, y + 6, { width: col.amount, align: 'right' }); rx += col.amount;
+      
+      // Enhanced status badge with rounded corners effect
+      const statusColors = {
+        paid: COLORS.success,
+        approved: COLORS.info,
+        processing: COLORS.warning,
+        pending: COLORS.textSecondary
+      };
+      
+      const statusColor = statusColors[status] || COLORS.textSecondary;
+      
+      // Status badge background
       doc.fillColor(statusColor)
-         .rect(rx + 5, y + 1, col.status - 10, 13)
-         .fill()
-         .fillColor('white')
+         .rect(rx + 8, y + 3, col.status - 16, 14)
+         .fill();
+      
+      // Status text
+      doc.fillColor(COLORS.bgWhite)
          .fontSize(7)
-         .text(status.toUpperCase(), rx + 5, y + 4, { width: col.status - 10, align: 'center' })
-         .fillColor('black')
-         .fontSize(8);
+         .font('Helvetica-Bold')
+         .text(status.toUpperCase(), rx + 8, y + 7, { width: col.status - 16, align: 'center' });
 
-      y += 15;
+      y += 20;
     }
 
-    // Summary section
-    checkPageBreak(40);
-    doc.moveTo(startX, y).lineTo(startX + tableWidth, y).stroke('#cccccc');
-    y += 10;
+    // Enhanced Summary Section
+    checkPageBreak(60);
     
-    doc.fontSize(9)
+    // Summary card
+    const summaryY = y + 10;
+    doc.rect(startX, summaryY, tableWidth, 50)
+       .fillAndStroke(COLORS.lightGray, COLORS.borderColor);
+    
+    // Summary header
+    doc.rect(startX, summaryY, tableWidth, 20)
+       .fillAndStroke(COLORS.secondary, COLORS.secondary);
+    
+    doc.fontSize(11)
+       .fillColor(COLORS.bgWhite)
        .font('Helvetica-Bold')
-       .text('SUMMARY', startX, y)
+       .text('PAYMENT SUMMARY', startX + 15, summaryY + 6);
+    
+    // Summary content in two columns
+    doc.fontSize(10)
+       .fillColor(COLORS.textPrimary)
        .font('Helvetica')
-       .text(`Total Employees: ${payrolls.length}`, startX + 200, y)
-       .text(`Total Amount: ${ACC_CURRENCY} ${totalAmount.toLocaleString()}`, startX + 400, y, { align: 'right' });
-    
-    y += 30;
-
-    // Approval section
-    doc.fontSize(9)
+       .text(`Total Employees: ${payrolls.length}`, startX + 15, summaryY + 30)
        .font('Helvetica-Bold')
-       .text('AUTHORIZATION', startX, y);
+       .fillColor(COLORS.golden)
+       .text(`Grand Total: ${ACC_CURRENCY} ${totalAmount.toLocaleString()}`, startX + 300, summaryY + 30, { align: 'right', width: 200 });
     
-    y += 15;
-    doc.moveTo(startX, y).lineTo(startX + 250, y).stroke('#cccccc');
-    doc.moveTo(startX + 300, y).lineTo(startX + 550, y).stroke('#cccccc');
-    doc.text('Authorized Signature', startX, y + 5);
-    doc.text('Date', startX + 300, y + 5);
-    
-    y += 20;
-    doc.text('Name:', startX, y + 5);
-    doc.text('Designation:', startX + 300, y + 5);
+    y = summaryY + 70;
 
-    // Footer function
+    // Enhanced Authorization Section
+    checkPageBreak(80);
+    
+    doc.fontSize(11)
+       .fillColor(COLORS.primary)
+       .font('Helvetica-Bold')
+       .text('AUTHORIZATION & APPROVAL', startX, y);
+    
+    y += 25;
+    
+    // Two signature boxes
+    const sigBoxWidth = (tableWidth - 20) / 2;
+    
+    // Left signature box
+    doc.rect(startX, y, sigBoxWidth, 50)
+       .fillAndStroke(COLORS.bgWhite, COLORS.borderColor);
+    
+    doc.fontSize(8)
+       .fillColor(COLORS.textSecondary)
+       .font('Helvetica')
+       .text('PREPARED BY', startX + 10, y + 8)
+       .text('Signature: _________________________', startX + 10, y + 25)
+       .text('Date: _______________', startX + 10, y + 38);
+    
+    // Right signature box
+    doc.rect(startX + sigBoxWidth + 20, y, sigBoxWidth, 50)
+       .fillAndStroke(COLORS.bgWhite, COLORS.borderColor);
+    
+    doc.text('AUTHORIZED BY', startX + sigBoxWidth + 30, y + 8)
+       .text('Signature: _________________________', startX + sigBoxWidth + 30, y + 25)
+       .text('Date: _______________', startX + sigBoxWidth + 30, y + 38);
+
+    // Footer function with enhanced design
     function addFooter() {
-      const footerY = doc.page.height - 30;
-      doc.fontSize(7)
-         .fillColor('#666666')
-         .text('Confidential - For bank processing only', startX, footerY)
-         .text(`Page ${doc.page.number}`, doc.page.width - startX - 20, footerY, { align: 'right' })
-         .text(`Generated on ${moment().format('DD MMM YYYY, h:mm A')}`, doc.page.width / 2 - 100, footerY, { align: 'center' });
+      const footerY = doc.page.height - 50;
+      
+      // Footer background
+      doc.rect(0, footerY - 10, doc.page.width, 60)
+         .fillAndStroke(COLORS.primary, COLORS.primary);
+      
+      doc.fontSize(8)
+         .fillColor(COLORS.goldenLight)
+         .font('Helvetica')
+         .text('CONFIDENTIAL DOCUMENT - For Bank Processing Only', 40, footerY)
+         .fillColor(COLORS.bgWhite)
+         .text(`Page ${doc.page.number}`, doc.page.width - 60, footerY, { align: 'right' })
+         .text(`${COMPANY_NAME} • Generated ${moment().format('DD MMM YYYY, h:mm A')}`, 40, footerY + 15)
+         .fillColor(COLORS.goldenLight)
+         .text('This document contains sensitive financial information', 40, footerY + 28);
     }
 
     // Add footer to last page
@@ -803,6 +957,5 @@ payrollController.generateBankInstructionPDF = async function (res, options = {}
     }
   }
 };
-
 
 module.exports = payrollController;
