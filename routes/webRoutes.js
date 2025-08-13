@@ -13,6 +13,7 @@ router.get('/admin', (req, res) => {
     res.render('admin/dashboard', {
         title: 'Dashboard',
         currentPage: 'dashboard',
+        layout:false,
         user: {
             name: 'Administrator',
             email: 'admin@teampay.com',

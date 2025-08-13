@@ -1,108 +1,857 @@
-<!-- Welcome Section -->
-<div class="welcome-section fade-in">
-    <div class="row align-items-center">
-        <div class="col-md-8">
-            <h2>Welcome back, <%= user.name %>!</h2>
-            <p>Here's what's happening with your HR system today. Manage your employees, process payroll, and generate reports all from one place.</p>
-            <div class="date-time" id="currentDateTime">
-                <i class="fas fa-calendar-alt me-2"></i>
-                <span id="dateTime"></span>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Statistics Cards -->
-<div class="stats-grid">
-    <div class="stat-card employees">
-        <div class="stat-header">
-            <p class="stat-title">Total Employees</p>
-            <div class="stat-icon">
-                <i class="fas fa-users"></i>
-            </div>
-        </div>
-        <div class="stat-value" id="employeeCount">247</div>
-        <div class="stat-trend">
-            <i class="fas fa-arrow-up"></i>
-            <span>+12 this month</span>
-        </div>
-    </div>
-
-    <div class="stat-card departments">
-        <div class="stat-header">
-            <p class="stat-title">Departments</p>
-            <div class="stat-icon">
-                <i class="fas fa-sitemap"></i>
-            </div>
-        </div>
-        <div class="stat-value" id="departmentCount">15</div>
-        <div class="stat-trend">
-            <i class="fas fa-arrow-up"></i>
-            <span>+2 new departments</span>
-        </div>
-    </div>
-
-    <div class="stat-card positions">
-        <div class="stat-header">
-            <p class="stat-title">Active Positions</p>
-            <div class="stat-icon">
-                <i class="fas fa-briefcase"></i>
-            </div>
-        </div>
-        <div class="stat-value" id="positionCount">42</div>
-        <div class="stat-trend">
-            <i class="fas fa-arrow-up"></i>
-            <span>+5 positions</span>
-        </div>
-    </div>
-
-    <div class="stat-card payroll">
-        <div class="stat-header">
-            <p class="stat-title">Monthly Payroll</p>
-            <div class="stat-icon">
-                <i class="fas fa-money-bill-wave"></i>
-            </div>
-        </div>
-        <div class="stat-value">$2.4M</div>
-        <div class="stat-trend">
-            <i class="fas fa-arrow-up"></i>
-            <span>+8.5% from last month</span>
-        </div>
-    </div>
-</div>
-
-<!-- Charts Section -->
-<div class="charts-section">
-    <div class="chart-card">
-        <div class="chart-header">
-            <h5><i class="fas fa-chart-bar"></i>Employee Distribution by Department</h5>
-        </div>
-        <div class="chart-container">
-            <canvas id="departmentChart"></canvas>
-        </div>
-    </div>
-
-    <div class="chart-card">
-        <div class="chart-header">
-            <h5><i class="fas fa-chart-line"></i>Monthly Payroll Trends</h5>
-        </div>
-        <div class="chart-container">
-            <canvas id="payrollChart"></canvas>
-        </div>
-    </div>
-</div>
-
-<script>
-    // Dashboard-specific JavaScript
-    document.addEventListener('DOMContentLoaded', function() {
-        // Initialize dashboard charts
-        if (typeof initializeDashboardCharts === 'function') {
-            initializeDashboardCharts();
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TPS - Admin Dashboard</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- DataTables -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+    <!-- ApexCharts -->
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/admin.css">
+    
+    <style>
+        .card-stat {
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+            border-left: 4px solid;
         }
-        
-        // Show welcome notification
-        setTimeout(() => {
-            showNotification('Welcome to SmartPay HRMS Dashboard!', 'success');
-        }, 1000);
-    });
-</script>
+        .card-stat:hover {
+            transform: translateY(-5px);
+        }
+        .stat-icon {
+            font-size: 2rem;
+            opacity: 0.8;
+        }
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 600;
+        }
+        .stat-label {
+            font-size: 0.9rem;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-bottom: 20px;
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+        .loading-spinner {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+        .spinner-border {
+            width: 3rem;
+            height: 3rem;
+        }
+        .trend-indicator {
+            font-size: 0.9rem;
+            margin-left: 5px;
+        }
+        .trend-up {
+            color: #28a745;
+        }
+        .trend-down {
+            color: #dc3545;
+        }
+        .trend-neutral {
+            color: #6c757d;
+        }
+        .recent-activity-item {
+            border-left: 3px solid;
+            padding-left: 15px;
+            margin-bottom: 15px;
+        }
+        .dashboard-section-title {
+            font-weight: 600;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .quick-action-btn {
+            transition: all 0.3s ease;
+            border-radius: 8px;
+        }
+        .quick-action-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+        }
+        .department-badge {
+            font-size: 0.8rem;
+            padding: 0.35em 0.65em;
+        }
+        .currency {
+            font-weight: 600;
+            color: #0d6efd;
+        }
+        .card-stat-1 { border-left-color: #4e73df; }
+        .card-stat-2 { border-left-color: #1cc88a; }
+        .card-stat-3 { border-left-color: #36b9cc; }
+        .card-stat-4 { border-left-color: #f6c23e; }
+    </style>
+</head>
+<body>
+    <!-- Loading Spinner -->
+    <div class="loading-spinner" id="loadingSpinner">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+
+    <!-- Sidebar Overlay for Mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Sidebar -->
+    <%- include('./partials/sidebar', { currentPage: 'dashboard' }) %>
+
+    <!-- Main Content -->
+    <div class="main-content" id="mainContent">
+        <!-- Header -->
+        <%- include('./partials/header', { 
+            title: 'Dashboard Overview', 
+            user: typeof user !== 'undefined' ? user : { name: 'User', email: '', avatar: 'U' } 
+        }) %>
+
+        <!-- Page Content -->
+        <main class="dashboard-content">
+            <div class="container-fluid px-4">
+                <!-- Welcome Banner -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card bg-primary text-white shadow">
+                            <div class="card-body">
+                                <div class="row align-items-center">
+                                    <div class="col-md-8">
+                                        <h4 class="mb-1">Welcome back, <strong><%= user.name %></strong>!</h4>
+                                        <p class="mb-0">Here's what's happening with your business today.</p>
+                                    </div>
+                                    <div class="col-md-4 text-md-end">
+                                        <p class="mb-0">Today is <span id="currentDate"></span></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats Cards Row -->
+                <div class="row mb-4">
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card card-stat card-stat-1 h-100">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="stat-label">Total Employees</h6>
+                                        <h2 class="stat-value" id="totalEmployees">0</h2>
+                                        <div class="mt-2">
+                                            <span class="trend-indicator" id="employeeTrend">
+                                                <i class="fas fa-caret-up trend-up"></i> <span>0%</span> from last month
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="stat-icon text-primary">
+                                        <i class="fas fa-users"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card card-stat card-stat-2 h-100">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="stat-label">Active Employees</h6>
+                                        <h2 class="stat-value" id="activeEmployees">0</h2>
+                                        <div class="mt-2">
+                                            <span class="badge bg-success">0% Active</span>
+                                        </div>
+                                    </div>
+                                    <div class="stat-icon text-success">
+                                        <i class="fas fa-user-check"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card card-stat card-stat-3 h-100">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="stat-label">Departments</h6>
+                                        <h2 class="stat-value" id="totalDepartments">0</h2>
+                                        <div class="mt-2">
+                                            <span id="departmentStats">0 with employees</span>
+                                        </div>
+                                    </div>
+                                    <div class="stat-icon text-info">
+                                        <i class="fas fa-building"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card card-stat card-stat-4 h-100">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="stat-label">Avg. Tenure</h6>
+                                        <h2 class="stat-value" id="avgTenure">0</h2>
+                                        <div class="mt-2">
+                                            <span id="newHires">0 new hires this year</span>
+                                        </div>
+                                    </div>
+                                    <div class="stat-icon text-warning">
+                                        <i class="fas fa-clock"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Row -->
+                <div class="row mb-4">
+                    <div class="col-xl-8 mb-4">
+                        <div class="card shadow h-100">
+                            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                                <h6 class="m-0 font-weight-bold text-primary">Employee Growth</h6>
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" id="growthDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                        Last 12 Months
+                                    </button>
+                                    <ul class="dropdown-menu" aria-labelledby="growthDropdown">
+                                        <li><a class="dropdown-item" href="#" data-range="6">Last 6 Months</a></li>
+                                        <li><a class="dropdown-item" href="#" data-range="12">Last 12 Months</a></li>
+                                        <li><a class="dropdown-item" href="#" data-range="24">Last 2 Years</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container">
+                                    <canvas id="employeeGrowthChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xl-4 mb-4">
+                        <div class="card shadow h-100">
+                            <div class="card-header py-3">
+                                <h6 class="m-0 font-weight-bold text-primary">Department Distribution</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container">
+                                    <canvas id="departmentDistributionChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Second Charts Row -->
+                <div class="row mb-4">
+                    <div class="col-xl-6 mb-4">
+                        <div class="card shadow h-100">
+                            <div class="card-header py-3">
+                                <h6 class="m-0 font-weight-bold text-primary">Employee Status</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container">
+                                    <div id="statusPieChart"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xl-6 mb-4">
+                        <div class="card shadow h-100">
+                            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                                <h6 class="m-0 font-weight-bold text-primary">Payroll Summary (Last 6 Months)</h6>
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" id="payrollDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                        MWK
+                                    </button>
+                                    <ul class="dropdown-menu" aria-labelledby="payrollDropdown">
+                                        <li><a class="dropdown-item" href="#" data-currency="MWK">MWK</a></li>
+                                        <li><a class="dropdown-item" href="#" data-currency="USD">USD</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container">
+                                    <canvas id="payrollTrendChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions and Recent Activity -->
+                <div class="row">
+                    <!-- Quick Actions -->
+                    <div class="col-lg-4 mb-4">
+                        <div class="card shadow h-100">
+                            <div class="card-header py-3">
+                                <h6 class="m-0 font-weight-bold text-primary">Quick Actions</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-6">
+                                        <a href="/employees/new" class="btn btn-primary quick-action-btn w-100 py-3">
+                                            <i class="fas fa-user-plus fa-2x mb-2"></i>
+                                            <h6 class="mb-0">Add Employee</h6>
+                                        </a>
+                                    </div>
+                                    <div class="col-6">
+                                        <a href="/payroll/process" class="btn btn-success quick-action-btn w-100 py-3">
+                                            <i class="fas fa-calculator fa-2x mb-2"></i>
+                                            <h6 class="mb-0">Process Payroll</h6>
+                                        </a>
+                                    </div>
+                                    <div class="col-6">
+                                        <a href="/departments/new" class="btn btn-info quick-action-btn w-100 py-3">
+                                            <i class="fas fa-building fa-2x mb-2"></i>
+                                            <h6 class="mb-0">Add Department</h6>
+                                        </a>
+                                    </div>
+                                    <div class="col-6">
+                                        <a href="/reports" class="btn btn-warning quick-action-btn w-100 py-3">
+                                            <i class="fas fa-chart-bar fa-2x mb-2"></i>
+                                            <h6 class="mb-0">Generate Report</h6>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Activity -->
+                    <div class="col-lg-8 mb-4">
+                        <div class="card shadow h-100">
+                            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                                <h6 class="m-0 font-weight-bold text-primary">Recent Activity</h6>
+                                <a href="/activity" class="btn btn-sm btn-outline-primary">View All</a>
+                            </div>
+                            <div class="card-body">
+                                <div id="recentActivityList">
+                                    <div class="text-center py-4">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <!-- jQuery -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.0/jquery.min.js"></script>
+    <!-- DataTables -->
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <!-- Axios -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.2/axios.min.js"></script>
+    
+    <script>
+        // Set current date
+        document.getElementById('currentDate').textContent = new Date().toLocaleDateString('en-US', { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+        });
+
+        // Set auth token for all requests
+        const authToken = localStorage.getItem('authToken');
+        axios.defaults.headers.common['Authorization'] = `Bearer ${authToken}`;
+
+        // Show loading spinner
+        function showLoading() {
+            document.getElementById('loadingSpinner').style.display = 'flex';
+        }
+
+        // Hide loading spinner
+        function hideLoading() {
+            document.getElementById('loadingSpinner').style.display = 'none';
+        }
+
+        // Format numbers with commas
+        function formatNumber(num) {
+            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+
+        // Format currency
+        function formatCurrency(amount, currency = 'MWK') {
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: currency,
+                minimumFractionDigits: 2
+            }).format(amount);
+        }
+
+        // Initialize dashboard
+        $(document).ready(function() {
+            showLoading();
+            
+            // Load stats
+            loadDashboardStats();
+            
+            // Load charts
+            loadEmployeeGrowthChart();
+            loadDepartmentDistributionChart();
+            loadStatusPieChart();
+            loadPayrollTrendChart();
+            
+            // Load recent activity
+            loadRecentActivity();
+        });
+
+        // Load dashboard stats
+        function loadDashboardStats() {
+            axios.get('/api/dashboard/stats')
+                .then(response => {
+                    const stats = response.data;
+                    
+                    // Update stat cards
+                    $('#totalEmployees').text(formatNumber(stats.totalEmployees));
+                    $('#activeEmployees').text(formatNumber(stats.activeEmployees));
+                    $('#totalDepartments').text(formatNumber(stats.totalDepartments));
+                    $('#departmentStats').text(`${stats.departmentsWithEmployees} with employees`);
+                    $('#avgTenure').text(`${stats.averageTenure} yrs`);
+                    $('#newHires').text(`${stats.newHiresThisYear} new hires this year`);
+                    
+                    // Update employee trend
+                    const employeeTrend = $('#employeeTrend');
+                    const trendValue = 10; // This should come from your API
+                    if (trendValue > 0) {
+                        employeeTrend.find('i').removeClass().addClass('fas fa-caret-up trend-up');
+                        employeeTrend.find('span').text(`${trendValue}%`);
+                    } else if (trendValue < 0) {
+                        employeeTrend.find('i').removeClass().addClass('fas fa-caret-down trend-down');
+                        employeeTrend.find('span').text(`${Math.abs(trendValue)}%`);
+                    } else {
+                        employeeTrend.find('i').removeClass().addClass('fas fa-equals trend-neutral');
+                        employeeTrend.find('span').text('0%');
+                    }
+                    
+                    // Update active percentage
+                    const activePercentage = Math.round((stats.activeEmployees / stats.totalEmployees) * 100);
+                    $('.badge.bg-success').text(`${activePercentage}% Active`);
+                })
+                .catch(error => {
+                    console.error('Error loading dashboard stats:', error);
+                })
+                .finally(() => {
+                    hideLoading();
+                });
+        }
+
+        // Employee Growth Chart
+        let employeeGrowthChart;
+        function loadEmployeeGrowthChart(range = 12) {
+            axios.get(`/api/dashboard/employee-growth?months=${range}`)
+                .then(response => {
+                    const data = response.data;
+                    
+                    const ctx = document.getElementById('employeeGrowthChart').getContext('2d');
+                    
+                    if (employeeGrowthChart) {
+                        employeeGrowthChart.destroy();
+                    }
+                    
+                    employeeGrowthChart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: data.labels,
+                            datasets: [{
+                                label: 'Total Employees',
+                                data: data.total,
+                                borderColor: '#4e73df',
+                                backgroundColor: 'rgba(78, 115, 223, 0.05)',
+                                borderWidth: 2,
+                                fill: true,
+                                tension: 0.4
+                            }, {
+                                label: 'Active Employees',
+                                data: data.active,
+                                borderColor: '#1cc88a',
+                                backgroundColor: 'rgba(28, 200, 138, 0.05)',
+                                borderWidth: 2,
+                                fill: true,
+                                tension: 0.4
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'top',
+                                },
+                                tooltip: {
+                                    mode: 'index',
+                                    intersect: false,
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        callback: function(value) {
+                                            return formatNumber(value);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading employee growth chart:', error);
+                });
+        }
+
+        // Department Distribution Chart
+        let departmentDistributionChart;
+        function loadDepartmentDistributionChart() {
+            axios.get('/api/dashboard/department-distribution')
+                .then(response => {
+                    const data = response.data;
+                    
+                    const ctx = document.getElementById('departmentDistributionChart').getContext('2d');
+                    
+                    if (departmentDistributionChart) {
+                        departmentDistributionChart.destroy();
+                    }
+                    
+                    departmentDistributionChart = new Chart(ctx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: data.labels,
+                            datasets: [{
+                                data: data.data,
+                                backgroundColor: [
+                                    '#4e73df',
+                                    '#1cc88a',
+                                    '#36b9cc',
+                                    '#f6c23e',
+                                    '#e74a3b',
+                                    '#858796',
+                                    '#5a5c69',
+                                    '#2e59d9',
+                                    '#17a673',
+                                    '#2c9faf'
+                                ],
+                                hoverBackgroundColor: [
+                                    '#2e59d9',
+                                    '#17a673',
+                                    '#2c9faf',
+                                    '#dda20a',
+                                    '#be2617',
+                                    '#656776',
+                                    '#3a3b45',
+                                    '#1c3fbb',
+                                    '#0e8c5f',
+                                    '#1d828f'
+                                ],
+                                hoverBorderColor: "rgba(234, 236, 244, 1)",
+                            }],
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'right',
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            const label = context.label || '';
+                                            const value = context.raw || 0;
+                                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                            const percentage = Math.round((value / total) * 100);
+                                            return `${label}: ${value} (${percentage}%)`;
+                                        }
+                                    }
+                                }
+                            },
+                            cutout: '70%',
+                        },
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading department distribution chart:', error);
+                });
+        }
+
+        // Status Pie Chart (using ApexCharts)
+        function loadStatusPieChart() {
+            axios.get('/api/dashboard/employee-status')
+                .then(response => {
+                    const data = response.data;
+                    
+                    const options = {
+                        series: data.series,
+                        chart: {
+                            type: 'donut',
+                            height: 300,
+                        },
+                        labels: data.labels,
+                        colors: ['#4e73df', '#1cc88a', '#f6c23e', '#e74a3b', '#858796'],
+                        legend: {
+                            position: 'bottom'
+                        },
+                        responsive: [{
+                            breakpoint: 480,
+                            options: {
+                                chart: {
+                                    width: 200
+                                },
+                                legend: {
+                                    position: 'bottom'
+                                }
+                            }
+                        }],
+                        plotOptions: {
+                            pie: {
+                                donut: {
+                                    labels: {
+                                        show: true,
+                                        total: {
+                                            show: true,
+                                            label: 'Total',
+                                            formatter: function (w) {
+                                                return w.globals.seriesTotals.reduce((a, b) => a + b, 0);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        dataLabels: {
+                            enabled: false
+                        },
+                        tooltip: {
+                            y: {
+                                formatter: function(value, { seriesIndex, w }) {
+                                    const total = w.globals.seriesTotals.reduce((a, b) => a + b, 0);
+                                    const percentage = Math.round((value / total) * 100);
+                                    return `${value} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    };
+                    
+                    const chart = new ApexCharts(document.querySelector("#statusPieChart"), options);
+                    chart.render();
+                })
+                .catch(error => {
+                    console.error('Error loading status pie chart:', error);
+                });
+        }
+
+        // Payroll Trend Chart
+        let payrollTrendChart;
+        function loadPayrollTrendChart(currency = 'MWK') {
+            axios.get(`/api/dashboard/payroll-trend?currency=${currency}`)
+                .then(response => {
+                    const data = response.data;
+                    
+                    const ctx = document.getElementById('payrollTrendChart').getContext('2d');
+                    
+                    if (payrollTrendChart) {
+                        payrollTrendChart.destroy();
+                    }
+                    
+                    payrollTrendChart = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: data.labels,
+                            datasets: [{
+                                label: 'Gross Pay',
+                                data: data.grossPay,
+                                backgroundColor: 'rgba(78, 115, 223, 0.8)',
+                                borderColor: 'rgba(78, 115, 223, 1)',
+                                borderWidth: 1
+                            }, {
+                                label: 'Net Pay',
+                                data: data.netPay,
+                                backgroundColor: 'rgba(28, 200, 138, 0.8)',
+                                borderColor: 'rgba(28, 200, 138, 1)',
+                                borderWidth: 1
+                            }, {
+                                label: 'Deductions',
+                                data: data.deductions,
+                                backgroundColor: 'rgba(231, 74, 59, 0.8)',
+                                borderColor: 'rgba(231, 74, 59, 1)',
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'top',
+                                },
+                                tooltip: {
+                                    mode: 'index',
+                                    intersect: false,
+                                    callbacks: {
+                                        label: function(context) {
+                                            let label = context.dataset.label || '';
+                                            if (label) {
+                                                label += ': ';
+                                            }
+                                            if (context.parsed.y !== null) {
+                                                label += formatCurrency(context.parsed.y, currency);
+                                            }
+                                            return label;
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        callback: function(value) {
+                                            return formatCurrency(value, currency);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading payroll trend chart:', error);
+                });
+        }
+
+        // Load recent activity
+        function loadRecentActivity() {
+            axios.get('/api/dashboard/recent-activity')
+                .then(response => {
+                    const activities = response.data;
+                    const activityList = $('#recentActivityList');
+                    
+                    activityList.empty();
+                    
+                    if (activities.length === 0) {
+                        activityList.html('<p class="text-muted text-center py-4">No recent activity found</p>');
+                        return;
+                    }
+                    
+                    activities.forEach(activity => {
+                        const iconClass = getActivityIcon(activity.type);
+                        const bgClass = getActivityBgClass(activity.type);
+                        
+                        const activityItem = $(`
+                            <div class="recent-activity-item border-left-${bgClass}">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <h6 class="mb-0">${activity.title}</h6>
+                                    <small class="text-muted">${new Date(activity.timestamp).toLocaleTimeString()}</small>
+                                </div>
+                                <p class="mb-1 small">${activity.description}</p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted">
+                                        <i class="fas fa-${iconClass} text-${bgClass} me-1"></i>
+                                        ${activity.type}
+                                    </small>
+                                    <small>${new Date(activity.timestamp).toLocaleDateString()}</small>
+                                </div>
+                            </div>
+                        `);
+                        
+                        activityList.append(activityItem);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading recent activity:', error);
+                    $('#recentActivityList').html('<p class="text-danger text-center py-4">Failed to load recent activity</p>');
+                });
+        }
+
+        // Helper function to get activity icon
+        function getActivityIcon(type) {
+            const icons = {
+                'employee': 'user',
+                'payroll': 'money-bill-wave',
+                'department': 'building',
+                'system': 'cog',
+                'login': 'sign-in-alt',
+                'update': 'edit'
+            };
+            return icons[type.toLowerCase()] || 'info-circle';
+        }
+
+        // Helper function to get activity background class
+        function getActivityBgClass(type) {
+            const classes = {
+                'employee': 'primary',
+                'payroll': 'success',
+                'department': 'info',
+                'system': 'warning',
+                'login': 'danger',
+                'update': 'secondary'
+            };
+            return classes[type.toLowerCase()] || 'dark';
+        }
+
+        // Event listeners for dropdowns
+        $(document).on('click', '.dropdown-item[data-range]', function(e) {
+            e.preventDefault();
+            const range = $(this).data('range');
+            $('#growthDropdown').text($(this).text());
+            loadEmployeeGrowthChart(range);
+        });
+
+        $(document).on('click', '.dropdown-item[data-currency]', function(e) {
+            e.preventDefault();
+            const currency = $(this).data('currency');
+            $('#payrollDropdown').text(currency);
+            loadPayrollTrendChart(currency);
+        });
+    </script>
+</body>
+</html>
