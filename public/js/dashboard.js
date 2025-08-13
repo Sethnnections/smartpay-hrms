@@ -93,7 +93,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Fetch summary data
     function fetchSummaryData() {
-        return axios.get('http://localhost:3000/api/dashboard/summary', {
+        return axios.get('/api/dashboard/summary', {
             headers: {
                 'Authorization': `Bearer ${authToken}`,
                 'Content-Type': 'application/json'
@@ -118,7 +118,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Fetch employee data
     function fetchEmployeeData() {
-        return axios.get('http://localhost:3000/api/dashboard/employees', {
+        return axios.get('/api/dashboard/employees', {
             headers: {
                 'Authorization': `Bearer ${authToken}`,
                 'Content-Type': 'application/json'
@@ -145,7 +145,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Fetch payroll data
     function fetchPayrollData() {
-        return axios.get('http://localhost:3000/api/dashboard/payroll', {
+        return axios.get('/api/dashboard/payroll', {
             headers: {
                 'Authorization': `Bearer ${authToken}`,
                 'Content-Type': 'application/json'
@@ -172,7 +172,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Fetch performance data (not used in current implementation)
     function fetchPerformanceData() {
-        return axios.get('http://localhost:3000/api/dashboard/performance', {
+        return axios.get('/api/dashboard/performance', {
             headers: {
                 'Authorization': `Bearer ${authToken}`,
                 'Content-Type': 'application/json'
