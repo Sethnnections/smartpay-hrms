@@ -22,6 +22,174 @@
     <!-- SweetAlert2 -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 
+    <style>
+        /* Enhanced Employee Management Styles */
+        .employee-card {
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .employee-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .employee-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background-color: #f0f2f5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #4a6cf7;
+        }
+        
+        .employee-status-badge {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .status-active {
+            background-color: #e6f7ee;
+            color: #28a745;
+        }
+        
+        .status-inactive {
+            background-color: #fef0f0;
+            color: #dc3545;
+        }
+        
+        .employee-actions .btn {
+            padding: 5px 10px;
+            font-size: 13px;
+            border-radius: 5px;
+        }
+        
+        /* Enhanced Form Styles */
+        .form-section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #4a6cf7;
+            border-bottom: 1px solid #e0e0e0;
+            padding-bottom: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .form-card {
+            border-radius: 10px;
+            border: 1px solid #e0e0e0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+        
+        .form-card .card-header {
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #e0e0e0;
+            padding: 15px 20px;
+        }
+        
+        .form-card .card-body {
+            padding: 25px;
+        }
+        
+        .form-label {
+            font-weight: 500;
+            color: #495057;
+            margin-bottom: 8px;
+        }
+        
+        .form-control,
+        .form-select {
+            border-radius: 6px;
+            padding: 10px 15px;
+            border: 1px solid #ced4da;
+        }
+        
+        .form-control:focus,
+        .form-select:focus {
+            border-color: #4a6cf7;
+            box-shadow: 0 0 0 0.2rem rgba(74, 108, 247, 0.25);
+        }
+        
+        /* Enhanced Table Styles */
+        .table-responsive {
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .table {
+            margin-bottom: 0;
+        }
+        
+        .table thead th {
+            background-color: #f8f9fa;
+            color: #495057;
+            font-weight: 600;
+            border-bottom-width: 1px;
+            padding: 12px 15px;
+        }
+        
+        .table tbody td {
+            padding: 12px 15px;
+            vertical-align: middle;
+        }
+        
+        .table-hover tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+        
+        /* Enhanced Modal Styles */
+        .employee-details-modal .modal-header {
+            border-bottom: 1px solid #e0e0e0;
+            padding: 15px 20px;
+        }
+        
+        .employee-details-modal .modal-body {
+            padding: 20px;
+        }
+        
+        .employee-details-modal .detail-group {
+            margin-bottom: 15px;
+        }
+        
+        .employee-details-modal .detail-label {
+            font-weight: 500;
+            color: #6c757d;
+            margin-bottom: 5px;
+        }
+        
+        .employee-details-modal .detail-value {
+            font-weight: 400;
+            color: #212529;
+        }
+        
+        /* Custom Tabs */
+        .nav-tabs-custom .nav-link {
+            border: none;
+            color: #6c757d;
+            font-weight: 500;
+            padding: 12px 20px;
+            border-radius: 8px 8px 0 0;
+            margin-right: 5px;
+        }
+        
+        .nav-tabs-custom .nav-link.active {
+            color: #4a6cf7;
+            background-color: #f8f9fa;
+            border-bottom: 2px solid #4a6cf7;
+        }
+        
+        .nav-tabs-custom .nav-link:hover:not(.active) {
+            color: #4a6cf7;
+            background-color: rgba(74, 108, 247, 0.05);
+        }
+    </style>
 </head>
 
 <body>
@@ -63,37 +231,47 @@
                             <div class="tab-content" id="employeeTabsContent">
                                 <!-- Employees List Section -->
                                 <div class="tab-pane fade show active" id="employees" role="tabpanel">
-                                    <div class="card mb-4">
+                                    <div class="card form-card mb-4">
                                         <div class="card-header">
                                             <div class="d-flex justify-content-between align-items-center">
-                                                <h5 class="mb-0">Employees</h5>
-                                                <div>
-                                                    <input type="text" class="form-control form-control-sm"
-                                                        id="employee-search" placeholder="Search employees...">
+                                                <h5 class="mb-0">Employee Directory</h5>
+                                                <div class="d-flex">
+                                                    <div class="input-group input-group-sm" style="width: 250px;">
+                                                        <span class="input-group-text bg-white"><i class="fas fa-search"></i></span>
+                                                        <input type="text" class="form-control" id="employee-search" placeholder="Search employees...">
+                                                    </div>
+                                                    <button class="btn btn-sm btn-outline-primary ms-2" id="refresh-btn">
+                                                        <i class="fas fa-sync-alt"></i>
+                                                    </button>
                                                 </div>
                                             </div>
                                         </div>
                                         <div class="card-body">
                                             <div class="table-responsive">
-                                                <table class="table table-hover" id="employees-table">
+                                                <table class="table table-hover align-middle" id="employees-table">
                                                     <thead>
                                                         <tr>
                                                             <th>ID</th>
-                                                            <th>Name</th>
-                                                            <th>Email</th>
+                                                            <th>Employee</th>
+                                                            <th>Contact</th>
                                                             <th>Department</th>
                                                             <th>Position</th>
-                                                            <th>Grade</th>
                                                             <th>Status</th>
                                                             <th>Actions</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody id="employees-table-body">
                                                         <!-- Employees will be loaded here -->
+                                                        <tr>
+                                                            <td colspan="7" class="text-center py-4">
+                                                                <div class="loading-spinner text-primary"></div>
+                                                                <p class="mt-2">Loading employees...</p>
+                                                            </td>
+                                                        </tr>
                                                     </tbody>
                                                 </table>
                                             </div>
-                                            <nav aria-label="Page navigation">
+                                            <nav aria-label="Page navigation" class="mt-3">
                                                 <ul class="pagination justify-content-center" id="employees-pagination">
                                                     <!-- Pagination will be loaded here -->
                                                 </ul>
@@ -104,52 +282,54 @@
 
                                 <!-- Add Employee Section -->
                                 <div class="tab-pane fade" id="add-employee" role="tabpanel">
-                                    <div class="card mb-4">
+                                    <div class="card form-card mb-4">
                                         <div class="card-header">
                                             <h5 class="mb-0">Add New Employee</h5>
                                         </div>
                                         <div class="card-body">
                                             <form id="add-employee-form">
-                                                <!-- Your existing form content remains the same -->
-                                                <div class="row mb-3">
-                                                    <div class="col-md-6">
+                                                <div class="row mb-4">
+                                                    <div class="col-12">
+                                                        <h6 class="form-section-title">
+                                                            <i class="fas fa-user-circle me-2"></i>Basic Information
+                                                        </h6>
+                                                    </div>
+                                                    
+                                                    <div class="col-md-6 mb-3">
                                                         <label for="user-select" class="form-label">Select User</label>
                                                         <select class="form-select" id="user-select" required>
                                                             <option value="" selected disabled>Select a user</option>
                                                             <!-- Users will be loaded here -->
                                                         </select>
                                                     </div>
-                                                    <div class="col-md-6">
+                                                    <div class="col-md-6 mb-3">
                                                         <label for="employee-id" class="form-label">Employee ID</label>
-                                                        <input type="text" class="form-control" id="employee-id"
-                                                            placeholder="Will be auto-generated if empty">
+                                                        <div class="input-group">
+                                                            <input type="text" class="form-control" id="employee-id" placeholder="Will be auto-generated">
+                                                            <button class="btn btn-outline-secondary" type="button" id="generate-id-btn">
+                                                                <i class="fas fa-sync-alt"></i> Generate
+                                                            </button>
+                                                        </div>
                                                     </div>
-                                                </div>
-
-                                                <div class="row mb-3">
-                                                    <div class="col-md-4">
+                                                    
+                                                    <div class="col-md-4 mb-3">
                                                         <label for="first-name" class="form-label">First Name</label>
-                                                        <input type="text" class="form-control" id="first-name"
-                                                            required>
+                                                        <input type="text" class="form-control" id="first-name" required>
                                                     </div>
-                                                    <div class="col-md-4">
+                                                    <div class="col-md-4 mb-3">
                                                         <label for="middle-name" class="form-label">Middle Name</label>
                                                         <input type="text" class="form-control" id="middle-name">
                                                     </div>
-                                                    <div class="col-md-4">
+                                                    <div class="col-md-4 mb-3">
                                                         <label for="last-name" class="form-label">Last Name</label>
                                                         <input type="text" class="form-control" id="last-name" required>
                                                     </div>
-                                                </div>
-
-                                                <div class="row mb-3">
-                                                    <div class="col-md-4">
-                                                        <label for="date-of-birth" class="form-label">Date of
-                                                            Birth</label>
-                                                        <input type="date" class="form-control" id="date-of-birth"
-                                                            required>
+                                                    
+                                                    <div class="col-md-4 mb-3">
+                                                        <label for="date-of-birth" class="form-label">Date of Birth</label>
+                                                        <input type="date" class="form-control" id="date-of-birth" required>
                                                     </div>
-                                                    <div class="col-md-4">
+                                                    <div class="col-md-4 mb-3">
                                                         <label for="gender" class="form-label">Gender</label>
                                                         <select class="form-select" id="gender" required>
                                                             <option value="" selected disabled>Select gender</option>
@@ -159,124 +339,124 @@
                                                             <option value="prefer_not_to_say">Prefer not to say</option>
                                                         </select>
                                                     </div>
-                                                    <div class="col-md-4">
+                                                    <div class="col-md-4 mb-3">
                                                         <label for="nationality" class="form-label">Nationality</label>
-                                                        <input type="text" class="form-control" id="nationality"
-                                                            required>
+                                                        <input type="text" class="form-control" id="nationality" required>
                                                     </div>
                                                 </div>
 
-                                                <!-- Add these to your form in the personal info section -->
-                                                <div class="row mb-3">
-                                                    <div class="col-md-12">
-                                                        <h6>Address Information</h6>
+                                                <!-- Address Information -->
+                                                <div class="row mb-4">
+                                                    <div class="col-12">
+                                                        <h6 class="form-section-title">
+                                                            <i class="fas fa-home me-2"></i>Address Information
+                                                        </h6>
                                                     </div>
-                                                </div>
-                                                <div class="row mb-3">
-                                                    <div class="col-md-6">
-                                                        <label for="street-address" class="form-label">Street
-                                                            Address</label>
-                                                        <input type="text" class="form-control" id="street-address"
-                                                            required>
+                                                    
+                                                    <div class="col-md-6 mb-3">
+                                                        <label for="street-address" class="form-label">Street Address</label>
+                                                        <input type="text" class="form-control" id="street-address" required>
                                                     </div>
-                                                    <div class="col-md-6">
+                                                    <div class="col-md-6 mb-3">
                                                         <label for="city" class="form-label">City</label>
                                                         <input type="text" class="form-control" id="city" required>
                                                     </div>
-                                                </div>
-                                                <div class="row mb-3">
-                                                    <div class="col-md-4">
-                                                        <label for="state" class="form-label">State</label>
+                                                    
+                                                    <div class="col-md-4 mb-3">
+                                                        <label for="state" class="form-label">State/Province</label>
                                                         <input type="text" class="form-control" id="state" required>
                                                     </div>
-                                                    <div class="col-md-4">
-                                                        <label for="zip-code" class="form-label">Zip Code</label>
+                                                    <div class="col-md-4 mb-3">
+                                                        <label for="zip-code" class="form-label">Zip/Postal Code</label>
                                                         <input type="text" class="form-control" id="zip-code" required>
                                                     </div>
-                                                    <div class="col-md-4">
+                                                    <div class="col-md-4 mb-3">
                                                         <label for="country" class="form-label">Country</label>
-                                                        <input type="text" class="form-control" id="country"
-                                                            value="United States" required>
+                                                        <input type="text" class="form-control" id="country" value="United States" required>
                                                     </div>
                                                 </div>
 
-                                                <!-- Add these to your form for emergency contact -->
-                                                <div class="row mb-3">
-                                                    <div class="col-md-12">
-                                                        <h6>Emergency Contact Information</h6>
+                                                <!-- Contact Information -->
+                                                <div class="row mb-4">
+                                                    <div class="col-12">
+                                                        <h6 class="form-section-title">
+                                                            <i class="fas fa-phone-alt me-2"></i>Contact Information
+                                                        </h6>
                                                     </div>
-                                                </div>
-                                                <div class="row mb-3">
-                                                    <div class="col-md-4">
-                                                        <label for="emergency-contact-name" class="form-label">Full
-                                                            Name</label>
-                                                        <input type="text" class="form-control"
-                                                            id="emergency-contact-name" required>
-                                                    </div>
-                                                    <div class="col-md-4">
-                                                        <label for="emergency-contact-relationship"
-                                                            class="form-label">Relationship</label>
-                                                        <input type="text" class="form-control"
-                                                            id="emergency-contact-relationship" required>
-                                                    </div>
-                                                    <div class="col-md-4">
-                                                        <label for="emergency-contact-phone" class="form-label">Phone
-                                                            Number</label>
-                                                        <input type="tel" class="form-control"
-                                                            id="emergency-contact-phone" required>
-                                                    </div>
-                                                </div>
-
-                                                <div class="row mb-3">
-                                                    <div class="col-md-6">
+                                                    
+                                                    <div class="col-md-6 mb-3">
                                                         <label for="email" class="form-label">Email</label>
                                                         <input type="email" class="form-control" id="email" required>
                                                     </div>
-                                                    <div class="col-md-6">
-                                                        <label for="phone-number" class="form-label">Phone
-                                                            Number</label>
-                                                        <input type="tel" class="form-control" id="phone-number"
-                                                            required>
+                                                    <div class="col-md-6 mb-3">
+                                                        <label for="phone-number" class="form-label">Phone Number</label>
+                                                        <input type="tel" class="form-control" id="phone-number" required>
                                                     </div>
                                                 </div>
 
-                                                <div class="row mb-3">
-                                                    <div class="col-md-4">
+                                                <!-- Emergency Contact -->
+                                                <div class="row mb-4">
+                                                    <div class="col-12">
+                                                        <h6 class="form-section-title">
+                                                            <i class="fas fa-exclamation-triangle me-2"></i>Emergency Contact
+                                                        </h6>
+                                                    </div>
+                                                    
+                                                    <div class="col-md-4 mb-3">
+                                                        <label for="emergency-contact-name" class="form-label">Full Name</label>
+                                                        <input type="text" class="form-control" id="emergency-contact-name" required>
+                                                    </div>
+                                                    <div class="col-md-4 mb-3">
+                                                        <label for="emergency-contact-relationship" class="form-label">Relationship</label>
+                                                        <input type="text" class="form-control" id="emergency-contact-relationship" required>
+                                                    </div>
+                                                    <div class="col-md-4 mb-3">
+                                                        <label for="emergency-contact-phone" class="form-label">Phone Number</label>
+                                                        <input type="tel" class="form-control" id="emergency-contact-phone" required>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Employment Information -->
+                                                <div class="row mb-4">
+                                                    <div class="col-12">
+                                                        <h6 class="form-section-title">
+                                                            <i class="fas fa-briefcase me-2"></i>Employment Information
+                                                        </h6>
+                                                    </div>
+                                                    
+                                                    <div class="col-md-4 mb-3">
                                                         <label for="department" class="form-label">Department</label>
                                                         <select class="form-select" id="department" required>
-                                                            <option value="" selected disabled>Select department
-                                                            </option>
+                                                            <option value="" selected disabled>Select department</option>
                                                             <!-- Departments will be loaded here -->
                                                         </select>
                                                     </div>
-                                                    <div class="col-md-4">
+                                                    <div class="col-md-4 mb-3">
                                                         <label for="position" class="form-label">Position</label>
                                                         <select class="form-select" id="position" required>
                                                             <option value="" selected disabled>Select position</option>
                                                             <!-- Positions will be loaded here -->
                                                         </select>
                                                     </div>
-                                                    <div class="col-md-4">
+                                                    <div class="col-md-4 mb-3">
                                                         <label for="grade" class="form-label">Grade</label>
                                                         <select class="form-select" id="grade" required>
                                                             <option value="" selected disabled>Select grade</option>
                                                             <!-- Grades will be loaded here -->
                                                         </select>
                                                     </div>
-                                                </div>
-
-                                                <div class="row mb-3">
-                                                    <div class="col-md-6">
+                                                    
+                                                    <div class="col-md-6 mb-3">
                                                         <label for="salary" class="form-label">Salary</label>
-                                                        <input type="number" class="form-control" id="salary" min="0"
-                                                            step="0.01" required>
+                                                        <div class="input-group">
+                                                            <span class="input-group-text">$</span>
+                                                            <input type="number" class="form-control" id="salary" min="0" step="0.01" required>
+                                                        </div>
                                                     </div>
-                                                    <div class="col-md-6">
-                                                        <label for="employment-type" class="form-label">Employment
-                                                            Type</label>
+                                                    <div class="col-md-6 mb-3">
+                                                        <label for="employment-type" class="form-label">Employment Type</label>
                                                         <select class="form-select" id="employment-type" required>
-                                                            <option value="" selected disabled>Select employment type
-                                                            </option>
+                                                            <option value="" selected disabled>Select employment type</option>
                                                             <option value="full-time">Full-time</option>
                                                             <option value="part-time">Part-time</option>
                                                             <option value="contract">Contract</option>
@@ -284,67 +464,62 @@
                                                             <option value="intern">Intern</option>
                                                         </select>
                                                     </div>
-                                                </div>
-                                                <!-- Bank Information Section -->
-                                                <div class="row mb-3">
-                                                    <div class="col-md-12">
-                                                        <h6>Bank Information</h6>
+                                                    
+                                                    <div class="col-md-6 mb-3">
+                                                        <label for="start-date" class="form-label">Start Date</label>
+                                                        <input type="date" class="form-control" id="start-date" required>
+                                                    </div>
+                                                    <div class="col-md-6 mb-3">
+                                                        <label for="probation-period" class="form-label">Probation Period</label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="probation-period" min="1" value="3">
+                                                            <span class="input-group-text">months</span>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                                <div class="row mb-3">
-                                                    <div class="col-md-4">
+
+                                                <!-- Bank Information -->
+                                                <div class="row mb-4">
+                                                    <div class="col-12">
+                                                        <h6 class="form-section-title">
+                                                            <i class="fas fa-university me-2"></i>Bank Information
+                                                        </h6>
+                                                    </div>
+                                                    
+                                                    <div class="col-md-4 mb-3">
                                                         <label for="bank-name" class="form-label">Bank Name</label>
                                                         <input type="text" class="form-control" id="bank-name" required>
                                                     </div>
-                                                    <div class="col-md-4">
-                                                        <label for="account-name" class="form-label">Account
-                                                            Name</label>
-                                                        <input type="text" class="form-control" id="account-name"
-                                                            required>
+                                                    <div class="col-md-4 mb-3">
+                                                        <label for="account-name" class="form-label">Account Name</label>
+                                                        <input type="text" class="form-control" id="account-name" required>
                                                     </div>
-                                                    <div class="col-md-4">
-                                                        <label for="account-number" class="form-label">Account
-                                                            Number</label>
-                                                        <input type="text" class="form-control" id="account-number"
-                                                            required>
+                                                    <div class="col-md-4 mb-3">
+                                                        <label for="account-number" class="form-label">Account Number</label>
+                                                        <input type="text" class="form-control" id="account-number" required>
                                                     </div>
-                                                </div>
-                                                <div class="row mb-3">
-                                                    <div class="col-md-4">
-                                                        <label for="routing-number" class="form-label">Routing
-                                                            Number</label>
+                                                    
+                                                    <div class="col-md-4 mb-3">
+                                                        <label for="routing-number" class="form-label">Routing Number</label>
                                                         <input type="text" class="form-control" id="routing-number">
                                                     </div>
-                                                    <div class="col-md-4">
+                                                    <div class="col-md-4 mb-3">
                                                         <label for="bank-code" class="form-label">Bank Code</label>
                                                         <input type="text" class="form-control" id="bank-code">
                                                     </div>
-                                                    <div class="col-md-4">
+                                                    <div class="col-md-4 mb-3">
                                                         <label for="iban" class="form-label">IBAN</label>
                                                         <input type="text" class="form-control" id="iban">
                                                     </div>
                                                 </div>
 
-                                                <div class="row mb-3">
-                                                    <div class="col-md-6">
-                                                        <label for="start-date" class="form-label">Start Date</label>
-                                                        <input type="date" class="form-control" id="start-date"
-                                                            required>
-                                                    </div>
-                                                    <div class="col-md-6">
-                                                        <label for="probation-period" class="form-label">Probation
-                                                            Period (months)</label>
-                                                        <input type="number" class="form-control" id="probation-period"
-                                                            min="1" value="3">
-                                                    </div>
-                                                </div>
-                                                <div class="text-end">
-                                                    <button type="button" class="btn btn-secondary me-2"
-                                                        id="cancel-add-employee">Cancel</button>
-                                                    <button type="submit" class="btn btn-primary" id="submit-employee">
+                                                <div class="d-flex justify-content-end border-top pt-4">
+                                                    <button type="button" class="btn btn-outline-secondary me-3 px-4" id="cancel-add-employee">
+                                                        Cancel
+                                                    </button>
+                                                    <button type="submit" class="btn btn-primary px-4" id="submit-employee">
                                                         <span id="submit-employee-text">Add Employee</span>
-                                                        <span class="loading-spinner d-none"
-                                                            id="submit-employee-spinner"></span>
+                                                        <span class="spinner-border spinner-border-sm d-none" id="submit-employee-spinner"></span>
                                                     </button>
                                                 </div>
                                             </form>
@@ -353,31 +528,122 @@
                                 </div>
                             </div>
                         </div>
-
                     </div>
                 </main>
 
-                <div class="modal fade" id="employeeDetailsModal" tabindex="-1" aria-hidden="true">
+                <!-- Employee Details Modal -->
+                <div class="modal fade employee-details-modal" id="employeeDetailsModal" tabindex="-1" aria-hidden="true">
                     <div class="modal-dialog modal-lg">
                         <div class="modal-content">
                             <div class="modal-header">
                                 <h5 class="modal-title" id="employeeDetailsModalTitle">Employee Details</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                    aria-label="Close"></button>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                             </div>
                             <div class="modal-body" id="employeeDetailsModalBody">
-                                <!-- Employee details will be loaded here -->
+                                <div class="row">
+                                    <div class="col-md-4 text-center mb-4">
+                                        <div class="employee-avatar mx-auto mb-3" id="employee-avatar">
+                                            JD
+                                        </div>
+                                        <h5 id="employee-full-name">John Doe</h5>
+                                        <div class="badge bg-primary" id="employee-position">Software Engineer</div>
+                                    </div>
+                                    
+                                    <div class="col-md-8">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="detail-group">
+                                                    <div class="detail-label">Employee ID</div>
+                                                    <div class="detail-value" id="employee-id-detail">EMP-001</div>
+                                                </div>
+                                                
+                                                <div class="detail-group">
+                                                    <div class="detail-label">Department</div>
+                                                    <div class="detail-value" id="employee-department">Engineering</div>
+                                                </div>
+                                                
+                                                <div class="detail-group">
+                                                    <div class="detail-label">Grade</div>
+                                                    <div class="detail-value" id="employee-grade">Senior</div>
+                                                </div>
+                                                
+                                                <div class="detail-group">
+                                                    <div class="detail-label">Salary</div>
+                                                    <div class="detail-value" id="employee-salary">$85,000.00</div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="col-md-6">
+                                                <div class="detail-group">
+                                                    <div class="detail-label">Email</div>
+                                                    <div class="detail-value" id="employee-email">john.doe@example.com</div>
+                                                </div>
+                                                
+                                                <div class="detail-group">
+                                                    <div class="detail-label">Phone</div>
+                                                    <div class="detail-value" id="employee-phone">(555) 123-4567</div>
+                                                </div>
+                                                
+                                                <div class="detail-group">
+                                                    <div class="detail-label">Status</div>
+                                                    <div class="detail-value">
+                                                        <span class="badge bg-success" id="employee-status">Active</span>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="detail-group">
+                                                    <div class="detail-label">Start Date</div>
+                                                    <div class="detail-value" id="employee-start-date">Jan 15, 2020</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="mt-4">
+                                            <h6 class="form-section-title mb-3">Additional Information</h6>
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="detail-group">
+                                                        <div class="detail-label">Date of Birth</div>
+                                                        <div class="detail-value" id="employee-dob">May 10, 1985</div>
+                                                    </div>
+                                                    
+                                                    <div class="detail-group">
+                                                        <div class="detail-label">Gender</div>
+                                                        <div class="detail-value" id="employee-gender">Male</div>
+                                                    </div>
+                                                    
+                                                    <div class="detail-group">
+                                                        <div class="detail-label">Nationality</div>
+                                                        <div class="detail-value" id="employee-nationality">American</div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="col-md-6">
+                                                    <div class="detail-group">
+                                                        <div class="detail-label">Bank Name</div>
+                                                        <div class="detail-value" id="employee-bank-name">Chase Bank</div>
+                                                    </div>
+                                                    
+                                                    <div class="detail-group">
+                                                        <div class="detail-label">Account Number</div>
+                                                        <div class="detail-value" id="employee-account-number">******7890</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                <button type="button" class="btn btn-primary">Edit Employee</button>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Bootstrap JS -->
-                <script
-                    src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
                 <!-- Org Chart JS -->
                 <script src="https://cdnjs.cloudflare.com/ajax/libs/orgchart/3.8.1/js/jquery.orgchart.min.js"></script>
 
@@ -475,6 +741,11 @@
                             e.preventDefault();
                             addEmployee();
                         });
+
+                        // Generate employee ID button
+                        $('#generate-id-btn').click(function() {
+                            $('#employee-id').val(generateEmployeeId());
+                        });
                     });
 
                     // Function to show employees section
@@ -518,31 +789,45 @@
                         tableBody.empty();
 
                         if (employees.length === 0) {
-                            tableBody.append('<tr><td colspan="8" class="text-center">No employees found</td></tr>');
+                            tableBody.append('<tr><td colspan="7" class="text-center py-4">No employees found</td></tr>');
                             return;
                         }
 
                         employees.forEach(employee => {
+                            const firstName = employee.personalInfo.firstName || '';
+                            const lastName = employee.personalInfo.lastName || '';
+                            const initials = (firstName.charAt(0) + lastName.charAt(0)).toUpperCase();
+                            
                             const row = `
-                    <tr>
-                        <td>${employee.employeeId}</td>
-                        <td>${employee.personalInfo.firstName} ${employee.personalInfo.lastName}</td>
-                        <td>${employee.personalInfo.email}</td>
-                        <td>${employee.employmentInfo.departmentId?.name || 'N/A'}</td>
-                        <td>${employee.employmentInfo.positionId?.name || 'N/A'}</td>
-                        <td>${employee.employmentInfo.gradeId?.name || 'N/A'}</td>
-                        <td>
-                            <span class="badge ${employee.employmentInfo.status === 'active' ? 'bg-success' : 'bg-secondary'}">
-                                ${employee.employmentInfo.status}
-                            </span>
-                        </td>
-                        <td>
-                            <button class="btn btn-sm btn-info view-employee" data-id="${employee._id}">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                        </td>
-                    </tr>
-                `;
+                                <tr>
+                                    <td>${employee.employeeId || 'N/A'}</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="employee-avatar me-3">${initials}</div>
+                                            <div>
+                                                <div class="fw-semibold">${firstName} ${lastName}</div>
+                                                <div class="text-muted small">${employee.employmentInfo.positionId?.name || 'N/A'}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="text-muted">${employee.personalInfo.email || 'N/A'}</div>
+                                        <div class="small">${employee.personalInfo.phoneNumber || 'N/A'}</div>
+                                    </td>
+                                    <td>${employee.employmentInfo.departmentId?.name || 'N/A'}</td>
+                                    <td>${employee.employmentInfo.positionId?.name || 'N/A'}</td>
+                                    <td>
+                                        <span class="employee-status-badge ${employee.employmentInfo.status === 'active' ? 'status-active' : 'status-inactive'}">
+                                            ${employee.employmentInfo.status || 'N/A'}
+                                        </span>
+                                    </td>
+                                    <td class="employee-actions">
+                                        <button class="btn btn-sm btn-outline-primary view-employee" data-id="${employee._id}">
+                                            <i class="fas fa-eye me-1"></i> View
+                                        </button>
+                                    </td>
+                                </tr>
+                            `;
                             tableBody.append(row);
                         });
 
@@ -563,30 +848,46 @@
 
                         // Previous button
                         pagination.append(`
-                <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
-                    <a class="page-link" href="#" ${currentPage === 1 ? 'tabindex="-1" aria-disabled="true"' : ''}>
-                        Previous
-                    </a>
-                </li>
-            `);
+                            <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                                <a class="page-link" href="#" ${currentPage === 1 ? 'tabindex="-1" aria-disabled="true"' : ''}>
+                                    <i class="fas fa-chevron-left"></i>
+                                </a>
+                            </li>
+                        `);
 
                         // Page numbers
-                        for (let i = 1; i <= totalPages; i++) {
+                        const maxVisiblePages = 5;
+                        let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+                        let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+                        if (endPage - startPage + 1 < maxVisiblePages) {
+                            startPage = Math.max(1, endPage - maxVisiblePages + 1);
+                        }
+
+                        if (startPage > 1) {
+                            pagination.append('<li class="page-item disabled"><a class="page-link" href="#">...</a></li>');
+                        }
+
+                        for (let i = startPage; i <= endPage; i++) {
                             pagination.append(`
-                    <li class="page-item ${i === currentPage ? 'active' : ''}">
-                        <a class="page-link" href="#">${i}</a>
-                    </li>
-                `);
+                                <li class="page-item ${i === currentPage ? 'active' : ''}">
+                                    <a class="page-link" href="#">${i}</a>
+                                </li>
+                            `);
+                        }
+
+                        if (endPage < totalPages) {
+                            pagination.append('<li class="page-item disabled"><a class="page-link" href="#">...</a></li>');
                         }
 
                         // Next button
                         pagination.append(`
-                <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
-                    <a class="page-link" href="#" ${currentPage === totalPages ? 'tabindex="-1" aria-disabled="true"' : ''}>
-                        Next
-                    </a>
-                </li>
-            `);
+                            <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+                                <a class="page-link" href="#" ${currentPage === totalPages ? 'tabindex="-1" aria-disabled="true"' : ''}>
+                                    <i class="fas fa-chevron-right"></i>
+                                </a>
+                            </li>
+                        `);
 
                         // Add event listeners to pagination links
                         $('.page-link').click(function (e) {
@@ -594,11 +895,11 @@
                             const text = $(this).text().toLowerCase();
                             let newPage = currentPage;
 
-                            if (text === 'previous') {
+                            if ($(this).find('.fa-chevron-left').length) {
                                 newPage = Math.max(1, currentPage - 1);
-                            } else if (text === 'next') {
+                            } else if ($(this).find('.fa-chevron-right').length) {
                                 newPage = Math.min(totalPages, currentPage + 1);
-                            } else {
+                            } else if (!isNaN(parseInt(text))) {
                                 newPage = parseInt(text);
                             }
 
@@ -630,42 +931,105 @@
                         const modalBody = $('#employeeDetailsModalBody');
                         modalBody.empty();
 
+                        const firstName = employee.personalInfo.firstName || '';
+                        const lastName = employee.personalInfo.lastName || '';
+                        const initials = (firstName.charAt(0) + lastName.charAt(0)).toUpperCase();
+                        
                         const details = `
-                <div class="row">
-                    <div class="col-md-4">
-                        <div class="mb-3">
-                            <h6>Personal Information</h6>
-                            <p><strong>Name:</strong> ${employee.personalInfo.firstName} ${employee.personalInfo.middleName || ''} ${employee.personalInfo.lastName}</p>
-                            <p><strong>Date of Birth:</strong> ${new Date(employee.personalInfo.dateOfBirth).toLocaleDateString()}</p>
-                            <p><strong>Gender:</strong> ${employee.personalInfo.gender}</p>
-                            <p><strong>Nationality:</strong> ${employee.personalInfo.nationality}</p>
-                            <p><strong>ID Number:</strong> ${employee.personalInfo.idNumber}</p>
-                            <p><strong>Email:</strong> ${employee.personalInfo.email}</p>
-                            <p><strong>Phone:</strong> ${employee.personalInfo.phoneNumber}</p>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="mb-3">
-                            <h6>Employment Information</h6>
-                            <p><strong>Employee ID:</strong> ${employee.employeeId}</p>
-                            <p><strong>Department:</strong> ${employee.department?.name || 'N/A'}</p>
-                            <p><strong>Position:</strong> ${employee.position?.name || 'N/A'}</p>
-                            <p><strong>Grade:</strong> ${employee.grade?.name || 'N/A'}</p>
-                            <p><strong>Salary:</strong> $${employee.employmentInfo.currentSalary.toLocaleString()}</p>
-                            <p><strong>Start Date:</strong> ${new Date(employee.employmentInfo.startDate).toLocaleDateString()}</p>
-                            <p><strong>Status:</strong> ${employee.employmentInfo.status}</p>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="mb-3">
-                            <h6>Bank Information</h6>
-                            <p><strong>Bank Name:</strong> ${employee.bankInfo.bankName}</p>
-                            <p><strong>Account Name:</strong> ${employee.bankInfo.accountName}</p>
-                            <p><strong>Account Number:</strong> ${employee.bankInfo.accountNumber}</p>
-                        </div>
-                    </div>
-                </div>
-            `;
+                            <div class="row">
+                                <div class="col-md-4 text-center mb-4">
+                                    <div class="employee-avatar mx-auto mb-3">${initials}</div>
+                                    <h5>${firstName} ${lastName}</h5>
+                                    <div class="badge bg-primary">${employee.employmentInfo.positionId?.name || 'N/A'}</div>
+                                </div>
+                                
+                                <div class="col-md-8">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="detail-group">
+                                                <div class="detail-label">Employee ID</div>
+                                                <div class="detail-value">${employee.employeeId || 'N/A'}</div>
+                                            </div>
+                                            
+                                            <div class="detail-group">
+                                                <div class="detail-label">Department</div>
+                                                <div class="detail-value">${employee.employmentInfo.departmentId?.name || 'N/A'}</div>
+                                            </div>
+                                            
+                                            <div class="detail-group">
+                                                <div class="detail-label">Grade</div>
+                                                <div class="detail-value">${employee.employmentInfo.gradeId?.name || 'N/A'}</div>
+                                            </div>
+                                            
+                                            <div class="detail-group">
+                                                <div class="detail-label">Salary</div>
+                                                <div class="detail-value">$${(employee.employmentInfo.currentSalary || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="col-md-6">
+                                            <div class="detail-group">
+                                                <div class="detail-label">Email</div>
+                                                <div class="detail-value">${employee.personalInfo.email || 'N/A'}</div>
+                                            </div>
+                                            
+                                            <div class="detail-group">
+                                                <div class="detail-label">Phone</div>
+                                                <div class="detail-value">${employee.personalInfo.phoneNumber || 'N/A'}</div>
+                                            </div>
+                                            
+                                            <div class="detail-group">
+                                                <div class="detail-label">Status</div>
+                                                <div class="detail-value">
+                                                    <span class="badge ${employee.employmentInfo.status === 'active' ? 'bg-success' : 'bg-secondary'}">
+                                                        ${employee.employmentInfo.status || 'N/A'}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="detail-group">
+                                                <div class="detail-label">Start Date</div>
+                                                <div class="detail-value">${employee.employmentInfo.startDate ? new Date(employee.employmentInfo.startDate).toLocaleDateString() : 'N/A'}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mt-4">
+                                        <h6 class="form-section-title mb-3">Additional Information</h6>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="detail-group">
+                                                    <div class="detail-label">Date of Birth</div>
+                                                    <div class="detail-value">${employee.personalInfo.dateOfBirth ? new Date(employee.personalInfo.dateOfBirth).toLocaleDateString() : 'N/A'}</div>
+                                                </div>
+                                                
+                                                <div class="detail-group">
+                                                    <div class="detail-label">Gender</div>
+                                                    <div class="detail-value">${employee.personalInfo.gender || 'N/A'}</div>
+                                                </div>
+                                                
+                                                <div class="detail-group">
+                                                    <div class="detail-label">Nationality</div>
+                                                    <div class="detail-value">${employee.personalInfo.nationality || 'N/A'}</div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="col-md-6">
+                                                <div class="detail-group">
+                                                    <div class="detail-label">Bank Name</div>
+                                                    <div class="detail-value">${employee.bankInfo?.bankName || 'N/A'}</div>
+                                                </div>
+                                                
+                                                <div class="detail-group">
+                                                    <div class="detail-label">Account Number</div>
+                                                    <div class="detail-value">${employee.bankInfo?.accountNumber ? '••••••' + employee.bankInfo.accountNumber.slice(-4) : 'N/A'}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
 
                         modalBody.append(details);
                     }
@@ -762,7 +1126,7 @@
                         dropdown.append('<option value="" selected disabled>Select grade</option>');
 
                         grades.forEach(grade => {
-                            dropdown.append(`<option value="${grade._id}">${grade.name} ($${grade.salaryRange.minimum} - $${grade.salaryRange.maximum})</option>`);
+                            dropdown.append(`<option value="${grade._id}">${grade.name} (MWK${grade.salaryRange.minimum} - MWK${grade.salaryRange.maximum})</option>`);
                         });
                     }
 
@@ -823,7 +1187,6 @@
                         });
                     }
 
-                    // Function to add a new employee
                     // Function to add a new employee
                     function addEmployee() {
                         const submitBtn = $('#submit-employee');
@@ -956,7 +1319,11 @@
                                     icon: 'success',
                                     title: 'Success',
                                     text: 'Employee created successfully!',
-                                    confirmButtonText: 'OK'
+                                    confirmButtonText: 'OK',
+                                    customClass: {
+                                        confirmButton: 'btn btn-primary'
+                                    },
+                                    buttonsStyling: false
                                 }).then(() => {
                                     // Return to employees list
                                     showEmployeesSection();
@@ -976,7 +1343,11 @@
                                     icon: 'error',
                                     title: 'Error',
                                     text: errorMessage,
-                                    confirmButtonText: 'OK'
+                                    confirmButtonText: 'OK',
+                                    customClass: {
+                                        confirmButton: 'btn btn-primary'
+                                    },
+                                    buttonsStyling: false
                                 });
                             })
                             .finally(() => {
@@ -1007,27 +1378,35 @@
                             icon: 'error',
                             title: 'Validation Error',
                             text: message,
-                            confirmButtonText: 'OK'
+                            confirmButtonText: 'OK',
+                            customClass: {
+                                confirmButton: 'btn btn-primary'
+                            },
+                            buttonsStyling: false
                         });
                     }
                     // Helper function to show loading state
                     function showLoading(selector, message) {
                         $(selector).html(`
-                <div class="text-center py-4">
-                    <div class="loading-spinner text-primary"></div>
-                    <p class="mt-2">${message}</p>
-                </div>
-            `);
+                            <tr>
+                                <td colspan="7" class="text-center py-4">
+                                    <div class="loading-spinner text-primary"></div>
+                                    <p class="mt-2">${message}</p>
+                                </td>
+                            </tr>
+                        `);
                     }
 
                     // Helper function to show error state
                     function showError(selector, message) {
                         $(selector).html(`
-                <div class="text-center py-4 text-danger">
-                    <i class="fas fa-exclamation-circle fa-2x"></i>
-                    <p class="mt-2">${message}</p>
-                </div>
-            `);
+                            <tr>
+                                <td colspan="7" class="text-center py-4 text-danger">
+                                    <i class="fas fa-exclamation-circle fa-2x"></i>
+                                    <p class="mt-2">${message}</p>
+                                </td>
+                            </tr>
+                        `);
                     }
 
                     // Helper function to show SweetAlert error
@@ -1036,7 +1415,11 @@
                             icon: 'error',
                             title: 'Error',
                             text: message,
-                            confirmButtonText: 'OK'
+                            confirmButtonText: 'OK',
+                            customClass: {
+                                confirmButton: 'btn btn-primary'
+                            },
+                            buttonsStyling: false
                         });
                     }
                 </script>
