@@ -98,6 +98,7 @@ app.use('/api/grades', require('./routes/api/gradeRoutes'));
 app.use('/api/positions', require('./routes/api/positionRoutes'));
 app.use('/api/employees', require('./routes/api/employeeRoutes'));
 app.use('/api/payroll', require('./routes/api/payrollRoutes'));
+app.use('/api/dashboard', require('./routes/api/dashboardRoutes'));
 
 // Health check endpoint
 app.get('/health', (req, res) => {

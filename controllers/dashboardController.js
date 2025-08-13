@@ -90,7 +90,7 @@ class DashboardController {
       const payrollStats = await Payroll.getSummary(currentMonth);
       
       // Recent payroll trends
-      const payrollTrends = await this.getPayrollTrends(periodNum, type);
+      const payrollTrends = await DashboardController.getPayrollTrends(periodNum, type);
       
       res.json({
         success: true,
