@@ -13,11 +13,17 @@ const COMPANY_ADDRESS = process.env.COMPANY_ADDRESS || 'Umoyo Building, Blantyre
 const COMPANY_LOGO = process.env.COMPANY_LOGO_PATH || path.join(process.cwd(), 'public', 'logo.png');
 const BANK_NAME = process.env.BANK_NAME || 'National Bank of Malawi';
 const COMPANY_ACCOUNT = process.env.COMPANY_ACCOUNT || '123456789';
-const PAYSLIP_DIR = process.env.PAYSLIP_DIR || path.join(process.cwd(), 'storage', 'payslips');
+const PAYSLIP_DIR = process.env.PAYSLIP_DIR || path.join('/tmp', 'payslips');
+
 
 // Ensure directory exists
-if (!fs.existsSync(PAYSLIP_DIR)) {
-  fs.mkdirSync(PAYSLIP_DIR, { recursive: true });
+try {
+  if (!fs.existsSync(PAYSLIP_DIR)) {
+    fs.mkdirSync(PAYSLIP_DIR, { recursive: true });
+  }
+} catch (err) {
+  console.error('Failed to create payslip directory:', err);
+  // Fallback to in-memory storage or other solution
 }
 
 // Color scheme
