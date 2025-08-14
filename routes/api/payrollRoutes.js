@@ -129,20 +129,13 @@ router.post('/bank-instruction', authenticateToken, async (req, res) => {
 
 
 // Download/View payslip - Updated route
+// Download/View payslip - Updated route
 router.get('/:id/payslip', flexibleAuth, async (req, res) => {
   try {
     const { id } = req.params;
     const { view, download } = req.query;
     
-    const payroll = await Payroll.findById(id)
-      .populate({
-        path: 'employeeId',
-        populate: [
-          { path: 'employmentInfo.departmentId', select: 'name' },
-          { path: 'employmentInfo.positionId', select: 'title' },
-          { path: 'employmentInfo.gradeId', select: 'name level' }
-        ]
-      });
+    const payroll = await payrollController.getPayrollDetails(id);
     
     if (!payroll) {
       return res.status(404).json({ error: 'Payroll not found' });
@@ -150,7 +143,6 @@ router.get('/:id/payslip', flexibleAuth, async (req, res) => {
 
     // Check permissions - employees can only access their own payslips
     if (req.user.role === 'employee') {
-      // You'll need to populate the userId field or have a way to link user to employee
       if (payroll.employeeId.userId && payroll.employeeId.userId.toString() !== req.user.id) {
         return res.status(403).json({ error: 'Access denied' });
       }
@@ -166,14 +158,17 @@ router.get('/:id/payslip', flexibleAuth, async (req, res) => {
       res.setHeader('Content-type', 'application/pdf');
       
       // Stream the PDF
-      await payrollController.generatePayslipPDF(res, payroll);
+      await payrollController.generatePayslipPDF(payroll, { 
+        res, 
+        disposition: download ? 'attachment' : 'inline' 
+      });
     } else {
       // Return payslip metadata
       res.json({
         success: true,
         payslip: payroll.payslip,
         employee: {
-          name: `${payroll.employeeId.personalInfo?.firstName} ${payroll.employeeId.personalInfo?.lastName}`,
+          name: payroll.employeeId.fullName,
           id: payroll.employeeId.employeeId
         },
         month: payroll.payrollMonth,
