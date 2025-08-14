@@ -23,7 +23,6 @@ try {
   }
 } catch (err) {
   console.error('Failed to create payslip directory:', err);
-  // Fallback to in-memory storage or other solution
 }
 
 // Color scheme
