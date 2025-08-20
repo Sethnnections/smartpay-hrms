@@ -214,38 +214,47 @@ payrollSchema.virtual('approvalStatus').get(function() {
   return 'pending';
 });
 
-// Static method: Calculate progressive tax
+// Static method: Calculate progressive tax according to Malawi tax brackets
 payrollSchema.statics.calculateProgressiveTax = function(grossPay) {
   let tax = 0;
+  let remainingIncome = grossPay;
   let effectiveRate = 0;
-  
-  if (grossPay <= 150000) {
-    // 0% tax bracket
+
+  // Tax bracket 1: 0 - 150,000 (0%)
+  if (remainingIncome <= 150000) {
     tax = 0;
-    effectiveRate = 0;
-  } else if (grossPay <= 500000) {
-    // 25% tax bracket for amount above 150,000
-    tax = (grossPay - 150000) * 0.25;
-    effectiveRate = (tax / grossPay) * 100;
-  } else if (grossPay <= 2550000) {
-    // 30% tax bracket for amount above 500,000
-    // Tax on first 500,000: (500,000 - 150,000) * 0.25 = 87,500
-    const taxOnFirstBracket = (500000 - 150000) * 0.25;
-    const taxOnSecondBracket = (grossPay - 500000) * 0.30;
-    tax = taxOnFirstBracket + taxOnSecondBracket;
-    effectiveRate = (tax / grossPay) * 100;
   } else {
-    // 35% tax bracket for amount above 2,550,000
-    // Tax on first bracket: (500,000 - 150,000) * 0.25 = 87,500
-    // Tax on second bracket: (2,550,000 - 500,000) * 0.30 = 615,000
-    const taxOnFirstBracket = (500000 - 150000) * 0.25;
-    const taxOnSecondBracket = (2550000 - 500000) * 0.30;
-    const taxOnThirdBracket = (grossPay - 2550000) * 0.35;
-    tax = taxOnFirstBracket + taxOnSecondBracket + taxOnThirdBracket;
+    // Tax bracket 2: 150,001 - 500,000 (25%)
+    const bracket2Amount = Math.min(remainingIncome - 150000, 350000);
+    if (bracket2Amount > 0) {
+      tax += bracket2Amount * 0.25;
+      remainingIncome -= bracket2Amount;
+    }
+
+    // Tax bracket 3: 500,001 - 2,550,000 (30%)
+    if (remainingIncome > 0) {
+      const bracket3Amount = Math.min(remainingIncome, 2050000);
+      if (bracket3Amount > 0) {
+        tax += bracket3Amount * 0.30;
+        remainingIncome -= bracket3Amount;
+      }
+    }
+
+    // Tax bracket 4: Above 2,550,000 (35%)
+    if (remainingIncome > 0) {
+      tax += remainingIncome * 0.35;
+    }
+  }
+
+  // Calculate effective tax rate
+  if (grossPay > 0) {
     effectiveRate = (tax / grossPay) * 100;
   }
-  
-  return { amount: Math.round(tax * 100) / 100, rate: Math.round(effectiveRate * 100) / 100 };
+
+  return { 
+    amount: Math.round(tax * 100) / 100, 
+    rate: Math.round(effectiveRate * 100) / 100 
+  };
 };
 
 // Pre-save calculations
@@ -297,7 +306,6 @@ payrollSchema.pre('save', function(next) {
 });
 
 // Static method: Process payroll for all active employees
-// Update the processAllEmployees static method in Payroll.js
 payrollSchema.statics.processAllEmployees = async function(month, processedBy) {
   const Employee = mongoose.model('Employee');
   
@@ -308,13 +316,13 @@ payrollSchema.statics.processAllEmployees = async function(month, processedBy) {
     { path: 'employmentInfo.gradeId', model: 'Grade' },
     { path: 'employmentInfo.departmentId', model: 'Department' }
   ]);
-  
+
   const payrollRecords = [];
   const [year, monthNum] = month.split('-');
   const startDate = moment(`${year}-${monthNum}-01`);
   const endDate = startDate.clone().endOf('month');
   const workingDays = this.calculateWorkingDays(startDate.toDate(), endDate.toDate());
-  
+
   for (const employee of employees) {
     // Skip if already processed
     const existing = await this.findOne({ employeeId: employee._id, payrollMonth: month });
@@ -414,6 +422,7 @@ payrollSchema.statics.processAllEmployees = async function(month, processedBy) {
   
   return savedRecords;
 };
+
 // Static method: Calculate working days
 payrollSchema.statics.calculateWorkingDays = function(startDate, endDate) {
   let count = 0;
@@ -479,6 +488,24 @@ payrollSchema.statics.generateAllPayslips = async function(month) {
   }
   
   return results;
+};
+
+// Instance method: Get payslip breakdown
+payrollSchema.methods.getPayslipBreakdown = function () {
+  return {
+    employeeId: this.employeeId,
+    payrollMonth: this.payrollMonth,
+    grossPay: this.grossPay,
+    deductions: {
+      tax: this.deductions.tax.amount,
+      pension: this.deductions.pension.amount,
+      loans: this.deductions.loans.reduce((sum, l) => sum + l.amount, 0),
+      other: this.deductions.other.reduce((sum, o) => sum + o.amount, 0),
+      total: this.deductions.total
+    },
+    netPay: this.netPay,
+    currency: this.currency
+  };
 };
 
 // Static method: Get payroll summary

@@ -9,6 +9,9 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome Icons -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- DataTables CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.21/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/datatables.net-buttons/2.4.2/css/buttons.bootstrap5.min.css" rel="stylesheet">
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
@@ -17,6 +20,69 @@
     
     <!-- Page-specific CSS -->
     <link rel="stylesheet" href="/css/users.css">
+    
+    <style>
+        /* DataTables Custom Styling */
+        .dataTables_wrapper .dataTables_length,
+        .dataTables_wrapper .dataTables_filter {
+            margin-bottom: 1rem;
+        }
+        
+        .dataTables_wrapper .dataTables_info,
+        .dataTables_wrapper .dataTables_paginate {
+            margin-top: 1rem;
+        }
+        
+        .dt-buttons {
+            margin-bottom: 1rem;
+        }
+        
+        .dt-button {
+            background: #007bff !important;
+            border-color: #007bff !important;
+            color: white !important;
+            border-radius: 0.375rem;
+            padding: 0.375rem 0.75rem;
+            font-size: 0.875rem;
+            margin-right: 0.25rem;
+        }
+        
+        .dt-button:hover {
+            background: #0056b3 !important;
+            border-color: #0056b3 !important;
+        }
+        
+        .dataTables_filter input {
+            border: 1px solid #ced4da;
+            border-radius: 0.375rem;
+            padding: 0.375rem 0.75rem;
+            margin-left: 0.5rem;
+        }
+        
+        .dataTables_length select {
+            border: 1px solid #ced4da;
+            border-radius: 0.375rem;
+            padding: 0.375rem 0.75rem;
+            margin: 0 0.5rem;
+        }
+        
+        .page-link {
+            color: #007bff;
+        }
+        
+        .page-item.active .page-link {
+            background-color: #007bff;
+            border-color: #007bff;
+        }
+        
+        /* Custom filter styling */
+        .custom-filters {
+            background: #f8f9fa;
+            border-radius: 0.375rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+    </style>
 </head>
 <body>
     <!-- Sidebar Overlay for Mobile -->
@@ -42,37 +108,35 @@
                     </button>
                 </div>
 
-                <!-- Filters -->
-                <div class="card mb-4">
-                    <div class="card-body">
-                        <form id="filterForm" class="row g-3">
-                            <div class="col-md-3">
-                                <label for="roleFilter" class="form-label">Role</label>
-                                <select class="form-select" id="roleFilter">
-                                    <option value="">All Roles</option>
-                                    <option value="admin">Admin</option>
-                                    <option value="hr">HR</option>
-                                    <option value="employee">Employee</option>
-                                </select>
-                            </div>
-                            <div class="col-md-3">
-                                <label for="statusFilter" class="form-label">Status</label>
-                                <select class="form-select" id="statusFilter">
-                                    <option value="">All Statuses</option>
-                                    <option value="true">Active</option>
-                                    <option value="false">Inactive</option>
-                                </select>
-                            </div>
-                            <div class="col-md-3 d-flex align-items-end">
-                                <button type="submit" class="btn btn-primary me-2">
-                                    <i class="fas fa-filter me-1"></i>Filter
-                                </button>
-                                <button type="reset" class="btn btn-outline-secondary">
-                                    <i class="fas fa-undo me-1"></i>Reset
-                                </button>
-                            </div>
-                        </form>
-                    </div>
+                <!-- Custom Filters -->
+                <div class="custom-filters">
+                    <form id="filterForm" class="row g-3">
+                        <div class="col-md-3">
+                            <label for="roleFilter" class="form-label">Role</label>
+                            <select class="form-select" id="roleFilter">
+                                <option value="">All Roles</option>
+                                <option value="admin">Admin</option>
+                                <option value="hr">HR</option>
+                                <option value="employee">Employee</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="statusFilter" class="form-label">Status</label>
+                            <select class="form-select" id="statusFilter">
+                                <option value="">All Statuses</option>
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button type="button" class="btn btn-primary me-2" id="applyFiltersBtn">
+                                <i class="fas fa-filter me-1"></i>Apply
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" id="resetFiltersBtn">
+                                <i class="fas fa-undo me-1"></i>Reset
+                            </button>
+                        </div>
+                    </form>
                 </div>
 
                 <!-- Users Table -->
@@ -94,13 +158,6 @@
                                 </tbody>
                             </table>
                         </div>
-
-                        <!-- Pagination -->
-                        <nav aria-label="Page navigation" class="mt-4">
-                            <ul class="pagination justify-content-center" id="pagination">
-                                <!-- Pagination will be loaded here -->
-                            </ul>
-                        </nav>
                     </div>
                 </div>
             </div>
@@ -237,6 +294,19 @@
 
     <!-- Bootstrap JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <!-- jQuery (required for DataTables) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <!-- DataTables JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.21/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.21/js/dataTables.bootstrap5.min.js"></script>
+    <!-- DataTables Buttons -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables.net-buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables.net-buttons/2.4.2/js/buttons.bootstrap5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables.net-buttons/2.4.2/js/buttons.html5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables.net-buttons/2.4.2/js/buttons.print.min.js"></script>
     <!-- Axios -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.2/axios.min.js"></script>
     
@@ -261,10 +331,11 @@
             
             // DOM elements
             const usersTableBody = document.getElementById('usersTableBody');
-            const pagination = document.getElementById('pagination');
             const filterForm = document.getElementById('filterForm');
             const roleFilter = document.getElementById('roleFilter');
             const statusFilter = document.getElementById('statusFilter');
+            const applyFiltersBtn = document.getElementById('applyFiltersBtn');
+            const resetFiltersBtn = document.getElementById('resetFiltersBtn');
             
             // Modal elements
             const addUserForm = document.getElementById('addUserForm');
@@ -275,61 +346,139 @@
             const resetPasswordBtn = document.getElementById('resetPasswordBtn');
             const confirmActionBtn = document.getElementById('confirmActionBtn');
             
+            // DataTable variable
+            let usersDataTable;
+            
             // State variables
-            let currentPage = 1;
-            let totalPages = 1;
-            let limit = 10;
-            let filter = {};
+            let allUsers = [];
+            
+            // Initialize DataTable
+            function initializeDataTable() {
+                if (usersDataTable) {
+                    usersDataTable.destroy();
+                }
+                
+                usersDataTable = $('#usersTable').DataTable({
+                    responsive: true,
+                    dom: 'Bfrtip',
+                    buttons: [
+                        {
+                            extend: 'excel',
+                            text: '<i class="fas fa-file-excel me-1"></i> Excel',
+                            title: 'Users List',
+                            exportOptions: {
+                                columns: [0, 1, 2, 3]
+                            }
+                        },
+                        {
+                            extend: 'pdf',
+                            text: '<i class="fas fa-file-pdf me-1"></i> PDF',
+                            title: 'Users List',
+                            exportOptions: {
+                                columns: [0, 1, 2, 3]
+                            }
+                        },
+                        {
+                            extend: 'print',
+                            text: '<i class="fas fa-print me-1"></i> Print',
+                            title: 'Users List',
+                            exportOptions: {
+                                columns: [0, 1, 2, 3]
+                            }
+                        },
+                        {
+                            extend: 'csv',
+                            text: '<i class="fas fa-file-csv me-1"></i> CSV',
+                            title: 'Users List',
+                            exportOptions: {
+                                columns: [0, 1, 2, 3]
+                            }
+                        }
+                    ],
+                    pageLength: 25,
+                    lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+                    order: [[3, 'desc']],
+                    language: {
+                        search: "Search users:",
+                        lengthMenu: "Show _MENU_ entries",
+                        info: "Showing _START_ to _END_ of _TOTAL_ users",
+                        paginate: {
+                            first: "First",
+                            last: "Last",
+                            next: "Next",
+                            previous: "Previous"
+                        }
+                    },
+                    columnDefs: [
+                        {
+                            targets: [1, 2], // Role and Status columns
+                            className: 'text-center'
+                        },
+                        {
+                            targets: [4], // Actions column
+                            orderable: false,
+                            searchable: false,
+                            className: 'text-center'
+                        }
+                    ]
+                });
+            }
             
             // Initialize the page
-            loadUsers(currentPage, limit, filter);
+            loadUsers();
             
             // Event listeners
-            filterForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                filter = {};
-                
-                if (roleFilter.value) {
-                    filter.role = roleFilter.value;
-                }
-                
-                if (statusFilter.value) {
-                    filter.isActive = statusFilter.value === 'true';
-                }
-                
-                currentPage = 1;
-                loadUsers(currentPage, limit, filter);
-            });
-            
-            filterForm.addEventListener('reset', function() {
-                currentPage = 1;
-                filter = {};
-                loadUsers(currentPage, limit, filter);
-            });
+            applyFiltersBtn.addEventListener('click', applyFilters);
+            resetFiltersBtn.addEventListener('click', resetFilters);
             
             saveUserBtn.addEventListener('click', addUser);
             updateUserBtn.addEventListener('click', updateUser);
             resetPasswordBtn.addEventListener('click', resetPassword);
             confirmActionBtn.addEventListener('click', performConfirmedAction);
             
-            // Load users with pagination
-            function loadUsers(page, limit, filter) {
-                const queryParams = new URLSearchParams({
-                    page,
-                    limit,
-                    ...filter
-                });
+            // Apply custom filters
+            function applyFilters() {
+                const roleValue = roleFilter.value;
+                const statusValue = statusFilter.value;
                 
+                if (usersDataTable) {
+                    // Clear existing column filters
+                    usersDataTable.columns().search('');
+                    
+                    // Apply role filter
+                    if (roleValue) {
+                        usersDataTable.column(1).search(roleValue);
+                    }
+                    
+                    // Apply status filter
+                    if (statusValue) {
+                        const statusText = statusValue === 'active' ? 'Active' : 'Inactive';
+                        usersDataTable.column(2).search(statusText);
+                    }
+                    
+                    usersDataTable.draw();
+                }
+            }
+            
+            // Reset filters
+            function resetFilters() {
+                roleFilter.value = '';
+                statusFilter.value = '';
+                
+                if (usersDataTable) {
+                    usersDataTable.columns().search('').draw();
+                }
+            }
+            
+            // Load users
+            function loadUsers() {
                 showLoading();
                 
-                axios.get(`/auth/users?${queryParams}`)
+                axios.get('/auth/users?page=1&limit=1000')
                     .then(response => {
-                        const { users, total, pages } = response.data;
-                        currentPage = page;
-                        totalPages = pages;
-                        
+                        const { users } = response.data;
+                        allUsers = users;
                         renderUsersTable(users);
-                        renderPagination(total, pages, page);
                     })
                     .catch(error => {
                         showError('Failed to load users. Please try again.');
@@ -371,19 +520,19 @@
                         <td><span class="badge ${statusBadgeClass}">${statusText}</span></td>
                         <td>${new Date(user.createdAt).toLocaleDateString()}</td>
                         <td>
-                            <div class="d-flex gap-2">
-                                <button class="btn btn-sm btn-outline-primary edit-btn" data-id="${user._id}">
+                            <div class="d-flex gap-2 justify-content-center">
+                                <button class="btn btn-sm btn-outline-primary edit-btn" data-id="${user._id}" title="Edit User">
                                     <i class="fas fa-edit"></i>
                                 </button>
-                                <button class="btn btn-sm btn-outline-secondary reset-password-btn" data-id="${user._id}">
+                                <button class="btn btn-sm btn-outline-secondary reset-password-btn" data-id="${user._id}" title="Reset Password">
                                     <i class="fas fa-key"></i>
                                 </button>
                                 ${user.isActive ? `
-                                    <button class="btn btn-sm btn-outline-danger deactivate-btn" data-id="${user._id}">
+                                    <button class="btn btn-sm btn-outline-danger deactivate-btn" data-id="${user._id}" title="Deactivate User">
                                         <i class="fas fa-user-slash"></i>
                                     </button>
                                 ` : `
-                                    <button class="btn btn-sm btn-outline-success activate-btn" data-id="${user._id}">
+                                    <button class="btn btn-sm btn-outline-success activate-btn" data-id="${user._id}" title="Activate User">
                                         <i class="fas fa-user-check"></i>
                                     </button>
                                 `}
@@ -393,6 +542,9 @@
                     
                     usersTableBody.appendChild(row);
                 });
+                
+                // Initialize or reinitialize DataTable
+                initializeDataTable();
                 
                 // Add event listeners to action buttons
                 document.querySelectorAll('.edit-btn').forEach(btn => {
@@ -410,59 +562,6 @@
                 document.querySelectorAll('.activate-btn').forEach(btn => {
                     btn.addEventListener('click', () => confirmActivateUser(btn.dataset.id));
                 });
-            }
-            
-            // Render pagination
-            function renderPagination(total, pages, current) {
-                pagination.innerHTML = '';
-                
-                if (pages <= 1) return;
-                
-                // Previous button
-                const prevLi = document.createElement('li');
-                prevLi.className = `page-item ${current === 1 ? 'disabled' : ''}`;
-                prevLi.innerHTML = `
-                    <a class="page-link" href="#" aria-label="Previous" ${current === 1 ? 'tabindex="-1"' : ''}>
-                        <span aria-hidden="true">&laquo;</span>
-                    </a>
-                `;
-                prevLi.addEventListener('click', (e) => {
-                    if (current > 1) {
-                        e.preventDefault();
-                        loadUsers(current - 1, limit, filter);
-                    }
-                });
-                pagination.appendChild(prevLi);
-                
-                // Page numbers
-                for (let i = 1; i <= pages; i++) {
-                    const li = document.createElement('li');
-                    li.className = `page-item ${i === current ? 'active' : ''}`;
-                    li.innerHTML = `<a class="page-link" href="#">${i}</a>`;
-                    li.addEventListener('click', (e) => {
-                        e.preventDefault();
-                        if (i !== current) {
-                            loadUsers(i, limit, filter);
-                        }
-                    });
-                    pagination.appendChild(li);
-                }
-                
-                // Next button
-                const nextLi = document.createElement('li');
-                nextLi.className = `page-item ${current === pages ? 'disabled' : ''}`;
-                nextLi.innerHTML = `
-                    <a class="page-link" href="#" aria-label="Next" ${current === pages ? 'tabindex="-1"' : ''}>
-                        <span aria-hidden="true">&raquo;</span>
-                    </a>
-                `;
-                nextLi.addEventListener('click', (e) => {
-                    if (current < pages) {
-                        e.preventDefault();
-                        loadUsers(current + 1, limit, filter);
-                    }
-                });
-                pagination.appendChild(nextLi);
             }
             
             // Add new user
@@ -494,7 +593,7 @@
                     showSuccess('User added successfully');
                     $('#addUserModal').modal('hide');
                     addUserForm.reset();
-                    loadUsers(currentPage, limit, filter);
+                    loadUsers();
                 })
                 .catch(error => {
                     const errorMessage = error.response?.data?.message || 'Failed to add user';
@@ -562,7 +661,7 @@
                 .then(() => {
                     showSuccess('User updated successfully');
                     $('#editUserModal').modal('hide');
-                    loadUsers(currentPage, limit, filter);
+                    loadUsers();
                 })
                 .catch(error => {
                     const errorMessage = error.response?.data?.message || 'Failed to update user';
@@ -641,7 +740,7 @@
                 axios.delete(`/auth/users/${userId}`)
                     .then(() => {
                         showSuccess('User deactivated successfully');
-                        loadUsers(currentPage, limit, filter);
+                        loadUsers();
                     })
                     .catch(error => {
                         const errorMessage = error.response?.data?.message || 'Failed to deactivate user';
@@ -676,7 +775,7 @@
                 })
                     .then(() => {
                         showSuccess('User activated successfully');
-                        loadUsers(currentPage, limit, filter);
+                        loadUsers();
                     })
                     .catch(error => {
                         const errorMessage = error.response?.data?.message || 'Failed to activate user';

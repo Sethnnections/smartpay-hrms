@@ -23,10 +23,17 @@
     border-radius: 10px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
     transition: all 0.3s ease;
+    background-color: var(--bg-white);
+    border: 1px solid var(--border-color);
 }
 
 .card:hover {
-    box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 10px 15px rgba(10, 31, 58, 0.1);
+}
+
+.card-title {
+    color: var(--text-primary);
+    font-weight: 600;
 }
 
 .filter-card {
@@ -40,10 +47,12 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    background-color: rgba(10, 31, 58, 0.1) !important;
 }
 
 .avatar-title {
     font-size: 1rem;
+    color: var(--text-primary);
 }
 
 /* Chart Containers */
@@ -52,9 +61,85 @@
 }
 
 /* Period Filter Buttons */
+.period-btn {
+    color: var(--text-primary);
+    border-color: var(--border-color);
+}
+
+.period-btn:hover {
+    background-color: rgba(10, 31, 58, 0.1);
+    border-color: var(--border-color);
+}
+
 .period-btn.active {
-    background-color: #0d6efd;
+    background-color: #0a1f3a;
     color: white;
+    border-color: #0a1f3a;
+}
+
+/* Dropdowns */
+.btn-outline-secondary {
+    color: var(--text-primary);
+    border-color: var(--border-color);
+}
+
+.btn-outline-secondary:hover {
+    background-color: rgba(10, 31, 58, 0.1);
+    border-color: var(--border-color);
+    color: var(--text-primary);
+}
+
+.dropdown-menu {
+    border: 1px solid var(--border-color);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.dropdown-item {
+    color: var(--text-primary);
+}
+
+.dropdown-item:hover, .dropdown-item:focus {
+    background-color: rgba(10, 31, 58, 0.1);
+    color: var(--text-primary);
+}
+
+.dropdown-item.active {
+    background-color: #0a1f3a;
+    color: white;
+}
+
+/* Text Colors */
+.text-muted {
+    color: var(--text-secondary) !important;
+}
+
+.text-primary {
+    color: #0a1f3a !important;
+}
+
+.text-success {
+    color: #28a745 !important;
+}
+
+.text-danger {
+    color: #e86029 !important;
+}
+
+.text-warning {
+    color: #e86029 !important;
+}
+
+.text-info {
+    color: #0a1f3a !important;
+}
+
+/* Chart Colors */
+:root {
+    --chart-blue: #0a1f3a;
+    --chart-orange: #e86029;
+    --chart-orange-light: #f7d7b3;
+    --chart-green: #28a745;
+    --chart-gray: #e2e8f0;
 }
 
 /* Responsive Adjustments */
@@ -66,5 +151,83 @@
     .period-btn {
         padding: 0.25rem 0.5rem;
         font-size: 0.8rem;
+    }
+}
+
+/* Summary Cards Styling */
+.summary-card-employees {
+    background-color: #0a1f3a;
+    color: white;
+    border-left: 4px solid #e86029;
+}
+
+.summary-card-departments {
+    background-color: #ffffff;
+    color: #0a1f3a;
+    border-left: 4px solid #28a745;
+}
+
+.summary-card-payroll {
+    background-color: #ffffff;
+    color: #0a1f3a;
+    border-left: 4px solid #0d6efd;
+}
+
+.summary-card-turnover {
+    background-color: #ffffff;
+    color: #0a1f3a;
+    border-left: 4px solid #e86029;
+}
+
+/* Card Content Styling */
+.summary-card-employees .text-muted,
+.summary-card-employees .avatar-title {
+    color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.summary-card-employees .avatar-title {
+    background-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.summary-card-employees .text-success {
+    color: #f7d7b3 !important;
+}
+
+.summary-card-departments .avatar-title,
+.summary-card-payroll .avatar-title,
+.summary-card-turnover .avatar-title {
+    background-color: rgba(10, 31, 58, 0.1) !important;
+    color: #0a1f3a !important;
+}
+
+/* Money Amount Styling */
+.money-amount {
+    font-family: 'Courier New', monospace;
+    font-weight: 200;
+    letter-spacing: 0.5px;
+}
+
+.budget-amount {
+    font-weight: 600;
+}
+
+/* Card Hover Effects */
+.card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(10, 31, 58, 0.15);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .summary-card {
+        margin-bottom: 15px;
+    }
+    
+    .money-amount {
+        font-size: 0.9rem;
     }
 }

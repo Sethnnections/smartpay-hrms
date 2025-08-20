@@ -11,6 +11,9 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <!-- SweetAlert2 -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/11.7.12/sweetalert2.min.css" rel="stylesheet">
+    <!-- DataTables CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.21/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/datatables.net-buttons/2.4.2/css/buttons.bootstrap5.min.css" rel="stylesheet">
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
@@ -66,6 +69,59 @@
         .month-selector {
             max-width: 200px;
         }
+        
+        /* DataTables Custom Styling */
+        .dataTables_wrapper .dataTables_length,
+        .dataTables_wrapper .dataTables_filter {
+            margin-bottom: 1rem;
+        }
+        
+        .dataTables_wrapper .dataTables_info,
+        .dataTables_wrapper .dataTables_paginate {
+            margin-top: 1rem;
+        }
+        
+        .dt-buttons {
+            margin-bottom: 1rem;
+        }
+        
+        .dt-button {
+            background: #007bff !important;
+            border-color: #007bff !important;
+            color: white !important;
+            border-radius: 0.375rem;
+            padding: 0.375rem 0.75rem;
+            font-size: 0.875rem;
+            margin-right: 0.25rem;
+        }
+        
+        .dt-button:hover {
+            background: #0056b3 !important;
+            border-color: #0056b3 !important;
+        }
+        
+        .dataTables_filter input {
+            border: 1px solid #ced4da;
+            border-radius: 0.375rem;
+            padding: 0.375rem 0.75rem;
+            margin-left: 0.5rem;
+        }
+        
+        .dataTables_length select {
+            border: 1px solid #ced4da;
+            border-radius: 0.375rem;
+            padding: 0.375rem 0.75rem;
+            margin: 0 0.5rem;
+        }
+        
+        .page-link {
+            color: #007bff;
+        }
+        
+        .page-item.active .page-link {
+            background-color: #007bff;
+            border-color: #007bff;
+        }
     </style>
 </head>
 <body>
@@ -94,7 +150,7 @@
         <main class="dashboard-content">
             <div class="container-fluid px-4">
                 <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h2 class="mb-0">Employee Payslips</h2>
+                    <h6 class="mb-0">Employee Payslips</h6>
                     <div class="d-flex gap-2">
                         <select class="form-select month-selector" id="monthSelector">
                             <!-- Options will be populated by JavaScript -->
@@ -133,6 +189,19 @@
 
     <!-- Bootstrap JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <!-- jQuery (required for DataTables) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <!-- DataTables JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.21/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.21/js/dataTables.bootstrap5.min.js"></script>
+    <!-- DataTables Buttons -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables.net-buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables.net-buttons/2.4.2/js/buttons.bootstrap5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables.net-buttons/2.4.2/js/buttons.html5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables.net-buttons/2.4.2/js/buttons.print.min.js"></script>
     <!-- Axios -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.2/axios.min.js"></script>
     <!-- SweetAlert2 -->
@@ -169,6 +238,9 @@
         const monthSelector = document.getElementById('monthSelector');
         const generateAllBtn = document.getElementById('generateAllBtn');
         const payslipsTableBody = document.getElementById('payslipsTableBody');
+
+        // DataTable variable
+        let payslipsDataTable;
 
         // Current month in YYYY-MM format
         const currentMonth = new Date().toISOString().slice(0, 7);
@@ -227,6 +299,82 @@
             }
         }
         
+        // Initialize DataTable
+        function initializeDataTable() {
+            if (payslipsDataTable) {
+                payslipsDataTable.destroy();
+            }
+            
+            payslipsDataTable = $('#payslipsTable').DataTable({
+                responsive: true,
+                dom: 'Bfrtip',
+                buttons: [
+                    {
+                        extend: 'excel',
+                        text: '<i class="fas fa-file-excel me-1"></i> Excel',
+                        title: `Payslips - ${formatMonth(monthSelector.value)}`,
+                        exportOptions: {
+                            columns: [0, 1, 2, 3, 4, 5]
+                        }
+                    },
+                    {
+                        extend: 'pdf',
+                        text: '<i class="fas fa-file-pdf me-1"></i> PDF',
+                        title: `Payslips - ${formatMonth(monthSelector.value)}`,
+                        exportOptions: {
+                            columns: [0, 1, 2, 3, 4, 5]
+                        }
+                    },
+                    {
+                        extend: 'print',
+                        text: '<i class="fas fa-print me-1"></i> Print',
+                        title: `Payslips - ${formatMonth(monthSelector.value)}`,
+                        exportOptions: {
+                            columns: [0, 1, 2, 3, 4, 5]
+                        }
+                    },
+                    {
+                        extend: 'csv',
+                        text: '<i class="fas fa-file-csv me-1"></i> CSV',
+                        title: `Payslips - ${formatMonth(monthSelector.value)}`,
+                        exportOptions: {
+                            columns: [0, 1, 2, 3, 4, 5]
+                        }
+                    }
+                ],
+                pageLength: 25,
+                lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+                order: [[1, 'desc']],
+                language: {
+                    search: "Search payslips:",
+                    lengthMenu: "Show _MENU_ entries",
+                    info: "Showing _START_ to _END_ of _TOTAL_ payslips",
+                    paginate: {
+                        first: "First",
+                        last: "Last",
+                        next: "Next",
+                        previous: "Previous"
+                    }
+                },
+                columnDefs: [
+                    {
+                        targets: [2, 3, 4], // Gross Pay, Deductions, Net Pay columns
+                        className: 'text-end'
+                    },
+                    {
+                        targets: [5], // Status column
+                        className: 'text-center'
+                    },
+                    {
+                        targets: [6], // Actions column
+                        orderable: false,
+                        searchable: false,
+                        className: 'text-center'
+                    }
+                ]
+            });
+        }
+        
         // Fetch payslips for selected month
         async function fetchPayslips(month) {
             showLoading();
@@ -282,7 +430,7 @@
                         </span>
                     </td>
                    <td>
-                        <div class="d-flex gap-2">
+                        <div class="d-flex gap-2 justify-content-center">
                         <!-- View payslip button 
                         <button class="btn btn-sm btn-outline-primary view-payslip" data-id="${payslip._id}">
                             <i class="fas fa-eye"></i>
@@ -299,6 +447,9 @@
                     </td>
                 </tr>
             `).join('');
+            
+            // Initialize or reinitialize DataTable
+            initializeDataTable();
             
             // Add event listeners to buttons
             document.querySelectorAll('.view-payslip').forEach(btn => {

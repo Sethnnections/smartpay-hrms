@@ -310,12 +310,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 datasets: [{
                     label: label,
                     data: data,
-                    backgroundColor: 'rgba(13, 110, 253, 0.1)',
-                    borderColor: 'rgba(13, 110, 253, 1)',
+                    borderColor: '#0a1f3a',
+                    backgroundColor: 'rgba(10, 31, 58, 0.1)',
+                    pointBackgroundColor: '#0a1f3a',
                     borderWidth: 2,
                     tension: 0.4,
                     fill: true,
-                    pointBackgroundColor: 'rgba(13, 110, 253, 1)',
                     pointRadius: 4,
                     pointHoverRadius: 6
                 }]
@@ -367,20 +367,20 @@ document.addEventListener('DOMContentLoaded', function() {
             data: {
                 labels: labels,
                 datasets: [
-                    {
-                        label: 'Budget Allocated',
-                        data: allocated,
-                        backgroundColor: 'rgba(40, 167, 69, 0.7)',
-                        borderColor: 'rgba(40, 167, 69, 1)',
-                        borderWidth: 1
-                    },
-                    {
-                        label: 'Budget Spent',
-                        data: spent,
-                        backgroundColor: 'rgba(13, 110, 253, 0.7)',
-                        borderColor: 'rgba(13, 110, 253, 1)',
-                        borderWidth: 1
-                    }
+                 {
+    label: 'Budget Allocated',
+    data: allocated,
+    backgroundColor: 'rgba(232, 96, 41, 0.7)',
+    borderColor: 'rgba(232, 96, 41, 1)',
+    borderWidth: 1
+},
+{
+    label: 'Budget Spent',
+    data: spent,
+    backgroundColor: 'rgba(10, 31, 58, 0.7)',
+    borderColor: 'rgba(10, 31, 58, 1)',
+    borderWidth: 1
+}
                 ]
             },
             options: {
@@ -496,15 +496,42 @@ document.addEventListener('DOMContentLoaded', function() {
         return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
     }
     
-    function generateColors(count) {
-        const colors = [];
-        const hueStep = 360 / count;
-        
-        for (let i = 0; i < count; i++) {
-            const hue = i * hueStep;
-            colors.push(`hsl(${hue}, 70%, 60%)`);
-        }
-        
-        return colors;
+ function generateColors(count) {
+    const baseColors = ['#0a1f3a', '#e86029', '#f7d7b3', '#28a745', '#0f2a4d'];
+    const colors = [];
+    
+    for (let i = 0; i < count; i++) {
+        colors.push(baseColors[i % baseColors.length]);
     }
+    
+    return colors;
+}
+
+// Update the formatCurrency function in dashboard.js to better handle large numbers:
+function formatCurrency(amount) {
+    if (amount >= 1000000) {
+        return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'MWK',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        }).format(amount).replace(/(\.|,)00$/g, '') + 'M';
+    }
+    if (amount >= 1000) {
+        return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'MWK',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        }).format(amount).replace(/(\.|,)00$/g, '') + 'K';
+    }
+    return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'MWK',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+    }).format(amount);
+}
 });
+
+

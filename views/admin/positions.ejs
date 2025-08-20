@@ -13,15 +13,82 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- SweetAlert2 -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/11.4.8/sweetalert2.min.css" rel="stylesheet">
+    <!-- DataTables CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.21/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/datatables-buttons/2.4.2/css/buttons.bootstrap5.min.css" rel="stylesheet">
+    <!-- Select2 for better dropdowns -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2-bootstrap-5-theme/1.3.0/select2-bootstrap-5-theme.min.css" rel="stylesheet">
     
     <!-- Custom CSS -->
     <link rel="stylesheet" href="/css/admin.css">
     
     <!-- Page-specific CSS -->
-    <link rel="stylesheet" href="/css/positions.css">
     
-    <!-- Select2 for better dropdowns -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet">
+    <style>
+        /* Fixed Loading Overlay */
+    .loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 9999;
+    display: none;
+}
+
+.loading-overlay .spinner-border {
+    width: 3rem;
+    height: 3rem;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    margin-top: -1.5rem; /* Half of the height */
+    margin-left: -1.5rem; /* Half of the width */
+}
+    
+        /* Filter card improvements */
+        .filters-card {
+            margin-bottom: 1.5rem;
+        }
+        
+        .filters-row {
+            align-items: end;
+        }
+        
+        .filter-buttons {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+        
+        /* DataTables custom styling */
+        .dataTables_wrapper .dataTables_length,
+        .dataTables_wrapper .dataTables_filter,
+        .dataTables_wrapper .dataTables_info,
+        .dataTables_wrapper .dataTables_paginate {
+            margin-bottom: 1rem;
+        }
+        
+        .dt-buttons {
+            margin-bottom: 1rem;
+        }
+        
+        .dt-button {
+            margin-right: 0.5rem;
+        }
+        
+        /* Responsive table improvements */
+        .table-responsive {
+            border-radius: 0.375rem;
+        }
+        
+        /* Select2 dropdown improvements */
+        .select2-container--bootstrap-5 .select2-selection {
+            min-height: calc(2.25rem + 2px);
+        }
+    </style>
 </head>
 <body>
     <!-- Loading Overlay -->
@@ -47,7 +114,7 @@
 
         <!-- Page Content -->
         <main class="dashboard-content">
-            <div class="container-fluid px-4">
+            <div class="container-fluid px-1">
                 <!-- Alerts Container -->
                 <div id="alertsContainer"></div>
                 
@@ -55,7 +122,6 @@
                 <div class="page-header">
                     <div class="d-flex justify-content-between align-items-center mb-4">
                         <div>
-                            <h1 class="page-title">Positions</h1>
                             <p class="text-muted">Manage and track all positions within your organization</p>
                         </div>
                         <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addPositionModal" id="addPositionBtn">
@@ -65,43 +131,46 @@
                 </div>
 
                 <!-- Filters -->
-                <div class="card mb-4">
+                <div class="card filters-card">
                     <div class="card-header">
-                        <h5 class="card-title mb-0">Filters</h5>
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-filter me-2"></i>Filters
+                        </h5>
                     </div>
                     <div class="card-body">
-                        <div class="row g-3">
-                            <div class="col-md-3">
+                        <div class="row g-3 filters-row">
+                            <div class="col-lg-3 col-md-6">
                                 <label for="searchInput" class="form-label">Search</label>
                                 <input type="text" class="form-control" id="searchInput" placeholder="Name or code...">
                             </div>
-                            <div class="col-md-2">
+                            <div class="col-lg-2 col-md-6">
                                 <label for="filterDepartment" class="form-label">Department</label>
                                 <select class="form-select select2" id="filterDepartment">
                                     <option value="">All Departments</option>
                                 </select>
                             </div>
-                            <div class="col-md-2">
+                            <div class="col-lg-2 col-md-6">
                                 <label for="filterGrade" class="form-label">Grade</label>
                                 <select class="form-select select2" id="filterGrade">
                                     <option value="">All Grades</option>
                                 </select>
                             </div>
-                            <div class="col-md-2">
-                                <div class="form-check form-switch mt-4 pt-2">
+                            <div class="col-lg-2 col-md-6">
+                                <div class="form-check form-switch mt-4 pt-1">
                                     <input class="form-check-input" type="checkbox" id="filterVacancies">
                                     <label class="form-check-label" for="filterVacancies">Has Vacancies</label>
                                 </div>
                             </div>
-                            <div class="col-md-2">
-                                <div class="form-check form-switch mt-4 pt-2">
-                                    <input class="form-check-input" type="checkbox" id="filterActive" checked>
-                                    <label class="form-check-label" for="filterActive">Active Only</label>
+                          
+                            <div class="col-lg-1 col-md-12">
+                                <div class="filter-buttons">
+                                    <button class="btn btn-primary btn-sm" id="applyFilters">
+                                        <i class="fas fa-search me-1"></i>Apply
+                                    </button>
+                                    <button class="btn btn-outline-secondary btn-sm" id="resetFilters">
+                                        <i class="fas fa-undo me-1"></i>Reset
+                                    </button>
                                 </div>
-                            </div>
-                            <div class="col-md-1 d-flex align-items-end">
-                                <button class="btn btn-primary me-2" id="applyFilters">Apply</button>
-                                <button class="btn btn-outline-secondary" id="resetFilters">Reset</button>
                             </div>
                         </div>
                     </div>
@@ -110,13 +179,18 @@
                 <!-- Positions Table -->
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="card-title mb-0">All Positions</h5>
-                        <div class="text-muted">Showing <span id="positionsCount">0</span> positions</div>
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-users-cog me-2"></i>All Positions
+                        </h5>
+                        <div class="text-muted">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Total: <span id="positionsCount">0</span> positions
+                        </div>
                     </div>
                     <div class="card-body">
                         <div class="table-responsive">
                             <table class="table table-hover" id="positionsTable">
-                                <thead>
+                                <thead class="table-light">
                                     <tr>
                                         <th>Code</th>
                                         <th>Name</th>
@@ -126,7 +200,7 @@
                                         <th>Filled</th>
                                         <th>Vacancy</th>
                                         <th>Status</th>
-                                        <th>Actions</th>
+                                        <th width="120">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -145,7 +219,9 @@
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Add New Position</h5>
+                    <h5 class="modal-title">
+                        <i class="fas fa-plus me-2"></i>Add New Position
+                    </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <form id="addPositionForm">
@@ -202,7 +278,9 @@
                             
                             <!-- Requirements Section -->
                             <div class="col-12 mt-3">
-                                <h6 class="border-bottom pb-2">Requirements</h6>
+                                <h6 class="border-bottom pb-2">
+                                    <i class="fas fa-clipboard-list me-2"></i>Requirements
+                                </h6>
                             </div>
                             
                             <div class="col-md-4">
@@ -253,7 +331,9 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary">Create Position</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Create Position
+                        </button>
                     </div>
                 </form>
             </div>
@@ -265,7 +345,9 @@
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Edit Position</h5>
+                    <h5 class="modal-title">
+                        <i class="fas fa-edit me-2"></i>Edit Position
+                    </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <form id="editPositionForm">
@@ -323,7 +405,9 @@
                             
                             <!-- Requirements Section -->
                             <div class="col-12 mt-3">
-                                <h6 class="border-bottom pb-2">Requirements</h6>
+                                <h6 class="border-bottom pb-2">
+                                    <i class="fas fa-clipboard-list me-2"></i>Requirements
+                                </h6>
                             </div>
                             
                             <div class="col-md-4">
@@ -374,7 +458,9 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary">Update Position</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Update Position
+                        </button>
                     </div>
                 </form>
             </div>
@@ -386,7 +472,9 @@
         <div class="modal-dialog modal-xl">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Position Details</h5>
+                    <h5 class="modal-title">
+                        <i class="fas fa-eye me-2"></i>Position Details
+                    </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
@@ -588,6 +676,19 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/11.4.8/sweetalert2.min.js"></script>
     <!-- Chart.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
+    <!-- DataTables JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.21/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.21/js/dataTables.bootstrap5.min.js"></script>
+    <!-- DataTables Buttons -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables-buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables-buttons/2.4.2/js/buttons.bootstrap5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables-buttons/2.4.2/js/buttons.html5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables-buttons/2.4.2/js/buttons.print.min.js"></script>
+    <!-- JSZip for Excel export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <!-- PDFMake for PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
     
     <!-- Custom JS -->
     <script src="/js/positions.js"></script>

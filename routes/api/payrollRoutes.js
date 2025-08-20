@@ -5,11 +5,6 @@ const { authenticateToken, requireAdmin, requireHROrAdmin } = require('../../uti
 const Payroll = require('../../models/Payroll');
 
 // Middleware to handle flexible authentication
-// This allows both token in header and query parameter
-// Useful for frontend apps that may not always send headers
-
-
-
 const flexibleAuth = (req, res, next) => {
   let token = null;
   
@@ -37,8 +32,31 @@ const flexibleAuth = (req, res, next) => {
   }
 };
 
-
 router.use(authenticateToken);
+
+// Generate bank instruction PDF (Finance/Admin only)
+router.post('/bank-instruction', authenticateToken, async (req, res) => {
+  try {
+    // security: only finance or admin can generate the bank instruction
+    if (!req.user || !['admin', 'finance'].includes(req.user.role)) {
+      return res.status(403).json({ error: 'Access denied. Finance/Admin role required.' });
+    }
+
+    // Accept either { month } OR { startDate, endDate } in body
+    const { month, startDate, endDate } = req.body;
+
+    // call controller streaming function
+    await payrollController.generateBankInstructionPDF(res, { month, startDate, endDate }, req.user);
+    // function will stream and end the response
+  } catch (error) {
+    console.error('bank-instruction route error', error);
+    if (!res.headersSent) {
+      res.status(error.statusCode || 500).json({ error: error.message });
+    } else {
+      try { res.end(); } catch (e) { /* ignore */ }
+    }
+  }
+});
 
 // Process payroll for all active employees (Admin/HR only)
 router.post('/process', requireHROrAdmin, async (req, res) => {
@@ -100,40 +118,45 @@ router.post('/batch-payment', requireAdmin, async (req, res) => {
   }
 });
 
-// Add to top if needed:
-// const { authenticateToken } = require('../../utils/auth'); // already present earlier
-// (we'll check role manually here so finance or admin can generate)
-
-router.post('/bank-instruction', authenticateToken, async (req, res) => {
+// NEW ROUTE: View payslip (inline PDF)
+router.get('/:id/payslip-view', flexibleAuth, async (req, res) => {
   try {
-    // security: only finance or admin can generate the bank instruction
-    if (!req.user || !['admin', 'finance'].includes(req.user.role)) {
-      return res.status(403).json({ error: 'Access denied. Finance/Admin role required.' });
+    const { id } = req.params;
+    
+    const payroll = await payrollController.getPayrollDetails(id);
+    
+    if (!payroll) {
+      return res.status(404).json({ error: 'Payroll not found' });
     }
 
-    // Accept either { month } OR { startDate, endDate } in body
-    const { month, startDate, endDate } = req.body;
+    // Check permissions
+    if (req.user.role === 'employee') {
+      if (payroll.employeeId.userId && payroll.employeeId.userId.toString() !== req.user.id) {
+        return res.status(403).json({ error: 'Access denied' });
+      }
+    }
 
-    // call controller streaming function
-    await payrollController.generateBankInstructionPDF(res, { month, startDate, endDate }, req.user);
-    // function will stream and end the response
+    // Stream the PDF inline
+    res.setHeader('Content-disposition', `inline; filename=payslip_${id}.pdf`);
+    res.setHeader('Content-type', 'application/pdf');
+    
+    await payrollController.generatePayslipPDF(payroll, { 
+      res, 
+      disposition: 'inline' 
+    });
   } catch (error) {
-    console.error('bank-instruction route error', error);
+    console.error('Payslip view route error:', error);
     if (!res.headersSent) {
-      res.status(error.statusCode || 500).json({ error: error.message });
-    } else {
-      try { res.end(); } catch (e) { /* ignore */ }
+      res.status(500).json({ error: error.message });
     }
   }
 });
 
-
-// Download/View payslip - Updated route
 // Download/View payslip - Updated route
 router.get('/:id/payslip', flexibleAuth, async (req, res) => {
   try {
     const { id } = req.params;
-    const { view, download } = req.query;
+    const { download } = req.query;
     
     const payroll = await payrollController.getPayrollDetails(id);
     
@@ -148,19 +171,15 @@ router.get('/:id/payslip', flexibleAuth, async (req, res) => {
       }
     }
 
-    if (view || download) {
-      // Set appropriate headers
-      if (download) {
-        res.setHeader('Content-disposition', `attachment; filename=payslip_${id}.pdf`);
-      } else {
-        res.setHeader('Content-disposition', `inline; filename=payslip_${id}.pdf`);
-      }
+    if (download) {
+      // Set download headers
+      res.setHeader('Content-disposition', `attachment; filename=payslip_${id}.pdf`);
       res.setHeader('Content-type', 'application/pdf');
       
       // Stream the PDF
       await payrollController.generatePayslipPDF(payroll, { 
         res, 
-        disposition: download ? 'attachment' : 'inline' 
+        disposition: 'attachment' 
       });
     } else {
       // Return payslip metadata
@@ -184,15 +203,15 @@ router.get('/:id/payslip', flexibleAuth, async (req, res) => {
   }
 });
 
-// Generate individual payslip - Updated route
-router.post('/:id/payslip', authenticateToken, async (req, res) => {
+// Generate individual payslip (HR/Admin only, or employee for own payslip)
+router.post('/:id/payslip', async (req, res) => {
   try {
     const payroll = await payrollController.getPayrollDetails(req.params.id);
     
     // Check access permissions
     if (req.user.role === 'employee') {
       await payroll.populate('employeeId', 'userId');
-      if (payroll.employeeId.userId && payroll.employeeId.userId.toString() !== req.user.id) {
+      if (payroll.employeeId.userId.toString() !== req.user.id) {
         return res.status(403).json({ error: 'Access denied' });
       }
     } else if (!['admin', 'hr'].includes(req.user.role)) {
@@ -200,6 +219,22 @@ router.post('/:id/payslip', authenticateToken, async (req, res) => {
     }
 
     const result = await payrollController.generatePayslip(req.params.id);
+    res.json(result);
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ error: error.message });
+  }
+});
+
+// Generate all payslips for a month
+router.post('/payslips/generate-all', requireHROrAdmin, async (req, res) => {
+  try {
+    const { month } = req.body;
+    
+    if (!month) {
+      return res.status(400).json({ error: 'Month is required' });
+    }
+
+    const result = await payrollController.generateAllPayslips(month);
     res.json(result);
   } catch (error) {
     res.status(error.statusCode || 500).json({ error: error.message });
@@ -333,28 +368,6 @@ router.patch('/:id/mark-paid', requireAdmin, async (req, res) => {
   }
 });
 
-// Generate individual payslip (HR/Admin only, or employee for own payslip)
-router.post('/:id/payslip', async (req, res) => {
-  try {
-    const payroll = await payrollController.getPayrollDetails(req.params.id);
-    
-    // Check access permissions
-    if (req.user.role === 'employee') {
-      await payroll.populate('employeeId', 'userId');
-      if (payroll.employeeId.userId.toString() !== req.user.id) {
-        return res.status(403).json({ error: 'Access denied' });
-      }
-    } else if (!['admin', 'hr'].includes(req.user.role)) {
-      return res.status(403).json({ error: 'Access denied' });
-    }
-
-    const result = await payrollController.generatePayslip(req.params.id);
-    res.json(result);
-  } catch (error) {
-    res.status(error.statusCode || 500).json({ error: error.message });
-  }
-});
-
 // Deactivate payroll (Admin only)
 router.patch('/:id/deactivate', requireAdmin, async (req, res) => {
   try {
@@ -364,5 +377,10 @@ router.patch('/:id/deactivate', requireAdmin, async (req, res) => {
     res.status(error.statusCode || 500).json({ error: error.message });
   }
 });
+
+router.get('/payslip/:employeeId/:month', payrollController.getPayslip);
+
+// Get all payslips for a month
+router.get('/payslips/:month', payrollController.getAllPayslips);
 
 module.exports = router;
