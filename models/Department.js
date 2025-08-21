@@ -180,4 +180,9 @@ departmentSchema.methods.addExpense = async function(amount, description = '') {
   return this;
 };
 
+departmentSchema.index({ isActive: 1 });
+departmentSchema.index({ 'budget.allocated': 1 });
+departmentSchema.index({ 'budget.spent': 1 });
+departmentSchema.index({ establishedDate: 1 });
+
 module.exports = mongoose.model('Department', departmentSchema);

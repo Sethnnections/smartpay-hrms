@@ -1,0 +1,1208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TPS - Reports & Analytics</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/admin.css">
+    
+
+
+</head>
+<body>
+    <!-- Sidebar Overlay for Mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    
+    <!-- Sidebar -->
+    <%- include('./partials/sidebar', { currentPage: 'reports' }) %>
+    
+    <!-- Main Content -->
+    <div class="main-content" id="mainContent">
+        <!-- Header -->
+        <%- include('./partials/header', { 
+             title: 'Reports & Analytics', 
+             user: typeof user !== 'undefined' ? user : { name: 'User', email: '', avatar: 'U' } 
+        }) %>
+        
+        <!-- Page Content -->
+        <main class="dashboard-content">
+            <div class="container-fluid px-4">
+                <!-- Summary Stats -->
+                <div class="row mt-4" id="summaryStats">
+                    <div class="col-md-3 mb-4">
+                        <div class="card card-stats ">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center">
+                                    <div class="flex-grow-1">
+                                        <h5 class="card-title">Total Employees</h5>
+                                        <h2 class="card-text" id="totalEmployees">0</h2>
+                                    </div>
+                                    <div class="flex-shrink-0">
+                                        <i class="fas fa-users fa-2x opacity-50"></i>
+                                    </div>
+                                </div>
+                                <p class="card-text mb-0" id="activeEmployees">0 Active</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-4">
+                        <div class="card card-stats">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center">
+                                    <div class="flex-grow-1">
+                                        <h5 class="card-title">Departments</h5>
+                                        <h2 class="card-text" id="totalDepartments">0</h2>
+                                    </div>
+                                    <div class="flex-shrink-0">
+                                        <i class="fas fa-building fa-2x opacity-50"></i>
+                                    </div>
+                                </div>
+                                <p class="card-text mb-0">All Active</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-4">
+                        <div class="card card-stats ">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center">
+                                    <div class="flex-grow-1">
+                                        <h5 class="card-title">Positions</h5>
+                                        <h2 class="card-text" id="totalPositions">0</h2>
+                                    </div>
+                                    <div class="flex-shrink-0">
+                                        <i class="fas fa-briefcase fa-2x opacity-50"></i>
+                                    </div>
+                                </div>
+                                <p class="card-text mb-0" id="vacantPositions">0 Vacant</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-4">
+                        <div class="card card-stats ">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center">
+                                    <div class="flex-grow-1">
+                                        <h5 class="card-title">Payroll Status</h5>
+                                        <h2 class="card-text" id="payrollStatus">Not Processed</h2>
+                                    </div>
+                                    <div class="flex-shrink-0">
+                                        <i class="fas fa-money-bill-wave fa-2x opacity-50"></i>
+                                    </div>
+                                </div>
+                                <p class="card-text mb-0" id="currentMonthPayroll">Current Month</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reports Navigation -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header bg-light">
+                                <ul class="nav nav-tabs card-header-tabs" id="reportsTabs" role="tablist">
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link active" id="employee-tab" data-bs-toggle="tab" data-bs-target="#employee" type="button" role="tab">Employee Directory</button>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link" id="payroll-tab" data-bs-toggle="tab" data-bs-target="#payroll" type="button" role="tab">Payroll History</button>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link" id="documents-tab" data-bs-toggle="tab" data-bs-target="#documents" type="button" role="tab">Document Expiry</button>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link" id="analytics-tab" data-bs-toggle="tab" data-bs-target="#analytics" type="button" role="tab">Analytics</button>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="card-body">
+                                <div class="tab-content" id="reportsTabsContent">
+                                    <!-- Employee Directory Report -->
+                                    <div class="tab-pane fade show active" id="employee" role="tabpanel">
+                                        <div class="filter-bar">
+                                            <div class="row g-3">
+                                                <div class="col-md-3">
+                                                    <label for="empDeptFilter" class="form-label">Department</label>
+                                                    <select class="form-select" id="empDeptFilter">
+                                                        <option value="">All Departments</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <label for="empGradeFilter" class="form-label">Grade</label>
+                                                    <select class="form-select" id="empGradeFilter">
+                                                        <option value="">All Grades</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <label for="empStatusFilter" class="form-label">Status</label>
+                                                    <select class="form-select" id="empStatusFilter">
+                                                        <option value="active">Active</option>
+                                                        <option value="inactive">Inactive</option>
+                                                        <option value="all">All</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <label for="empSearch" class="form-label">Search</label>
+                                                    <input type="text" class="form-control" id="empSearch" placeholder="Name, ID, Email">
+                                                </div>
+                                                <div class="col-12 text-end">
+                                                    <button class="btn btn-primary" id="empFilterBtn">Apply Filters</button>
+                                                    <button class="btn btn-success export-btn" id="exportEmployeeBtn">
+                                                        <i class="fas fa-download me-1"></i> Export CSV
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="table-responsive">
+                                            <table class="table table-hover" id="employeeTable">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Employee ID</th>
+                                                        <th>Name</th>
+                                                        <th>Email</th>
+                                                        <th>Department</th>
+                                                        <th>Position</th>
+                                                        <th>Grade</th>
+                                                        <th>Salary</th>
+                                                        <th>Status</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr>
+                                                        <td colspan="8" class="text-center">Loading employee data...</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        <div class="pagination-container" id="employeePagination"></div>
+                                    </div>
+
+                                    <!-- Payroll History Report -->
+                                    <div class="tab-pane fade" id="payroll" role="tabpanel">
+                                        <div class="filter-bar">
+                                            <div class="row g-3">
+                                                <div class="col-md-3">
+                                                    <label for="payrollMonth" class="form-label">Month</label>
+                                                    <input type="month" class="form-control" id="payrollMonth">
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <label for="payrollDeptFilter" class="form-label">Department</label>
+                                                    <select class="form-select" id="payrollDeptFilter">
+                                                        <option value="">All Departments</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <label for="payrollStatusFilter" class="form-label">Payment Status</label>
+                                                    <select class="form-select" id="payrollStatusFilter">
+                                                        <option value="">All Status</option>
+                                                        <option value="pending">Pending</option>
+                                                        <option value="approved">Approved</option>
+                                                        <option value="paid">Paid</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <label for="payrollAmountRange" class="form-label">Amount Range</label>
+                                                    <div class="input-group">
+                                                        <input type="number" class="form-control" id="payrollMinAmount" placeholder="Min">
+                                                        <span class="input-group-text">-</span>
+                                                        <input type="number" class="form-control" id="payrollMaxAmount" placeholder="Max">
+                                                    </div>
+                                                </div>
+                                                <div class="col-12 text-end">
+                                                    <button class="btn btn-primary" id="payrollFilterBtn">Apply Filters</button>
+                                                    <button class="btn btn-success export-btn" id="exportPayrollBtn">
+                                                        <i class="fas fa-download me-1"></i> Export CSV
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="table-responsive">
+                                            <table class="table table-hover" id="payrollTable">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Employee</th>
+                                                        <th>Month</th>
+                                                        <th>Gross Pay</th>
+                                                        <th>Deductions</th>
+                                                        <th>Net Pay</th>
+                                                        <th>Payment Status</th>
+                                                        <th>Approval Status</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr>
+                                                        <td colspan="7" class="text-center">Loading payroll data...</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        <div class="pagination-container" id="payrollPagination"></div>
+                                    </div>
+
+                                    <!-- Document Expiry Report -->
+                                    <div class="tab-pane fade" id="documents" role="tabpanel">
+                                        <div class="filter-bar">
+                                            <div class="row g-3">
+                                                <div class="col-md-3">
+                                                    <label for="docDaysFilter" class="form-label">Expiring Within (Days)</label>
+                                                    <input type="number" class="form-control" id="docDaysFilter" value="30" min="1">
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <label for="docTypeFilter" class="form-label">Document Type</label>
+                                                    <select class="form-select" id="docTypeFilter">
+                                                        <option value="">All Types</option>
+                                                        <option value="id">ID</option>
+                                                        <option value="passport">Passport</option>
+                                                        <option value="resume">Resume</option>
+                                                        <option value="contract">Contract</option>
+                                                        <option value="certificate">Certificate</option>
+                                                        <option value="medical">Medical</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <label for="docDeptFilter" class="form-label">Department</label>
+                                                    <select class="form-select" id="docDeptFilter">
+                                                        <option value="">All Departments</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <label for="docSortFilter" class="form-label">Sort By</label>
+                                                    <select class="form-select" id="docSortFilter">
+                                                        <option value="documents.expiryDate">Expiry Date</option>
+                                                        <option value="personalInfo.lastName">Employee Name</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-12 text-end">
+                                                    <button class="btn btn-primary" id="docFilterBtn">Apply Filters</button>
+                                                    <button class="btn btn-success export-btn" id="exportDocBtn">
+                                                        <i class="fas fa-download me-1"></i> Export CSV
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="table-responsive">
+                                            <table class="table table-hover" id="documentsTable">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Employee</th>
+                                                        <th>Document</th>
+                                                        <th>Type</th>
+                                                        <th>Expiry Date</th>
+                                                        <th>Days Remaining</th>
+                                                        <th>Department</th>
+                                                        <th>Status</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr>
+                                                        <td colspan="7" class="text-center">Loading document data...</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        <div class="pagination-container" id="documentsPagination"></div>
+                                    </div>
+
+                                    <!-- Analytics Section -->
+                                    <div class="tab-pane fade" id="analytics" role="tabpanel">
+                                        <div class="row mb-4">
+                                            <div class="col-md-12">
+                                                <div class="filter-bar">
+                                                    <div class="row g-3">
+                                                        <div class="col-md-3">
+                                                            <label for="analyticsTimeframe" class="form-label">Timeframe</label>
+                                                            <select class="form-select" id="analyticsTimeframe">
+                                                                <option value="3">Last 3 Months</option>
+                                                                <option value="6" selected>Last 6 Months</option>
+                                                                <option value="12">Last 12 Months</option>
+                                                                <option value="24">Last 24 Months</option>
+                                                            </select>
+                                                        </div>
+                                                        <div class="col-md-3">
+                                                            <label for="analyticsDeptFilter" class="form-label">Department</label>
+                                                            <select class="form-select" id="analyticsDeptFilter">
+                                                                <option value="">All Departments</option>
+                                                            </select>
+                                                        </div>
+                                                        <div class="col-md-3">
+                                                            <label for="analyticsGradeFilter" class="form-label">Grade</label>
+                                                            <select class="form-select" id="analyticsGradeFilter">
+                                                                <option value="">All Grades</option>
+                                                            </select>
+                                                        </div>
+                                                        <div class="col-md-3">
+                                                            <label class="form-label">&nbsp;</label>
+                                                            <button class="btn btn-primary w-100" id="analyticsFilterBtn">Update Analytics</button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="row">
+                                            <!-- Department Analytics -->
+                                            <div class="col-md-6 mb-4">
+                                                <div class="card">
+                                                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                                                        <h5 class="mb-0">Department Analytics</h5>
+                                                        <button class="btn btn-sm btn-outline-primary" id="exportDeptAnalyticsBtn">
+                                                            <i class="fas fa-download"></i>
+                                                        </button>
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <div class="chart-container">
+                                                            <canvas id="deptBudgetChart"></canvas>
+                                                        </div>
+                                                        <div class="chart-container">
+                                                            <canvas id="deptEmployeeChart"></canvas>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Salary Analytics -->
+                                            <div class="col-md-6 mb-4">
+                                                <div class="card">
+                                                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                                                        <h5 class="mb-0">Salary Analytics</h5>
+                                                        <button class="btn btn-sm btn-outline-primary" id="exportSalaryAnalyticsBtn">
+                                                            <i class="fas fa-download"></i>
+                                                        </button>
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <div class="chart-container">
+                                                            <canvas id="salaryDistributionChart"></canvas>
+                                                        </div>
+                                                        <div class="chart-container">
+                                                            <canvas id="salaryByGradeChart"></canvas>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Workforce Analytics -->
+                                            <div class="col-md-6 mb-4">
+                                                <div class="card">
+                                                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                                                        <h5 class="mb-0">Workforce Analytics</h5>
+                                                        <button class="btn btn-sm btn-outline-primary" id="exportWorkforceAnalyticsBtn">
+                                                            <i class="fas fa-download"></i>
+                                                        </button>
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <div class="chart-container">
+                                                            <canvas id="workforceDistributionChart"></canvas>
+                                                        </div>
+                                                        <div class="chart-container">
+                                                            <canvas id="hiringTrendsChart"></canvas>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Demographic Analytics -->
+                                            <div class="col-md-6 mb-4">
+                                                <div class="card">
+                                                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                                                        <h5 class="mb-0">Demographic Analytics</h5>
+                                                        <button class="btn btn-sm btn-outline-primary" id="exportDemographicAnalyticsBtn">
+                                                            <i class="fas fa-download"></i>
+                                                        </button>
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <div class="chart-container">
+                                                            <canvas id="ageDistributionChart"></canvas>
+                                                        </div>
+                                                        <div class="chart-container">
+                                                            <canvas id="genderDistributionChart"></canvas>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <!-- Axios -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.2/axios.min.js"></script>
+    
+    <!-- Custom JS -->
+    <script src="/js/admin.js"></script>
+    
+    <!-- Reports Script -->
+    <script>
+        // Global variables
+        let currentEmployeePage = 1;
+        let currentPayrollPage = 1;
+        let currentDocumentsPage = 1;
+        const itemsPerPage = 10;
+        let departmentOptions = [];
+        let gradeOptions = [];
+
+        // Initialize when document is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSummaryStats();
+            loadDepartmentOptions();
+            loadGradeOptions();
+            loadEmployeeReport();
+            setupEventListeners();
+        });
+
+        // Load summary statistics
+        async function loadSummaryStats() {
+            try {
+                const response = await axios.get('/api/reports/summary', {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
+                });
+                
+                if (response.data.success) {
+                    const data = response.data.data;
+                    document.getElementById('totalEmployees').textContent = data.employees.total;
+                    document.getElementById('activeEmployees').textContent = `${data.employees.active} Active`;
+                    document.getElementById('totalDepartments').textContent = data.departments.total;
+                    document.getElementById('totalPositions').textContent = data.positions.total;
+                    document.getElementById('vacantPositions').textContent = `${data.positions.vacant} Vacant`;
+                    document.getElementById('payrollStatus').textContent = data.payroll.currentMonthProcessed ? 'Processed' : 'Not Processed';
+                    document.getElementById('currentMonthPayroll').textContent = `Current Month: ${new Date().toLocaleString('default', { month: 'long' })}`;
+                    
+                    // Update card color based on payroll status
+                    const payrollCard = document.querySelector('.bg-warning');
+                    if (data.payroll.currentMonthProcessed) {
+                        payrollCard.classList.remove('bg-warning');
+                        payrollCard.classList.add('bg-success');
+                        payrollCard.classList.remove('text-dark');
+                        payrollCard.classList.add('text-white');
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading summary stats:', error);
+                showError('Failed to load summary statistics');
+            }
+        }
+
+        // Load department options for filters
+        async function loadDepartmentOptions() {
+            try {
+                const response = await axios.get('/api/departments', {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
+                });
+                
+                if (response.data.success) {
+                    departmentOptions = response.data.data;
+                    
+                    // Populate department filters
+                    const departmentSelects = [
+                        'empDeptFilter', 'payrollDeptFilter', 'docDeptFilter', 'analyticsDeptFilter'
+                    ];
+                    
+                    departmentSelects.forEach(selectId => {
+                        const select = document.getElementById(selectId);
+                        select.innerHTML = '<option value="">All Departments</option>';
+                        
+                        departmentOptions.forEach(dept => {
+                            const option = document.createElement('option');
+                            option.value = dept._id;
+                            option.textContent = dept.name;
+                            select.appendChild(option);
+                        });
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading departments:', error);
+            }
+        }
+
+        // Load grade options for filters
+        async function loadGradeOptions() {
+            try {
+                const response = await axios.get('/api/grades', {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
+                });
+                
+                if (response.data.success) {
+                    gradeOptions = response.data.data;
+                    
+                    // Populate grade filters
+                    const gradeSelects = [
+                        'empGradeFilter', 'analyticsGradeFilter'
+                    ];
+                    
+                    gradeSelects.forEach(selectId => {
+                        const select = document.getElementById(selectId);
+                        select.innerHTML = '<option value="">All Grades</option>';
+                        
+                        gradeOptions.forEach(grade => {
+                            const option = document.createElement('option');
+                            option.value = grade._id;
+                            option.textContent = `${grade.name} (Level ${grade.level})`;
+                            select.appendChild(option);
+                        });
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading grades:', error);
+            }
+        }
+
+        // Load employee directory report
+        async function loadEmployeeReport(page = 1) {
+            try {
+                const department = document.getElementById('empDeptFilter').value;
+                const grade = document.getElementById('empGradeFilter').value;
+                const status = document.getElementById('empStatusFilter').value;
+                const search = document.getElementById('empSearch').value;
+                
+                let url = `/api/reports/employees?page=${page}&limit=${itemsPerPage}`;
+                if (department) url += `&department=${department}`;
+                if (grade) url += `&grade=${grade}`;
+                if (status !== 'all') url += `&status=${status}`;
+                if (search) url += `&search=${encodeURIComponent(search)}`;
+                
+                const response = await axios.get(url, {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
+                });
+                
+                if (response.data.success) {
+                    const data = response.data.data;
+                    currentEmployeePage = page;
+                    
+                    // Update table
+                    const tbody = document.getElementById('employeeTable').querySelector('tbody');
+                    tbody.innerHTML = '';
+                    
+                    if (data.employees.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="8" class="text-center">No employees found</td></tr>';
+                    } else {
+                        data.employees.forEach(emp => {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${emp.employeeId}</td>
+                                <td>${emp.personalInfo.firstName} ${emp.personalInfo.lastName}</td>
+                                <td>${emp.personalInfo.email}</td>
+                                <td>${emp.employmentInfo.departmentId?.name || 'N/A'}</td>
+                                <td>${emp.employmentInfo.positionId?.name || 'N/A'}</td>
+                                <td>${emp.employmentInfo.gradeId?.name || 'N/A'}</td>
+                                <td>${formatCurrency(emp.employmentInfo.currentSalary)}</td>
+                                <td><span class="badge bg-${emp.employmentInfo.status === 'active' ? 'success' : 'secondary'}">${emp.employmentInfo.status}</span></td>
+                            `;
+                            tbody.appendChild(row);
+                        });
+                    }
+                    
+                    // Update pagination
+                    updatePagination('employeePagination', data.currentPage, data.totalPages, data.totalEmployees, loadEmployeeReport);
+                }
+            } catch (error) {
+                console.error('Error loading employee report:', error);
+                showError('Failed to load employee directory');
+            }
+        }
+
+        // Load payroll history report
+        async function loadPayrollReport(page = 1) {
+            try {
+                const month = document.getElementById('payrollMonth').value;
+                const department = document.getElementById('payrollDeptFilter').value;
+                const status = document.getElementById('payrollStatusFilter').value;
+                const minAmount = document.getElementById('payrollMinAmount').value;
+                const maxAmount = document.getElementById('payrollMaxAmount').value;
+                
+                let url = `/api/reports/payroll?page=${page}&limit=${itemsPerPage}`;
+                if (month) url += `&month=${month}`;
+                if (department) url += `&department=${department}`;
+                if (status) url += `&paymentStatus=${status}`;
+                if (minAmount) url += `&minAmount=${minAmount}`;
+                if (maxAmount) url += `&maxAmount=${maxAmount}`;
+                
+                const response = await axios.get(url, {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
+                });
+                
+                if (response.data.success) {
+                    const data = response.data.data;
+                    currentPayrollPage = page;
+                    
+                    // Update table
+                    const tbody = document.getElementById('payrollTable').querySelector('tbody');
+                    tbody.innerHTML = '';
+                    
+                    if (data.payrolls.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="7" class="text-center">No payroll records found</td></tr>';
+                    } else {
+                        data.payrolls.forEach(payroll => {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${payroll.employeeId.personalInfo.firstName} ${payroll.employeeId.personalInfo.lastName}</td>
+                                <td>${payroll.payrollMonth}</td>
+                                <td>${formatCurrency(payroll.grossPay)}</td>
+                                <td>${formatCurrency(payroll.deductions.total)}</td>
+                                <td>${formatCurrency(payroll.netPay)}</td>
+                                <td><span class="badge bg-${getPaymentStatusBadge(payroll.payment.status)}">${payroll.payment.status}</span></td>
+                                <td><span class="badge bg-${getApprovalStatusBadge(payroll.approvalStatus)}">${payroll.approvalStatus}</span></td>
+                            `;
+                            tbody.appendChild(row);
+                        });
+                    }
+                    
+                    // Update pagination
+                    updatePagination('payrollPagination', data.currentPage, data.totalPages, data.totalRecords, loadPayrollReport);
+                }
+            } catch (error) {
+                console.error('Error loading payroll report:', error);
+                showError('Failed to load payroll history');
+            }
+        }
+
+        // Load document expiry report
+        async function loadDocumentsReport(page = 1) {
+            try {
+                const days = document.getElementById('docDaysFilter').value;
+                const type = document.getElementById('docTypeFilter').value;
+                const department = document.getElementById('docDeptFilter').value;
+                const sortBy = document.getElementById('docSortFilter').value;
+                
+                let url = `/api/reports/documents/expiry?page=${page}&limit=${itemsPerPage}&days=${days}`;
+                if (type) url += `&documentType=${type}`;
+                if (department) url += `&department=${department}`;
+                url += `&sortBy=${sortBy}&sortOrder=asc`;
+                
+                const response = await axios.get(url, {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
+                });
+                
+                if (response.data.success) {
+                    const data = response.data.data;
+                    currentDocumentsPage = page;
+                    
+                    // Update table
+                    const tbody = document.getElementById('documentsTable').querySelector('tbody');
+                    tbody.innerHTML = '';
+                    
+                    if (data.documents.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="7" class="text-center">No expiring documents found</td></tr>';
+                    } else {
+                        data.documents.forEach(doc => {
+                            const daysRemaining = Math.floor(doc.daysToExpiry);
+                            let statusBadge = 'success';
+                            if (daysRemaining < 7) statusBadge = 'danger';
+                            else if (daysRemaining < 30) statusBadge = 'warning';
+                            
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${doc.personalInfo.firstName} ${doc.personalInfo.lastName}</td>
+                                <td>${doc.document.name}</td>
+                                <td><span class="badge bg-secondary">${doc.document.type}</span></td>
+                                <td>${new Date(doc.document.expiryDate).toLocaleDateString()}</td>
+                                <td><span class="badge bg-${statusBadge}">${daysRemaining} days</span></td>
+                                <td>${doc.department?.name || 'N/A'}</td>
+                                <td><span class="badge bg-${doc.document.isVerified ? 'success' : 'warning'}">${doc.document.isVerified ? 'Verified' : 'Pending'}</span></td>
+                            `;
+                            tbody.appendChild(row);
+                        });
+                    }
+                    
+                    // Update pagination
+                    updatePagination('documentsPagination', data.currentPage, data.totalPages, data.totalDocuments, loadDocumentsReport);
+                }
+            } catch (error) {
+                console.error('Error loading documents report:', error);
+                showError('Failed to load document expiry report');
+            }
+        }
+
+        // Load analytics data
+        async function loadAnalytics() {
+            try {
+                const timeframe = document.getElementById('analyticsTimeframe').value;
+                const department = document.getElementById('analyticsDeptFilter').value;
+                const grade = document.getElementById('analyticsGradeFilter').value;
+                
+                // Load department analytics
+                let deptUrl = `/api/reports/analytics/departments?timeframe=${timeframe}`;
+                const deptResponse = await axios.get(deptUrl, {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
+                });
+                
+                if (deptResponse.data.success) {
+                    renderDepartmentAnalytics(deptResponse.data.data);
+                }
+                
+                // Load salary analytics
+                let salaryUrl = `/api/reports/analytics/salary`;
+                if (department) salaryUrl += `&department=${department}`;
+                if (grade) salaryUrl += `&grade=${grade}`;
+                
+                const salaryResponse = await axios.get(salaryUrl, {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
+                });
+                
+                if (salaryResponse.data.success) {
+                    renderSalaryAnalytics(salaryResponse.data.data);
+                }
+                
+                // Load workforce analytics
+                let workforceUrl = `/api/reports/analytics/workforce?period=${timeframe}`;
+                const workforceResponse = await axios.get(workforceUrl, {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
+                });
+                
+                if (workforceResponse.data.success) {
+                    renderWorkforceAnalytics(workforceResponse.data.data);
+                }
+                
+            } catch (error) {
+                console.error('Error loading analytics:', error);
+                showError('Failed to load analytics data');
+            }
+        }
+
+        // Render department analytics charts
+        function renderDepartmentAnalytics(data) {
+            // Department Budget Utilization Chart
+            const deptBudgetCtx = document.getElementById('deptBudgetChart').getContext('2d');
+            new Chart(deptBudgetCtx, {
+                type: 'bar',
+                data: {
+                    labels: data.departmentStats.map(dept => dept.name),
+                    datasets: [{
+                        label: 'Budget Utilization (%)',
+                        data: data.departmentStats.map(dept => dept.budgetUtilization),
+                        backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            title: {
+                                display: true,
+                                text: 'Utilization (%)'
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Department Employee Count Chart
+            const deptEmployeeCtx = document.getElementById('deptEmployeeChart').getContext('2d');
+            new Chart(deptEmployeeCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: data.departmentStats.map(dept => dept.name),
+                    datasets: [{
+                        label: 'Employee Count',
+                        data: data.departmentStats.map(dept => dept.employeeCount),
+                        backgroundColor: [
+                            'rgba(255, 99, 132, 0.5)',
+                            'rgba(54, 162, 235, 0.5)',
+                            'rgba(255, 206, 86, 0.5)',
+                            'rgba(75, 192, 192, 0.5)',
+                            'rgba(153, 102, 255, 0.5)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+        }
+
+        // Render salary analytics charts
+        function renderSalaryAnalytics(data) {
+            // Salary Distribution Chart
+            const salaryDistCtx = document.getElementById('salaryDistributionChart').getContext('2d');
+            new Chart(salaryDistCtx, {
+                type: 'bar',
+                data: {
+                    labels: data.salaryRanges.map(range => {
+                        if (range._id === 'Other') return 'Other';
+                        return `${formatCurrency(range._id)} - ${formatCurrency(range._id === 2000000 ? '∞' : data.salaryRanges[data.salaryRanges.indexOf(range) + 1]?._id || '∞')}`;
+                    }),
+                    datasets: [{
+                        label: 'Employee Count',
+                        data: data.salaryRanges.map(range => range.count),
+                        backgroundColor: 'rgba(75, 192, 192, 0.5)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Employee Count'
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Salary by Grade Chart
+            const salaryGradeCtx = document.getElementById('salaryByGradeChart').getContext('2d');
+            new Chart(salaryGradeCtx, {
+                type: 'line',
+                data: {
+                    labels: data.salaryByGrade.map(item => item._id.gradeName),
+                    datasets: [{
+                        label: 'Average Salary',
+                        data: data.salaryByGrade.map(item => item.avgSalary),
+                        fill: false,
+                        borderColor: 'rgba(153, 102, 255, 1)',
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Salary'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Render workforce analytics charts
+        function renderWorkforceAnalytics(data) {
+            // Workforce Distribution Chart
+            const workforceDistCtx = document.getElementById('workforceDistributionChart').getContext('2d');
+            new Chart(workforceDistCtx, {
+                type: 'pie',
+                data: {
+                    labels: data.statusDistribution.map(item => item._id),
+                    datasets: [{
+                        label: 'Employee Count',
+                        data: data.statusDistribution.map(item => item.count),
+                        backgroundColor: [
+                            'rgba(75, 192, 192, 0.5)',
+                            'rgba(255, 99, 132, 0.5)',
+                            'rgba(255, 205, 86, 0.5)',
+                            'rgba(54, 162, 235, 0.5)',
+                            'rgba(153, 102, 255, 0.5)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+            
+            // Hiring Trends Chart
+            const hiringTrendsCtx = document.getElementById('hiringTrendsChart').getContext('2d');
+            const hiringLabels = data.hiringTrends.map(item => `${item._id.year}-${item._id.month}`);
+            
+            new Chart(hiringTrendsCtx, {
+                type: 'line',
+                data: {
+                    labels: hiringLabels,
+                    datasets: [{
+                        label: 'Hires',
+                        data: data.hiringTrends.map(item => item.hires),
+                        fill: false,
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Number of Hires'
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Age Distribution Chart
+            const ageDistCtx = document.getElementById('ageDistributionChart').getContext('2d');
+            new Chart(ageDistCtx, {
+                type: 'bar',
+                data: {
+                    labels: data.ageDistribution.map(item => {
+                        if (item._id === 'Other') return 'Other';
+                        return `${item._id} - ${data.ageDistribution[data.ageDistribution.indexOf(item) + 1]?._id || '∞'}`;
+                    }),
+                    datasets: [{
+                        label: 'Employee Count',
+                        data: data.ageDistribution.map(item => item.count),
+                        backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Employee Count'
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Gender Distribution Chart
+            const genderDistCtx = document.getElementById('genderDistributionChart').getContext('2d');
+            new Chart(genderDistCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: data.genderDistribution.map(item => item._id),
+                    datasets: [{
+                        label: 'Employee Count',
+                        data: data.genderDistribution.map(item => item.count),
+                        backgroundColor: [
+                            'rgba(54, 162, 235, 0.5)',
+                            'rgba(255, 99, 132, 0.5)',
+                            'rgba(255, 206, 86, 0.5)',
+                            'rgba(75, 192, 192, 0.5)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+        }
+
+        // Setup event listeners
+        function setupEventListeners() {
+            // Employee report filters
+            document.getElementById('empFilterBtn').addEventListener('click', () => loadEmployeeReport(1));
+            
+            // Payroll report filters
+            document.getElementById('payrollFilterBtn').addEventListener('click', () => loadPayrollReport(1));
+            
+            // Documents report filters
+            document.getElementById('docFilterBtn').addEventListener('click', () => loadDocumentsReport(1));
+            
+            // Analytics filters
+            document.getElementById('analyticsFilterBtn').addEventListener('click', loadAnalytics);
+            
+            // Export buttons
+            document.getElementById('exportEmployeeBtn').addEventListener('click', exportEmployeeCSV);
+            document.getElementById('exportPayrollBtn').addEventListener('click', exportPayrollCSV);
+            document.getElementById('exportDocBtn').addEventListener('click', exportDocumentsCSV);
+            
+            // Tab change events
+            document.getElementById('employee-tab').addEventListener('click', () => {
+                if (document.getElementById('employeeTable').querySelector('tbody').children.length === 1) {
+                    loadEmployeeReport();
+                }
+            });
+            
+            document.getElementById('payroll-tab').addEventListener('click', () => {
+                if (document.getElementById('payrollTable').querySelector('tbody').children.length === 1) {
+                    loadPayrollReport();
+                }
+            });
+            
+            document.getElementById('documents-tab').addEventListener('click', () => {
+                if (document.getElementById('documentsTable').querySelector('tbody').children.length === 1) {
+                    loadDocumentsReport();
+                }
+            });
+            
+            document.getElementById('analytics-tab').addEventListener('click', loadAnalytics);
+        }
+
+        // Export employee data to CSV
+        async function exportEmployeeCSV() {
+            try {
+                const department = document.getElementById('empDeptFilter').value;
+                const grade = document.getElementById('empGradeFilter').value;
+                const status = document.getElementById('empStatusFilter').value;
+                const search = document.getElementById('empSearch').value;
+                
+                let url = `/api/reports/export/csv?reportType=employees`;
+                if (department) url += `&department=${department}`;
+                if (grade) url += `&grade=${grade}`;
+                if (status !== 'all') url += `&status=${status}`;
+                if (search) url += `&search=${encodeURIComponent(search)}`;
+                
+                const response = await axios.get(url, {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` },
+                    responseType: 'blob'
+                });
+                
+                const blob = new Blob([response.data], { type: 'text/csv' });
+                const link = document.createElement('a');
+                link.href = window.URL.createObjectURL(blob);
+                link.download = `employee_directory_${new Date().toISOString().slice(0, 10)}.csv`;
+                link.click();
+            } catch (error) {
+                console.error('Error exporting employee data:', error);
+                showError('Failed to export employee data');
+            }
+        }
+
+        // Export payroll data to CSV
+        async function exportPayrollCSV() {
+            showInfo('Payroll export feature will be implemented soon');
+        }
+
+        // Export documents data to CSV
+        async function exportDocumentsCSV() {
+            showInfo('Documents export feature will be implemented soon');
+        }
+
+        // Helper function to update pagination
+        function updatePagination(elementId, currentPage, totalPages, totalItems, callback) {
+            const paginationContainer = document.getElementById(elementId);
+            paginationContainer.innerHTML = '';
+            
+            if (totalPages <= 1) return;
+            
+            const pagination = document.createElement('ul');
+            pagination.className = 'pagination';
+            
+            // Previous button
+            const prevLi = document.createElement('li');
+            prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
+            const prevLink = document.createElement('a');
+            prevLink.className = 'page-link';
+            prevLink.href = '#';
+            prevLink.innerHTML = '&laquo;';
+            prevLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (currentPage > 1) callback(currentPage - 1);
+            });
+            prevLi.appendChild(prevLink);
+            pagination.appendChild(prevLi);
+            
+            // Page numbers
+            const startPage = Math.max(1, currentPage - 2);
+            const endPage = Math.min(totalPages, startPage + 4);
+            
+            for (let i = startPage; i <= endPage; i++) {
+                const pageLi = document.createElement('li');
+                pageLi.className = `page-item ${i === currentPage ? 'active' : ''}`;
+                const pageLink = document.createElement('a');
+                pageLink.className = 'page-link';
+                pageLink.href = '#';
+                pageLink.textContent = i;
+                pageLink.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    callback(i);
+                });
+                pageLi.appendChild(pageLink);
+                pagination.appendChild(pageLi);
+            }
+            
+            // Next button
+            const nextLi = document.createElement('li');
+            nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
+            const nextLink = document.createElement('a');
+            nextLink.className = 'page-link';
+            nextLink.href = '#';
+            nextLink.innerHTML = '&raquo;';
+            nextLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (currentPage < totalPages) callback(currentPage + 1);
+            });
+            nextLi.appendChild(nextLink);
+            pagination.appendChild(nextLi);
+            
+            paginationContainer.appendChild(pagination);
+            
+            // Add item count info
+            const info = document.createElement('div');
+            info.className = 'mt-2 text-muted';
+            info.textContent = `Showing ${((currentPage - 1) * itemsPerPage) + 1} to ${Math.min(currentPage * itemsPerPage, totalItems)} of ${totalItems} entries`;
+            paginationContainer.appendChild(info);
+        }
+
+        // Helper function to format currency
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: 2
+            }).format(amount);
+        }
+
+        // Helper function to get payment status badge color
+        function getPaymentStatusBadge(status) {
+            switch (status) {
+                case 'paid': return 'success';
+                case 'approved': return 'primary';
+                case 'processing': return 'info';
+                case 'pending': return 'warning';
+                case 'failed': return 'danger';
+                default: return 'secondary';
+            }
+        }
+
+        // Helper function to get approval status badge color
+        function getApprovalStatusBadge(status) {
+            switch (status) {
+                case 'approved': return 'success';
+                case 'pending': return 'warning';
+                case 'rejected': return 'danger';
+                default: return 'secondary';
+            }
+        }
+
+        // Helper function to show error messages
+        function showError(message) {
+            // You can implement a toast notification system here
+            alert(`Error: ${message}`);
+        }
+
+        // Helper function to show info messages
+        function showInfo(message) {
+            // You can implement a toast notification system here
+            alert(`Info: ${message}`);
+        }
+    </script>
+</body>
+</html>

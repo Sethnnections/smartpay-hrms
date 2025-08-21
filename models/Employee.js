@@ -1,5 +1,8 @@
 const mongoose = require('mongoose');
 const moment = require('moment');
+const mongoosePaginate = require('mongoose-paginate-v2');
+
+
 
 const employeeSchema = new mongoose.Schema({
   employeeId: {
@@ -857,6 +860,8 @@ employeeSchema.index({ 'employmentInfo.gradeId': 1 });
 employeeSchema.index({ 'employmentInfo.status': 1 });
 employeeSchema.index({ 'personalInfo.lastName': 1, 'personalInfo.firstName': 1 });
 employeeSchema.index({ employeeId: 1 });
+
+employeeSchema.plugin(mongoosePaginate);
 
 const Employee = mongoose.model('Employee', employeeSchema);
 

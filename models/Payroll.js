@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const moment = require('moment');
+const mongoosePaginate = require('mongoose-paginate-v2');
 
 const payrollSchema = new mongoose.Schema({
   employeeId: {
@@ -528,5 +529,6 @@ payrollSchema.statics.getSummary = async function(month) {
   ]);
 };
 
+payrollSchema.plugin(mongoosePaginate);
 const Payroll = mongoose.model('Payroll', payrollSchema);
 module.exports = Payroll;
