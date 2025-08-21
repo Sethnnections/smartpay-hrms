@@ -103,7 +103,7 @@ router.get('/admin/reports', (req, res) => {
     res.render('admin/reports', {
         title: 'Analytics',
         currentPage: 'reports',
-        layout:false,
+        //layout:false,
         user: {
             name: 'Administrator',
             email: 'admin@teampay.com',

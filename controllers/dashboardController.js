@@ -20,10 +20,12 @@ class DashboardController {
         {
           $facet: {
             total: [{ $count: "count" }],
-            active: [
-              { $match: { 'employmentInfo.status': 'active', isActive: true } },
-              { $count: "count" }
-            ],
+           // Replace all status checks with isActive
+active: [
+  { $match: { isActive: true } },
+  { $count: "count" }
+],
+
             byStatus: [
               { $group: { _id: '$employmentInfo.status', count: { $sum: 1 } } }
             ],
@@ -41,18 +43,18 @@ class DashboardController {
               },
               { $count: "count" }
             ],
-            terminations: [
-              {
-                $match: {
-                  'employmentInfo.status': { $in: ['terminated', 'resigned'] },
-                  'employmentInfo.endDate': {
-                    $gte: startDate.toDate(),
-                    $lte: endDate.toDate()
-                  }
+           terminations: [
+            {
+              $match: {
+                isActive: false, // Changed from status check
+                'employmentInfo.endDate': {
+                  $gte: startDate.toDate(),
+                  $lte: endDate.toDate()
                 }
-              },
-              { $count: "count" }
-            ]
+              }
+            },
+            { $count: "count" }
+],
           }
         }
       ]);
@@ -134,9 +136,9 @@ class DashboardController {
       const startDate = moment().subtract(periodNum, type);
       
       // Build match criteria
+
       const matchCriteria = { isActive: true };
       if (department) matchCriteria['employmentInfo.departmentId'] = department;
-      if (status) matchCriteria['employmentInfo.status'] = status;
       
       // Employee trends over time
       const trends = await Employee.aggregate([
@@ -258,13 +260,12 @@ class DashboardController {
       // Turnover rate calculation
       const totalEmployees = await Employee.countDocuments(matchCriteria);
       const terminationsInPeriod = await Employee.countDocuments({
-        ...matchCriteria,
-        'employmentInfo.status': { $in: ['terminated', 'resigned'] },
-        'employmentInfo.endDate': {
-          $gte: startDate.toDate(),
-          $lte: endDate.toDate()
-        }
-      });
+            isActive: false, // Changed from status check
+            'employmentInfo.endDate': {
+              $gte: startDate.toDate(),
+              $lte: endDate.toDate()
+            }
+          });
       
       const turnoverRate = totalEmployees > 0 ? ((terminationsInPeriod / totalEmployees) * 100).toFixed(2) : 0;
       
@@ -310,9 +311,9 @@ class DashboardController {
             foreignField: 'employmentInfo.departmentId',
             as: 'employees',
             pipeline: [
-              { $match: { 'employmentInfo.status': 'active', isActive: true } }
-            ]
-          }
+                { $match: { isActive: true } } // Changed from status check
+              ]
+            }
         },
         {
           $project: {
@@ -350,10 +351,9 @@ class DashboardController {
       
       // Employee distribution by department
       const employeeDistribution = await Employee.aggregate([
-        {
+       {
           $match: {
-            'employmentInfo.status': 'active',
-            isActive: true
+            isActive: true, // Changed from status check
           }
         },
         {
@@ -408,12 +408,10 @@ class DashboardController {
       // Build match criteria
       const matchCriteria = { isActive: true, payrollMonth: { $in: months } };
       if (department) {
-        // Get department employees first
-        const deptEmployees = await Employee.find({
+         const deptEmployees = await Employee.find({
           'employmentInfo.departmentId': department,
-          'employmentInfo.status': 'active'
+          isActive: true // Changed from status check
         }).select('_id');
-        
         matchCriteria.employeeId = { $in: deptEmployees.map(emp => emp._id) };
       }
       
@@ -554,15 +552,14 @@ class DashboardController {
       const startDate = moment().subtract(periodNum, type);
       
       // Build match criteria
-      const matchCriteria = {
-        'employmentInfo.status': 'active',
-        isActive: true,
+        const matchCriteria = {
+        isActive: true, // Changed from status check
         'performanceReviews.reviewDate': {
           $gte: startDate.toDate(),
           $lte: endDate.toDate()
         }
       };
-      
+            
       if (department) {
         matchCriteria['employmentInfo.departmentId'] = department;
       }
@@ -796,13 +793,13 @@ class DashboardController {
   }
   
   static async getTurnoverAnalytics(dateRange, groupBy, department) {
-    const matchCriteria = {
-      'employmentInfo.endDate': {
-        $gte: dateRange.start,
-        $lte: dateRange.end
-      },
-      'employmentInfo.status': { $in: ['terminated', 'resigned'] }
-    };
+   const matchCriteria = {
+  'employmentInfo.endDate': {
+    $gte: dateRange.start,
+    $lte: dateRange.end
+  },
+  isActive: false // Changed from status check
+};
     if (department) matchCriteria['employmentInfo.departmentId'] = department;
     
     return await Employee.aggregate([

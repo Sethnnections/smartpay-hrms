@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let employeeDistributionChart;
     let payrollTrendChart;
     let departmentBudgetChart;
-    let employeeStatusChart;
+    let employeeActivityChart; // Changed from employeeStatusChart
     
     // Initialize the dashboard
     initDashboard();
@@ -79,8 +79,7 @@ document.addEventListener('DOMContentLoaded', function() {
         Promise.all([
             fetchSummaryData(),
             fetchEmployeeData(),
-            fetchPayrollData(),
-            fetchPerformanceData()
+            fetchPayrollData()
         ])
         .then(() => {
             hideLoading();
@@ -106,6 +105,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => {
             if (response.data.success) {
                 updateSummaryCards(response.data.data);
+                updateEmployeeActivityChart(response.data.data); // Update activity chart with summary data
             } else {
                 throw new Error(response.data.message || 'Failed to fetch summary data');
             }
@@ -132,7 +132,6 @@ document.addEventListener('DOMContentLoaded', function() {
             if (response.data.success) {
                 window.employeeData = response.data.data; // Store for chart updates
                 updateEmployeeDistributionChart('department');
-                updateEmployeeStatusChart(response.data.data);
             } else {
                 throw new Error(response.data.message || 'Failed to fetch employee data');
             }
@@ -170,42 +169,22 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Fetch performance data (not used in current implementation)
-    function fetchPerformanceData() {
-        return axios.get('/api/dashboard/performance', {
-            headers: {
-                'Authorization': `Bearer ${authToken}`,
-                'Content-Type': 'application/json'
-            },
-            params: {
-                period: currentPeriod,
-                type: currentPeriodType
-            }
-        })
-        .then(response => {
-            if (!response.data.success) {
-                throw new Error(response.data.message || 'Failed to fetch performance data');
-            }
-            // Can be used for additional charts if needed
-        })
-        .catch(error => {
-            console.error('Error fetching performance data:', error);
-            throw error;
-        });
-    }
-    
     // Update summary cards
     function updateSummaryCards(data) {
         // Employees
         document.getElementById('totalEmployees').textContent = data.employees.total;
+        document.getElementById('activeEmployees').textContent = data.employees.active;
+        
+        // Calculate active percentage
+        const activePercentage = data.employees.total > 0 
+            ? ((data.employees.active / data.employees.total) * 100).toFixed(1)
+            : 0;
+        document.getElementById('activePercentage').textContent = activePercentage;
+        
         document.getElementById('employeeChange').innerHTML = 
             `<i class="fas fa-caret-up me-1"></i> ${data.employees.newHires} new hires`;
         document.getElementById('terminations').innerHTML = 
             `<i class="fas fa-caret-down me-1"></i> ${data.employees.terminations} terminations`;
-        
-        // Departments
-        document.getElementById('totalDepartments').textContent = data.departments.total;
-        document.getElementById('totalBudget').textContent = formatCurrency(data.departments.budgetSummary.totalAllocated);
         
         // Payroll
         const payrollTrend = data.payroll.trends[0];
@@ -217,7 +196,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Turnover rate (from employee data if available)
         if (window.employeeData) {
-            document.getElementById('turnoverRate').textContent = window.employeeData.summary.turnoverRate + '%';
+            document.getElementById('turnoverRate').textContent = window.employeeData.summary.turnoverRate;
         }
     }
     
@@ -367,20 +346,20 @@ document.addEventListener('DOMContentLoaded', function() {
             data: {
                 labels: labels,
                 datasets: [
-                 {
-    label: 'Budget Allocated',
-    data: allocated,
-    backgroundColor: 'rgba(232, 96, 41, 0.7)',
-    borderColor: 'rgba(232, 96, 41, 1)',
-    borderWidth: 1
-},
-{
-    label: 'Budget Spent',
-    data: spent,
-    backgroundColor: 'rgba(10, 31, 58, 0.7)',
-    borderColor: 'rgba(10, 31, 58, 1)',
-    borderWidth: 1
-}
+                    {
+                        label: 'Budget Allocated',
+                        data: allocated,
+                        backgroundColor: 'rgba(232, 96, 41, 0.7)',
+                        borderColor: 'rgba(232, 96, 41, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Budget Spent',
+                        data: spent,
+                        backgroundColor: 'rgba(10, 31, 58, 0.7)',
+                        borderColor: 'rgba(10, 31, 58, 1)',
+                        borderWidth: 1
+                    }
                 ]
             },
             options: {
@@ -409,35 +388,27 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Update employee status chart
-    function updateEmployeeStatusChart(data) {
-        if (!data.trends || data.trends.length === 0) return;
+    // Update employee activity chart (replaces the old status chart)
+    function updateEmployeeActivityChart(data) {
+        if (!data || !data.employees) return;
         
-        // Group by status
-        const statusCounts = {};
-        data.trends.forEach(trend => {
-            const status = trend._id.status;
-            statusCounts[status] = (statusCounts[status] || 0) + trend.count;
-        });
+        const activeCount = data.employees.active || 0;
+        const inactiveCount = data.employees.total - activeCount;
         
-        const labels = Object.keys(statusCounts);
-        const counts = Object.values(statusCounts);
-        const backgroundColors = generateColors(labels.length);
-        
-        const ctx = document.getElementById('employeeStatusChart').getContext('2d');
+        const ctx = document.getElementById('employeeActivityChart').getContext('2d');
         
         // Destroy previous chart if exists
-        if (employeeStatusChart) {
-            employeeStatusChart.destroy();
+        if (employeeActivityChart) {
+            employeeActivityChart.destroy();
         }
         
-        employeeStatusChart = new Chart(ctx, {
+        employeeActivityChart = new Chart(ctx, {
             type: 'pie',
             data: {
-                labels: labels,
+                labels: ['Active Employees', 'Inactive Employees'],
                 datasets: [{
-                    data: counts,
-                    backgroundColor: backgroundColors,
+                    data: [activeCount, inactiveCount],
+                    backgroundColor: ['#28a745', '#dc3545'],
                     borderWidth: 1
                 }]
             },
@@ -483,9 +454,26 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function formatCurrency(amount) {
+        if (amount >= 1000000) {
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'MWK',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(amount).replace(/(\.|,)00$/g, '') + 'M';
+        }
+        if (amount >= 1000) {
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'MWK',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(amount).replace(/(\.|,)00$/g, '') + 'K';
+        }
         return new Intl.NumberFormat('en-US', {
             style: 'currency',
             currency: 'MWK',
+            minimumFractionDigits: 0,
             maximumFractionDigits: 0
         }).format(amount);
     }
@@ -496,42 +484,14 @@ document.addEventListener('DOMContentLoaded', function() {
         return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
     }
     
- function generateColors(count) {
-    const baseColors = ['#0a1f3a', '#e86029', '#f7d7b3', '#28a745', '#0f2a4d'];
-    const colors = [];
-    
-    for (let i = 0; i < count; i++) {
-        colors.push(baseColors[i % baseColors.length]);
+    function generateColors(count) {
+        const baseColors = ['#0a1f3a', '#e86029', '#f7d7b3', '#28a745', '#0f2a4d'];
+        const colors = [];
+        
+        for (let i = 0; i < count; i++) {
+            colors.push(baseColors[i % baseColors.length]);
+        }
+        
+        return colors;
     }
-    
-    return colors;
-}
-
-// Update the formatCurrency function in dashboard.js to better handle large numbers:
-function formatCurrency(amount) {
-    if (amount >= 1000000) {
-        return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'MWK',
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0
-        }).format(amount).replace(/(\.|,)00$/g, '') + 'M';
-    }
-    if (amount >= 1000) {
-        return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'MWK',
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0
-        }).format(amount).replace(/(\.|,)00$/g, '') + 'K';
-    }
-    return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'MWK',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0
-    }).format(amount);
-}
 });
-
-
