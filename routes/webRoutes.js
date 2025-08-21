@@ -127,6 +127,7 @@ router.get('/admin/settings', (req, res) => {
     res.render('admin/settings', {
         title: 'Settings',
         currentPage: 'settings',
+        layout:false,
         user: {
             name: 'Administrator',
             email: 'admin@teampay.com',

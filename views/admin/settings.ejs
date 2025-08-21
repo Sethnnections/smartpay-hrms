@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TPS - Settings</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/admin.css">
+    
+    <!-- Page-specific CSS -->
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .settings-card { border: 1px solid #e9ecef; border-radius: 1rem; box-shadow: 0 2px 8px rgba(0,0,0,.04); }
+        .settings-card .card-header { background: #fff; border-bottom: 1px solid #eef0f2; }
+        .form-section-title { font-size: .9rem; font-weight: 600; color: #6c757d; text-transform: uppercase; letter-spacing: .06em; }
+        .tax-bracket-row input { max-width: 160px; }
+        .color-swatch { width: 36px; height: 36px; border-radius: .75rem; border: 1px solid #dee2e6; cursor: pointer; }
+        .logo-preview { width: 120px; height: 120px; object-fit: contain; border: 1px dashed #dee2e6; border-radius: .75rem; background: #fafafa; }
+        .kbd { background:#f8f9fa;border:1px solid #dee2e6;border-bottom-width:2px;border-radius:.5rem;padding:.25rem .5rem;font-weight:600; }
+        .pill { display:inline-block; padding:.25rem .5rem; border-radius:999px; font-size:.75rem; background:#f1f3f5; }
+        .btn-soft { background:#f6f7f9; border:1px solid #e9ecef; }
+        .table-brackets td, .table-brackets th { vertical-align: middle; }
+    </style>
+</head>
+<body data-theme="light">
+    <!-- Sidebar Overlay for Mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Sidebar -->
+    <%- include('./partials/sidebar', { currentPage: 'settings' }) %>
+
+    <!-- Main Content -->
+    <div class="main-content" id="mainContent">
+        <!-- Header -->
+        <%- include('./partials/header', { 
+            title: 'Settings', 
+            user: typeof user !== 'undefined' ? user : { name: 'User', email: '', avatar: 'U' } 
+        }) %>
+
+        <!-- Page Content -->
+        <main class="dashboard-content">
+            <div class="container-fluid px-4 py-3">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <div>
+                        <div class="text-muted">Manage backups, payroll options, tax rules, bank details, and appearance.</div>
+                    </div>
+                    <div>
+                        <button id="btnExportSettings" class="btn btn-outline-secondary me-2"><i class="fa-solid fa-file-export me-2"></i>Export JSON</button>
+                        <label class="btn btn-outline-primary mb-0">
+                            <i class="fa-solid fa-file-import me-2"></i>Import JSON
+                            <input id="inputImportSettings" type="file" accept="application/json" hidden>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Tabs -->
+                <ul class="nav nav-tabs" id="settingsTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="backup-tab" data-bs-toggle="tab" data-bs-target="#backup" type="button" role="tab" aria-controls="backup" aria-selected="true"><i class="fa-solid fa-database me-2"></i>Backup & Restore</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="payroll-tab" data-bs-toggle="tab" data-bs-target="#payroll" type="button" role="tab" aria-controls="payroll" aria-selected="false"><i class="fa-solid fa-calculator me-2"></i>Payroll</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="appearance-tab" data-bs-toggle="tab" data-bs-target="#appearance" type="button" role="tab" aria-controls="appearance" aria-selected="false"><i class="fa-solid fa-palette me-2"></i>Appearance</button>
+                    </li>
+                </ul>
+
+                <div class="tab-content pt-3" id="settingsTabsContent">
+                    <!-- Backup & Restore -->
+                    <div class="tab-pane fade show active" id="backup" role="tabpanel" aria-labelledby="backup-tab">
+                        <div class="card settings-card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h5 class="mb-0">Backup & Restore</h5>
+                                    <small class="text-muted">Download a backup of your settings or restore from a JSON file.</small>
+                                </div>
+                                <span class="pill" id="lastBackupPill">Last backup: never</span>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-12 col-lg-6">
+                                        <div class="p-3 border rounded-3 h-100">
+                                            <div class="form-section-title mb-2">Create Backup</div>
+                                            <p class="text-muted">Export all settings (payroll, bank, tax, and appearance) as a single JSON file.</p>
+                                            <button id="btnDownloadBackup" class="btn btn-primary"><i class="fa-solid fa-download me-2"></i>Download Backup</button>
+                                        </div>
+                                    </div>
+                                    <div class="col-12 col-lg-6">
+                                        <div class="p-3 border rounded-3 h-100">
+                                            <div class="form-section-title mb-2">Restore</div>
+                                            <p class="text-muted">Restore settings from a previously exported JSON file.</p>
+                                            <label class="btn btn-soft">
+                                                <i class="fa-solid fa-upload me-2"></i>Choose File
+                                                <input id="inputRestore" type="file" accept="application/json" hidden>
+                                            </label>
+                                            <button id="btnRestore" class="btn btn-success ms-2" disabled><i class="fa-solid fa-rotate me-2"></i>Restore</button>
+                                            <div class="mt-3 small text-muted" id="restoreFileName">No file selected</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="p-3 border rounded-3">
+                                            <div class="form-section-title mb-2">Danger Zone</div>
+                                            <p class="text-muted mb-2">Reset all settings to safe defaults. This cannot be undone.</p>
+                                            <button id="btnResetDefaults" class="btn btn-outline-danger"><i class="fa-solid fa-triangle-exclamation me-2"></i>Reset to Defaults</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Payroll -->
+                    <div class="tab-pane fade" id="payroll" role="tabpanel" aria-labelledby="payroll-tab">
+                        <div class="card settings-card mb-3">
+                            <div class="card-header">
+                                <h5 class="mb-0">General Payroll Settings</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-3">
+                                        <label class="form-label">Payroll Cycle</label>
+                                        <select id="payrollCycle" class="form-select">
+                                            <option value="monthly">Monthly</option>
+                                            <option value="biweekly">Bi-weekly</option>
+                                            <option value="weekly">Weekly</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Overtime Rate (x)</label>
+                                        <input id="overtimeRate" type="number" step="0.01" class="form-control" placeholder="1.5">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Employer Pension %</label>
+                                        <input id="employerPension" type="number" step="0.01" class="form-control" placeholder="10">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Employee Pension %</label>
+                                        <input id="employeePension" type="number" step="0.01" class="form-control" placeholder="5">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card settings-card mb-3">
+                            <div class="card-header d-flex align-items-center justify-content-between">
+                                <h5 class="mb-0">Tax Calculation</h5>
+                                <div>
+                                    <span class="me-2 text-muted">Regime:</span>
+                                    <select id="taxRegime" class="form-select form-select-sm d-inline-block" style="width:auto;">
+                                        <option value="progressive">Progressive</option>
+                                        <option value="flat">Flat</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div id="progressiveConfig">
+                                    <div class="d-flex align-items-center justify-content-between mb-2">
+                                        <div class="form-section-title mb-0">Brackets</div>
+                                        <button id="btnAddBracket" class="btn btn-sm btn-outline-primary"><i class="fa-solid fa-plus me-2"></i>Add Bracket</button>
+                                    </div>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-brackets align-middle">
+                                            <thead>
+                                                <tr>
+                                                    <th scope="col">From</th>
+                                                    <th scope="col">To</th>
+                                                    <th scope="col">Rate %</th>
+                                                    <th scope="col" style="width:60px"></th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="bracketsBody">
+                                                <!-- rows injected -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <div id="flatConfig" class="d-none">
+                                    <div class="row g-3">
+                                        <div class="col-md-4">
+                                            <label class="form-label">Flat Tax %</label>
+                                            <input id="flatTaxRate" type="number" step="0.01" class="form-control" placeholder="20">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">Tax-free Threshold</label>
+                                            <input id="flatThreshold" type="number" step="0.01" class="form-control" placeholder="0">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <hr>
+                                <div class="row g-3 align-items-end">
+                                    <div class="col-md-3">
+                                        <label class="form-label">Sample Gross (for preview)</label>
+                                        <input id="sampleGross" type="number" step="0.01" class="form-control" placeholder="2500000">
+                                    </div>
+                                    <div class="col-md-2 d-grid">
+                                        <button id="btnPreviewTax" class="btn btn-outline-secondary"><i class="fa-solid fa-magnifying-glass me-2"></i>Preview Tax</button>
+                                    </div>
+                                    <div class="col-md-7">
+                                        <div id="previewTaxResult" class="alert alert-light border d-flex justify-content-between align-items-center mb-0">
+                                            <div>
+                                                <div class="small text-muted">Estimated PAYE</div>
+                                                <div class="fs-5 fw-semibold" id="payeAmount">—</div>
+                                            </div>
+                                            <div class="text-end">
+                                                <div class="small text-muted">Effective Rate</div>
+                                                <div class="fs-5 fw-semibold" id="effectiveRate">—</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-footer text-end">
+                                <button id="btnSaveTax" class="btn btn-primary"><i class="fa-solid fa-floppy-disk me-2"></i>Save Tax Settings</button>
+                            </div>
+                        </div>
+
+                        <div class="card settings-card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Default Bank Details</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <label class="form-label">Bank Name</label>
+                                        <input id="bankName" type="text" class="form-control" placeholder="National Bank of Malawi">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Account Name</label>
+                                        <input id="accountName" type="text" class="form-control" placeholder="Norah Tech Supplies Ltd.">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Account Number</label>
+                                        <input id="accountNumber" type="text" class="form-control" placeholder="0012345678901">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Branch</label>
+                                        <input id="bankBranch" type="text" class="form-control" placeholder="City Centre, Lilongwe">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">SWIFT/BIC</label>
+                                        <input id="swift" type="text" class="form-control" placeholder="NBMAMWMWXXX">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Currency</label>
+                                        <select id="currency" class="form-select">
+                                            <option value="MWK">MWK</option>
+                                            <option value="USD">USD</option>
+                                            <option value="ZAR">ZAR</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-footer d-flex justify-content-between">
+                                <div class="text-muted small"><i class="fa-regular fa-circle-question me-1"></i>These defaults are used when employee-specific bank details are missing.</div>
+                                <button id="btnSaveBank" class="btn btn-primary"><i class="fa-solid fa-floppy-disk me-2"></i>Save Bank Details</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Appearance -->
+                    <div class="tab-pane fade" id="appearance" role="tabpanel" aria-labelledby="appearance-tab">
+                        <div class="card settings-card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Appearance</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-4">
+                                    <div class="col-md-4">
+                                        <div class="form-section-title mb-2">Theme</div>
+                                        <div class="form-check form-switch mb-2">
+                                            <input class="form-check-input" type="checkbox" id="toggleDark">
+                                            <label class="form-check-label" for="toggleDark">Dark mode</label>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Primary Color</label>
+                                            <input id="primaryColor" type="color" class="form-control form-control-color" value="#0f5132" title="Choose your color">
+                                        </div>
+                                        <div>
+                                            <label class="form-label">Accent Color</label>
+                                            <input id="accentColor" type="color" class="form-control form-control-color" value="#f0ad00" title="Choose your color">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-section-title mb-2">Branding</div>
+                                        <div class="mb-2 d-flex align-items-center gap-3">
+                                            <img id="logoPreview" class="logo-preview" src="/public/logo.png" alt="Logo preview" onerror="this.src='';">
+                                            <div>
+                                                <label class="btn btn-soft mb-2">
+                                                    <i class="fa-solid fa-image me-2"></i>Upload Logo
+                                                    <input id="inputLogo" type="file" accept="image/*" hidden>
+                                                </label>
+                                                <div class="small text-muted">Recommended: PNG/SVG, at least 256×256.</div>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label class="form-label">Favicon (ICO/PNG)</label>
+                                            <input id="inputFavicon" class="form-control" type="file" accept="image/*">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-section-title mb-2">Preview</div>
+                                        <div class="p-3 border rounded-3" id="themePreview">
+                                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                                <span class="fw-semibold">Button</span>
+                                                <button class="btn btn-primary" type="button">Primary</button>
+                                            </div>
+                                            <div class="alert alert-primary mb-2">Primary alert sample</div>
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="previewSwitch">
+                                                <label class="form-check-label" for="previewSwitch">Switch example</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-footer text-end">
+                                <button id="btnSaveAppearance" class="btn btn-primary"><i class="fa-solid fa-floppy-disk me-2"></i>Save Appearance</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+
+        <!-- Toasts -->
+        <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1080">
+            <div id="toast" class="toast align-items-center" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="d-flex">
+                    <div id="toastBody" class="toast-body"></div>
+                    <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <!-- Axios (optional if you later wire APIs) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.2/axios.min.js"></script>
+    <!-- Custom JS (if any) -->
+    <script>
+    // ---------- Mock Storage & Defaults ----------
+    const STORAGE_KEY = 'tps.settings.v1';
+    const defaults = {
+        meta: { lastBackupAt: null },
+        payroll: {
+            cycle: 'monthly',
+            overtimeRate: 1.5,
+            employerPension: 10,
+            employeePension: 5,
+            tax: {
+                regime: 'progressive',
+                brackets: [
+                    { from: 0, to: 150000, rate: 0 },
+                    { from: 150001, to: 1000000, rate: 25 },
+                    { from: 1000001, to: null, rate: 30 }
+                ],
+                flat: { rate: 20, threshold: 0 }
+            }
+        },
+        bank: {
+            bankName: 'National Bank of Malawi',
+            accountName: 'Norah Tech Supplies Ltd.',
+            accountNumber: '0012345678901',
+            branch: 'City Centre, Lilongwe',
+            swift: 'NBMAMWMWXXX',
+            currency: 'MWK'
+        },
+        appearance: {
+            dark: false,
+            primary: '#0f5132',
+            accent: '#f0ad00',
+            logoDataUrl: '',
+            faviconDataUrl: ''
+        }
+    };
+
+    function loadSettings() {
+        try {
+            return JSON.parse(localStorage.getItem(STORAGE_KEY)) || structuredClone(defaults);
+        } catch (e) { return structuredClone(defaults); }
+    }
+    function saveSettings(obj) { localStorage.setItem(STORAGE_KEY, JSON.stringify(obj)); }
+
+    let settings = loadSettings();
+
+    // ---------- Helpers ----------
+    const toastEl = document.getElementById('toast');
+    const toast = new bootstrap.Toast(toastEl, { delay: 2200 });
+    function showToast(msg) { document.getElementById('toastBody').textContent = msg; toast.show(); }
+
+    function fmtMoney(n) { return new Intl.NumberFormat(undefined, { style: 'currency', currency: settings.bank.currency || 'MWK', maximumFractionDigits: 0 }).format(n); }
+
+    function renderLastBackup() {
+        const pill = document.getElementById('lastBackupPill');
+        if (settings.meta.lastBackupAt) {
+            const d = new Date(settings.meta.lastBackupAt);
+            pill.textContent = 'Last backup: ' + d.toLocaleString();
+        } else { pill.textContent = 'Last backup: never'; }
+    }
+
+    // ---------- Populate Payroll General ----------
+    const payrollCycle = document.getElementById('payrollCycle');
+    const overtimeRate = document.getElementById('overtimeRate');
+    const employerPension = document.getElementById('employerPension');
+    const employeePension = document.getElementById('employeePension');
+
+    function populatePayrollGeneral() {
+        payrollCycle.value = settings.payroll.cycle;
+        overtimeRate.value = settings.payroll.overtimeRate;
+        employerPension.value = settings.payroll.employerPension;
+        employeePension.value = settings.payroll.employeePension;
+    }
+
+    // ---------- Tax UI ----------
+    const taxRegime = document.getElementById('taxRegime');
+    const progressiveConfig = document.getElementById('progressiveConfig');
+    const flatConfig = document.getElementById('flatConfig');
+    const flatTaxRate = document.getElementById('flatTaxRate');
+    const flatThreshold = document.getElementById('flatThreshold');
+    const bracketsBody = document.getElementById('bracketsBody');
+
+    function renderRegime() {
+        const regime = settings.payroll.tax.regime;
+        taxRegime.value = regime;
+        progressiveConfig.classList.toggle('d-none', regime !== 'progressive');
+        flatConfig.classList.toggle('d-none', regime !== 'flat');
+        flatTaxRate.value = settings.payroll.tax.flat.rate;
+        flatThreshold.value = settings.payroll.tax.flat.threshold;
+        renderBrackets();
+    }
+
+    function renderBrackets() {
+        bracketsBody.innerHTML = '';
+        const rows = settings.payroll.tax.brackets;
+        rows.forEach((b, idx) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><input type="number" class="form-control form-control-sm" value="${b.from}" data-idx="${idx}" data-field="from"></td>
+                <td><input type="number" class="form-control form-control-sm" value="${b.to ?? ''}" placeholder="∞" data-idx="${idx}" data-field="to"></td>
+                <td><input type="number" step="0.01" class="form-control form-control-sm" value="${b.rate}" data-idx="${idx}" data-field="rate"></td>
+                <td class="text-end">
+                    <button class="btn btn-sm btn-outline-danger" data-action="del" data-idx="${idx}"><i class="fa-solid fa-trash"></i></button>
+                </td>`;
+            bracketsBody.appendChild(tr);
+        });
+    }
+
+    document.getElementById('btnAddBracket').addEventListener('click', () => {
+        settings.payroll.tax.brackets.push({ from: 0, to: null, rate: 0 });
+        renderBrackets();
+    });
+
+    bracketsBody.addEventListener('input', (e) => {
+        const t = e.target; if (!t.dataset) return;
+        const i = +t.dataset.idx; const f = t.dataset.field;
+        let val = t.value === '' ? null : Number(t.value);
+        if (f === 'rate' && val != null) val = Math.max(0, val);
+        settings.payroll.tax.brackets[i][f] = val;
+    });
+
+    bracketsBody.addEventListener('click', (e) => {
+        const btn = e.target.closest('button[data-action="del"]');
+        if (!btn) return;
+        const i = +btn.dataset.idx; settings.payroll.tax.brackets.splice(i,1); renderBrackets();
+    });
+
+    taxRegime.addEventListener('change', () => {
+        settings.payroll.tax.regime = taxRegime.value;
+        renderRegime();
+    });
+
+    // ---------- Tax Preview Logic ----------
+    function calcTaxProgressive(gross, brackets) {
+        let tax = 0; let remaining = gross;
+        const sorted = [...brackets].sort((a,b)=> (a.from??0) - (b.from??0));
+        for (const b of sorted) {
+            const from = b.from ?? 0;
+            const to = b.to ?? Infinity;
+            if (gross <= from) continue;
+            const taxable = Math.min(remaining, to - from + (Number.isFinite(to) ? 0 : 0));
+            const span = Math.max(0, Math.min(gross, to) - from);
+            tax += span * (b.rate/100);
+            if (gross <= to) break;
+        }
+        return Math.max(0, Math.round(tax));
+    }
+
+    function calcTaxFlat(gross, rate, threshold) {
+        const taxable = Math.max(0, gross - threshold);
+        return Math.round(taxable * (rate/100));
+    }
+
+    document.getElementById('btnPreviewTax').addEventListener('click', () => {
+        const gross = Number(document.getElementById('sampleGross').value || 0);
+        let tax = 0;
+        if (settings.payroll.tax.regime === 'progressive') {
+            tax = calcTaxProgressive(gross, settings.payroll.tax.brackets);
+        } else {
+            tax = calcTaxFlat(gross, Number(flatTaxRate.value||0), Number(flatThreshold.value||0));
+        }
+        document.getElementById('payeAmount').textContent = fmtMoney(tax);
+        const eff = gross > 0 ? ((tax / gross) * 100).toFixed(2) + '%' : '—';
+        document.getElementById('effectiveRate').textContent = eff;
+    });
+
+    document.getElementById('btnSaveTax').addEventListener('click', () => {
+        settings.payroll.cycle = payrollCycle.value;
+        settings.payroll.overtimeRate = Number(overtimeRate.value || 0);
+        settings.payroll.employerPension = Number(employerPension.value || 0);
+        settings.payroll.employeePension = Number(employeePension.value || 0);
+        settings.payroll.tax.flat.rate = Number(flatTaxRate.value || 0);
+        settings.payroll.tax.flat.threshold = Number(flatThreshold.value || 0);
+        saveSettings(settings);
+        showToast('Payroll & tax settings saved.');
+    });
+
+    // ---------- Bank Details ----------
+    const bankName = document.getElementById('bankName');
+    const accountName = document.getElementById('accountName');
+    const accountNumber = document.getElementById('accountNumber');
+    const bankBranch = document.getElementById('bankBranch');
+    const swift = document.getElementById('swift');
+    const currency = document.getElementById('currency');
+
+    function populateBank() {
+        bankName.value = settings.bank.bankName;
+        accountName.value = settings.bank.accountName;
+        accountNumber.value = settings.bank.accountNumber;
+        bankBranch.value = settings.bank.branch;
+        swift.value = settings.bank.swift;
+        currency.value = settings.bank.currency;
+    }
+
+    document.getElementById('btnSaveBank').addEventListener('click', () => {
+        settings.bank.bankName = bankName.value.trim();
+        settings.bank.accountName = accountName.value.trim();
+        settings.bank.accountNumber = accountNumber.value.trim();
+        settings.bank.branch = bankBranch.value.trim();
+        settings.bank.swift = swift.value.trim();
+        settings.bank.currency = currency.value;
+        saveSettings(settings);
+        showToast('Bank details saved.');
+    });
+
+    // ---------- Appearance ----------
+    const toggleDark = document.getElementById('toggleDark');
+    const primaryColor = document.getElementById('primaryColor');
+    const accentColor = document.getElementById('accentColor');
+    const inputLogo = document.getElementById('inputLogo');
+    const inputFavicon = document.getElementById('inputFavicon');
+    const logoPreview = document.getElementById('logoPreview');
+
+    function applyTheme() {
+        document.body.dataset.theme = settings.appearance.dark ? 'dark' : 'light';
+        document.documentElement.style.setProperty('--bs-primary', settings.appearance.primary);
+        document.documentElement.style.setProperty('--bs-link-color', settings.appearance.primary);
+        document.documentElement.style.setProperty('--bs-warning', settings.appearance.accent);
+        if (settings.appearance.logoDataUrl) logoPreview.src = settings.appearance.logoDataUrl;
+        if (settings.appearance.faviconDataUrl) {
+            let link = document.querySelector("link[rel='icon']");
+            if (!link) { link = document.createElement('link'); link.rel='icon'; document.head.appendChild(link); }
+            link.href = settings.appearance.faviconDataUrl;
+        }
+        // Dark mode class toggle (basic demo)
+        document.body.classList.toggle('bg-dark', settings.appearance.dark);
+        document.body.classList.toggle('text-white', settings.appearance.dark);
+    }
+
+    function populateAppearance() {
+        toggleDark.checked = settings.appearance.dark;
+        primaryColor.value = settings.appearance.primary;
+        accentColor.value = settings.appearance.accent;
+    }
+
+    toggleDark.addEventListener('change', () => { settings.appearance.dark = toggleDark.checked; applyTheme(); });
+    primaryColor.addEventListener('input', () => { settings.appearance.primary = primaryColor.value; applyTheme(); });
+    accentColor.addEventListener('input', () => { settings.appearance.accent = accentColor.value; applyTheme(); });
+
+    inputLogo.addEventListener('change', (e) => {
+        const file = e.target.files?.[0]; if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => { settings.appearance.logoDataUrl = reader.result; logoPreview.src = reader.result; };
+        reader.readAsDataURL(file);
+    });
+    inputFavicon.addEventListener('change', (e) => {
+        const file = e.target.files?.[0]; if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => { settings.appearance.faviconDataUrl = reader.result; applyTheme(); };
+        reader.readAsDataURL(file);
+    });
+
+    document.getElementById('btnSaveAppearance').addEventListener('click', () => {
+        saveSettings(settings);
+        applyTheme();
+        showToast('Appearance saved.');
+    });
+
+    // ---------- Backup / Restore ----------
+    document.getElementById('btnDownloadBackup').addEventListener('click', () => {
+        const blob = new Blob([JSON.stringify(settings, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = `tps-settings-backup-${new Date().toISOString().slice(0,19)}.json`;
+        document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+        settings.meta.lastBackupAt = new Date().toISOString(); saveSettings(settings); renderLastBackup();
+        showToast('Backup downloaded.');
+    });
+
+    const inputRestore = document.getElementById('inputRestore');
+    const restoreFileName = document.getElementById('restoreFileName');
+    const btnRestore = document.getElementById('btnRestore');
+    inputRestore.addEventListener('change', (e) => {
+        const file = e.target.files?.[0];
+        restoreFileName.textContent = file ? file.name : 'No file selected';
+        btnRestore.disabled = !file;
+    });
+
+    btnRestore.addEventListener('click', async () => {
+        const file = inputRestore.files?.[0]; if (!file) return;
+        try {
+            const text = await file.text();
+            const obj = JSON.parse(text);
+            // Basic shape validation
+            if (!obj.payroll || !obj.bank || !obj.appearance) throw new Error('Invalid backup file');
+            settings = obj; saveSettings(settings); init();
+            showToast('Settings restored successfully.');
+        } catch (err) {
+            console.error(err); showToast('Failed to restore. Invalid or corrupted file.');
+        }
+    });
+
+    document.getElementById('btnResetDefaults').addEventListener('click', () => {
+        if (!confirm('Reset ALL settings to defaults?')) return;
+        settings = structuredClone(defaults); saveSettings(settings); init();
+        showToast('Settings reset to defaults.');
+    });
+
+    // Export/Import buttons on header row
+    document.getElementById('btnExportSettings').addEventListener('click', () => {
+        const blob = new Blob([JSON.stringify(settings, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = 'tps-settings.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    });
+    document.getElementById('inputImportSettings').addEventListener('change', async (e) => {
+        const file = e.target.files?.[0]; if (!file) return;
+        try { const text = await file.text(); const obj = JSON.parse(text); settings = obj; saveSettings(settings); init(); showToast('Settings imported.'); } catch { showToast('Import failed.'); }
+    });
+
+    // ---------- INIT ----------
+    function init() {
+        renderLastBackup();
+        populatePayrollGeneral();
+        renderRegime();
+        populateBank();
+        populateAppearance();
+        applyTheme();
+    }
+    init();
+
+    // ---------- OPTIONAL: Example API Wire-up (commented) ----------
+    // async function saveToServer() {
+    //   await axios.post('/api/settings', settings, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }});
+    // }
+
+    </script>
+</body>
+</html>

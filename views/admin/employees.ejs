@@ -30,12 +30,12 @@
             transition: all 0.3s ease;
             border: 1px solid #e0e0e0;
         }
-        
+
         .employee-card:hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
         }
-        
+
         .employee-avatar {
             width: 60px;
             height: 60px;
@@ -48,30 +48,30 @@
             font-weight: bold;
             color: #4a6cf7;
         }
-        
+
         .employee-status-badge {
             padding: 5px 10px;
             border-radius: 20px;
             font-size: 12px;
             font-weight: 500;
         }
-        
+
         .status-active {
             background-color: #e6f7ee;
             color: #28a745;
         }
-        
+
         .status-inactive {
             background-color: #fef0f0;
             color: #dc3545;
         }
-        
+
         .employee-actions .btn {
             padding: 5px 10px;
             font-size: 13px;
             border-radius: 5px;
         }
-        
+
         /* Enhanced Form Styles */
         .form-section-title {
             font-size: 16px;
@@ -81,52 +81,52 @@
             padding-bottom: 8px;
             margin-bottom: 20px;
         }
-        
+
         .form-card {
             border-radius: 10px;
             border: 1px solid #e0e0e0;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
         }
-        
+
         .form-card .card-header {
             background-color: #f8f9fa;
             border-bottom: 1px solid #e0e0e0;
             padding: 15px 20px;
         }
-        
+
         .form-card .card-body {
             padding: 25px;
         }
-        
+
         .form-label {
             font-weight: 500;
             color: #495057;
             margin-bottom: 8px;
         }
-        
+
         .form-control,
         .form-select {
             border-radius: 6px;
             padding: 10px 15px;
             border: 1px solid #ced4da;
         }
-        
+
         .form-control:focus,
         .form-select:focus {
             border-color: #4a6cf7;
             box-shadow: 0 0 0 0.2rem rgba(74, 108, 247, 0.25);
         }
-        
+
         /* Enhanced Table Styles */
         .table-responsive {
             border-radius: 8px;
             overflow: hidden;
         }
-        
+
         .table {
             margin-bottom: 0;
         }
-        
+
         .table thead th {
             background-color: #f8f9fa;
             color: #495057;
@@ -134,41 +134,41 @@
             border-bottom-width: 1px;
             padding: 12px 15px;
         }
-        
+
         .table tbody td {
             padding: 12px 15px;
             vertical-align: middle;
         }
-        
+
         .table-hover tbody tr:hover {
             background-color: #f8f9fa;
         }
-        
+
         /* Enhanced Modal Styles */
         .employee-details-modal .modal-header {
             border-bottom: 1px solid #e0e0e0;
             padding: 15px 20px;
         }
-        
+
         .employee-details-modal .modal-body {
             padding: 20px;
         }
-        
+
         .employee-details-modal .detail-group {
             margin-bottom: 15px;
         }
-        
+
         .employee-details-modal .detail-label {
             font-weight: 500;
             color: #6c757d;
             margin-bottom: 5px;
         }
-        
+
         .employee-details-modal .detail-value {
             font-weight: 400;
             color: #212529;
         }
-        
+
         /* Custom Tabs */
         .nav-tabs-custom .nav-link {
             border: none;
@@ -178,13 +178,13 @@
             border-radius: 8px 8px 0 0;
             margin-right: 5px;
         }
-        
+
         .nav-tabs-custom .nav-link.active {
             color: #4a6cf7;
             background-color: #f8f9fa;
             border-bottom: 2px solid #4a6cf7;
         }
-        
+
         .nav-tabs-custom .nav-link:hover:not(.active) {
             color: #4a6cf7;
             background-color: rgba(74, 108, 247, 0.05);
@@ -237,10 +237,13 @@
                                                 <h5 class="mb-0">Employee Directory</h5>
                                                 <div class="d-flex">
                                                     <div class="input-group input-group-sm" style="width: 250px;">
-                                                        <span class="input-group-text bg-white"><i class="fas fa-search"></i></span>
-                                                        <input type="text" class="form-control" id="employee-search" placeholder="Search employees...">
+                                                        <span class="input-group-text bg-white"><i
+                                                                class="fas fa-search"></i></span>
+                                                        <input type="text" class="form-control" id="employee-search"
+                                                            placeholder="Search employees...">
                                                     </div>
-                                                    <button class="btn btn-sm btn-outline-primary ms-2" id="refresh-btn">
+                                                    <button class="btn btn-sm btn-outline-primary ms-2"
+                                                        id="refresh-btn">
                                                         <i class="fas fa-sync-alt"></i>
                                                     </button>
                                                 </div>
@@ -294,7 +297,7 @@
                                                             <i class="fas fa-user-circle me-2"></i>Basic Information
                                                         </h6>
                                                     </div>
-                                                    
+
                                                     <div class="col-md-6 mb-3">
                                                         <label for="user-select" class="form-label">Select User</label>
                                                         <select class="form-select" id="user-select" required>
@@ -305,16 +308,19 @@
                                                     <div class="col-md-6 mb-3">
                                                         <label for="employee-id" class="form-label">Employee ID</label>
                                                         <div class="input-group">
-                                                            <input type="text" class="form-control" id="employee-id" placeholder="Will be auto-generated">
-                                                            <button class="btn btn-outline-secondary" type="button" id="generate-id-btn">
+                                                            <input type="text" class="form-control" id="employee-id"
+                                                                placeholder="Will be auto-generated">
+                                                            <button class="btn btn-outline-secondary" type="button"
+                                                                id="generate-id-btn">
                                                                 <i class="fas fa-sync-alt"></i> Generate
                                                             </button>
                                                         </div>
                                                     </div>
-                                                    
+
                                                     <div class="col-md-4 mb-3">
                                                         <label for="first-name" class="form-label">First Name</label>
-                                                        <input type="text" class="form-control" id="first-name" required>
+                                                        <input type="text" class="form-control" id="first-name"
+                                                            required>
                                                     </div>
                                                     <div class="col-md-4 mb-3">
                                                         <label for="middle-name" class="form-label">Middle Name</label>
@@ -324,10 +330,12 @@
                                                         <label for="last-name" class="form-label">Last Name</label>
                                                         <input type="text" class="form-control" id="last-name" required>
                                                     </div>
-                                                    
+
                                                     <div class="col-md-4 mb-3">
-                                                        <label for="date-of-birth" class="form-label">Date of Birth</label>
-                                                        <input type="date" class="form-control" id="date-of-birth" required>
+                                                        <label for="date-of-birth" class="form-label">Date of
+                                                            Birth</label>
+                                                        <input type="date" class="form-control" id="date-of-birth"
+                                                            required>
                                                     </div>
                                                     <div class="col-md-4 mb-3">
                                                         <label for="gender" class="form-label">Gender</label>
@@ -341,7 +349,8 @@
                                                     </div>
                                                     <div class="col-md-4 mb-3">
                                                         <label for="nationality" class="form-label">Nationality</label>
-                                                        <input type="text" class="form-control" id="nationality" required>
+                                                        <input type="text" class="form-control" id="nationality"
+                                                            required>
                                                     </div>
                                                 </div>
 
@@ -352,16 +361,18 @@
                                                             <i class="fas fa-home me-2"></i>Address Information
                                                         </h6>
                                                     </div>
-                                                    
+
                                                     <div class="col-md-6 mb-3">
-                                                        <label for="street-address" class="form-label">Street Address</label>
-                                                        <input type="text" class="form-control" id="street-address" required>
+                                                        <label for="street-address" class="form-label">Street
+                                                            Address</label>
+                                                        <input type="text" class="form-control" id="street-address"
+                                                            required>
                                                     </div>
                                                     <div class="col-md-6 mb-3">
                                                         <label for="city" class="form-label">City</label>
                                                         <input type="text" class="form-control" id="city" required>
                                                     </div>
-                                                    
+
                                                     <div class="col-md-4 mb-3">
                                                         <label for="state" class="form-label">State/Province</label>
                                                         <input type="text" class="form-control" id="state" required>
@@ -372,7 +383,8 @@
                                                     </div>
                                                     <div class="col-md-4 mb-3">
                                                         <label for="country" class="form-label">Country</label>
-                                                        <input type="text" class="form-control" id="country" value="United States" required>
+                                                        <input type="text" class="form-control" id="country"
+                                                            value="United States" required>
                                                     </div>
                                                 </div>
 
@@ -383,14 +395,16 @@
                                                             <i class="fas fa-phone-alt me-2"></i>Contact Information
                                                         </h6>
                                                     </div>
-                                                    
+
                                                     <div class="col-md-6 mb-3">
                                                         <label for="email" class="form-label">Email</label>
                                                         <input type="email" class="form-control" id="email" required>
                                                     </div>
                                                     <div class="col-md-6 mb-3">
-                                                        <label for="phone-number" class="form-label">Phone Number</label>
-                                                        <input type="tel" class="form-control" id="phone-number" required>
+                                                        <label for="phone-number" class="form-label">Phone
+                                                            Number</label>
+                                                        <input type="tel" class="form-control" id="phone-number"
+                                                            required>
                                                     </div>
                                                 </div>
 
@@ -398,21 +412,28 @@
                                                 <div class="row mb-4">
                                                     <div class="col-12">
                                                         <h6 class="form-section-title">
-                                                            <i class="fas fa-exclamation-triangle me-2"></i>Emergency Contact
+                                                            <i class="fas fa-exclamation-triangle me-2"></i>Emergency
+                                                            Contact
                                                         </h6>
                                                     </div>
-                                                    
+
                                                     <div class="col-md-4 mb-3">
-                                                        <label for="emergency-contact-name" class="form-label">Full Name</label>
-                                                        <input type="text" class="form-control" id="emergency-contact-name" required>
+                                                        <label for="emergency-contact-name" class="form-label">Full
+                                                            Name</label>
+                                                        <input type="text" class="form-control"
+                                                            id="emergency-contact-name" required>
                                                     </div>
                                                     <div class="col-md-4 mb-3">
-                                                        <label for="emergency-contact-relationship" class="form-label">Relationship</label>
-                                                        <input type="text" class="form-control" id="emergency-contact-relationship" required>
+                                                        <label for="emergency-contact-relationship"
+                                                            class="form-label">Relationship</label>
+                                                        <input type="text" class="form-control"
+                                                            id="emergency-contact-relationship" required>
                                                     </div>
                                                     <div class="col-md-4 mb-3">
-                                                        <label for="emergency-contact-phone" class="form-label">Phone Number</label>
-                                                        <input type="tel" class="form-control" id="emergency-contact-phone" required>
+                                                        <label for="emergency-contact-phone" class="form-label">Phone
+                                                            Number</label>
+                                                        <input type="tel" class="form-control"
+                                                            id="emergency-contact-phone" required>
                                                     </div>
                                                 </div>
 
@@ -423,11 +444,12 @@
                                                             <i class="fas fa-briefcase me-2"></i>Employment Information
                                                         </h6>
                                                     </div>
-                                                    
+
                                                     <div class="col-md-4 mb-3">
                                                         <label for="department" class="form-label">Department</label>
                                                         <select class="form-select" id="department" required>
-                                                            <option value="" selected disabled>Select department</option>
+                                                            <option value="" selected disabled>Select department
+                                                            </option>
                                                             <!-- Departments will be loaded here -->
                                                         </select>
                                                     </div>
@@ -445,18 +467,21 @@
                                                             <!-- Grades will be loaded here -->
                                                         </select>
                                                     </div>
-                                                    
+
                                                     <div class="col-md-6 mb-3">
                                                         <label for="salary" class="form-label">Salary</label>
                                                         <div class="input-group">
                                                             <span class="input-group-text">$</span>
-                                                            <input type="number" class="form-control" id="salary" min="0" step="0.01" required>
+                                                            <input type="number" class="form-control" id="salary"
+                                                                min="0" step="0.01" required>
                                                         </div>
                                                     </div>
                                                     <div class="col-md-6 mb-3">
-                                                        <label for="employment-type" class="form-label">Employment Type</label>
+                                                        <label for="employment-type" class="form-label">Employment
+                                                            Type</label>
                                                         <select class="form-select" id="employment-type" required>
-                                                            <option value="" selected disabled>Select employment type</option>
+                                                            <option value="" selected disabled>Select employment type
+                                                            </option>
                                                             <option value="full-time">Full-time</option>
                                                             <option value="part-time">Part-time</option>
                                                             <option value="contract">Contract</option>
@@ -464,15 +489,18 @@
                                                             <option value="intern">Intern</option>
                                                         </select>
                                                     </div>
-                                                    
+
                                                     <div class="col-md-6 mb-3">
                                                         <label for="start-date" class="form-label">Start Date</label>
-                                                        <input type="date" class="form-control" id="start-date" required>
+                                                        <input type="date" class="form-control" id="start-date"
+                                                            required>
                                                     </div>
                                                     <div class="col-md-6 mb-3">
-                                                        <label for="probation-period" class="form-label">Probation Period</label>
+                                                        <label for="probation-period" class="form-label">Probation
+                                                            Period</label>
                                                         <div class="input-group">
-                                                            <input type="number" class="form-control" id="probation-period" min="1" value="3">
+                                                            <input type="number" class="form-control"
+                                                                id="probation-period" min="1" value="3">
                                                             <span class="input-group-text">months</span>
                                                         </div>
                                                     </div>
@@ -485,22 +513,27 @@
                                                             <i class="fas fa-university me-2"></i>Bank Information
                                                         </h6>
                                                     </div>
-                                                    
+
                                                     <div class="col-md-4 mb-3">
                                                         <label for="bank-name" class="form-label">Bank Name</label>
                                                         <input type="text" class="form-control" id="bank-name" required>
                                                     </div>
                                                     <div class="col-md-4 mb-3">
-                                                        <label for="account-name" class="form-label">Account Name</label>
-                                                        <input type="text" class="form-control" id="account-name" required>
+                                                        <label for="account-name" class="form-label">Account
+                                                            Name</label>
+                                                        <input type="text" class="form-control" id="account-name"
+                                                            required>
                                                     </div>
                                                     <div class="col-md-4 mb-3">
-                                                        <label for="account-number" class="form-label">Account Number</label>
-                                                        <input type="text" class="form-control" id="account-number" required>
+                                                        <label for="account-number" class="form-label">Account
+                                                            Number</label>
+                                                        <input type="text" class="form-control" id="account-number"
+                                                            required>
                                                     </div>
-                                                    
+
                                                     <div class="col-md-4 mb-3">
-                                                        <label for="routing-number" class="form-label">Routing Number</label>
+                                                        <label for="routing-number" class="form-label">Routing
+                                                            Number</label>
                                                         <input type="text" class="form-control" id="routing-number">
                                                     </div>
                                                     <div class="col-md-4 mb-3">
@@ -514,12 +547,15 @@
                                                 </div>
 
                                                 <div class="d-flex justify-content-end border-top pt-4">
-                                                    <button type="button" class="btn btn-outline-secondary me-3 px-4" id="cancel-add-employee">
+                                                    <button type="button" class="btn btn-outline-secondary me-3 px-4"
+                                                        id="cancel-add-employee">
                                                         Cancel
                                                     </button>
-                                                    <button type="submit" class="btn btn-primary px-4" id="submit-employee">
+                                                    <button type="submit" class="btn btn-primary px-4"
+                                                        id="submit-employee">
                                                         <span id="submit-employee-text">Add Employee</span>
-                                                        <span class="spinner-border spinner-border-sm d-none" id="submit-employee-spinner"></span>
+                                                        <span class="spinner-border spinner-border-sm d-none"
+                                                            id="submit-employee-spinner"></span>
                                                     </button>
                                                 </div>
                                             </form>
@@ -532,12 +568,14 @@
                 </main>
 
                 <!-- Employee Details Modal -->
-                <div class="modal fade employee-details-modal" id="employeeDetailsModal" tabindex="-1" aria-hidden="true">
+                <div class="modal fade employee-details-modal" id="employeeDetailsModal" tabindex="-1"
+                    aria-hidden="true">
                     <div class="modal-dialog modal-lg">
                         <div class="modal-content">
                             <div class="modal-header">
                                 <h5 class="modal-title" id="employeeDetailsModalTitle">Employee Details</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                    aria-label="Close"></button>
                             </div>
                             <div class="modal-body" id="employeeDetailsModalBody">
                                 <div class="row">
@@ -548,7 +586,7 @@
                                         <h5 id="employee-full-name">John Doe</h5>
                                         <div class="badge bg-primary" id="employee-position">Software Engineer</div>
                                     </div>
-                                    
+
                                     <div class="col-md-8">
                                         <div class="row">
                                             <div class="col-md-6">
@@ -556,48 +594,51 @@
                                                     <div class="detail-label">Employee ID</div>
                                                     <div class="detail-value" id="employee-id-detail">EMP-001</div>
                                                 </div>
-                                                
+
                                                 <div class="detail-group">
                                                     <div class="detail-label">Department</div>
                                                     <div class="detail-value" id="employee-department">Engineering</div>
                                                 </div>
-                                                
+
                                                 <div class="detail-group">
                                                     <div class="detail-label">Grade</div>
                                                     <div class="detail-value" id="employee-grade">Senior</div>
                                                 </div>
-                                                
+
                                                 <div class="detail-group">
                                                     <div class="detail-label">Salary</div>
                                                     <div class="detail-value" id="employee-salary">$85,000.00</div>
                                                 </div>
                                             </div>
-                                            
+
                                             <div class="col-md-6">
                                                 <div class="detail-group">
                                                     <div class="detail-label">Email</div>
-                                                    <div class="detail-value" id="employee-email">john.doe@example.com</div>
+                                                    <div class="detail-value" id="employee-email">john.doe@example.com
+                                                    </div>
                                                 </div>
-                                                
+
                                                 <div class="detail-group">
                                                     <div class="detail-label">Phone</div>
                                                     <div class="detail-value" id="employee-phone">(555) 123-4567</div>
                                                 </div>
-                                                
+
                                                 <div class="detail-group">
                                                     <div class="detail-label">Status</div>
                                                     <div class="detail-value">
-                                                        <span class="badge bg-success" id="employee-status">Active</span>
+                                                        <span class="badge bg-success"
+                                                            id="employee-status">Active</span>
                                                     </div>
                                                 </div>
-                                                
+
                                                 <div class="detail-group">
                                                     <div class="detail-label">Start Date</div>
-                                                    <div class="detail-value" id="employee-start-date">Jan 15, 2020</div>
+                                                    <div class="detail-value" id="employee-start-date">Jan 15, 2020
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
-                                        
+
                                         <div class="mt-4">
                                             <h6 class="form-section-title mb-3">Additional Information</h6>
                                             <div class="row">
@@ -606,27 +647,30 @@
                                                         <div class="detail-label">Date of Birth</div>
                                                         <div class="detail-value" id="employee-dob">May 10, 1985</div>
                                                     </div>
-                                                    
+
                                                     <div class="detail-group">
                                                         <div class="detail-label">Gender</div>
                                                         <div class="detail-value" id="employee-gender">Male</div>
                                                     </div>
-                                                    
+
                                                     <div class="detail-group">
                                                         <div class="detail-label">Nationality</div>
-                                                        <div class="detail-value" id="employee-nationality">American</div>
+                                                        <div class="detail-value" id="employee-nationality">American
+                                                        </div>
                                                     </div>
                                                 </div>
-                                                
+
                                                 <div class="col-md-6">
                                                     <div class="detail-group">
                                                         <div class="detail-label">Bank Name</div>
-                                                        <div class="detail-value" id="employee-bank-name">Chase Bank</div>
+                                                        <div class="detail-value" id="employee-bank-name">Chase Bank
+                                                        </div>
                                                     </div>
-                                                    
+
                                                     <div class="detail-group">
                                                         <div class="detail-label">Account Number</div>
-                                                        <div class="detail-value" id="employee-account-number">******7890</div>
+                                                        <div class="detail-value" id="employee-account-number">
+                                                            ******7890</div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -643,7 +687,8 @@
                 </div>
 
                 <!-- Bootstrap JS -->
-                <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+                <script
+                    src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
                 <!-- Org Chart JS -->
                 <script src="https://cdnjs.cloudflare.com/ajax/libs/orgchart/3.8.1/js/jquery.orgchart.min.js"></script>
 
@@ -743,7 +788,7 @@
                         });
 
                         // Generate employee ID button
-                        $('#generate-id-btn').click(function() {
+                        $('#generate-id-btn').click(function () {
                             $('#employee-id').val(generateEmployeeId());
                         });
                     });
@@ -797,7 +842,7 @@
                             const firstName = employee.personalInfo.firstName || '';
                             const lastName = employee.personalInfo.lastName || '';
                             const initials = (firstName.charAt(0) + lastName.charAt(0)).toUpperCase();
-                            
+
                             const row = `
                                 <tr>
                                     <td>${employee.employeeId || 'N/A'}</td>
@@ -934,7 +979,7 @@
                         const firstName = employee.personalInfo.firstName || '';
                         const lastName = employee.personalInfo.lastName || '';
                         const initials = (firstName.charAt(0) + lastName.charAt(0)).toUpperCase();
-                        
+
                         const details = `
                             <div class="row">
                                 <div class="col-md-4 text-center mb-4">
@@ -963,7 +1008,7 @@
                                             
                                             <div class="detail-group">
                                                 <div class="detail-label">Salary</div>
-                                                <div class="detail-value">$${(employee.employmentInfo.currentSalary || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                                                <div class="detail-value">$${(employee.employmentInfo.currentSalary || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                                             </div>
                                         </div>
                                         
@@ -1359,8 +1404,19 @@
                     }
 
                     function generateEmployeeId() {
-                        const randomNum = Math.floor(1000 + Math.random() * 9000);
-                        return `TEAMPAY${randomNum}`;
+                        // Get the last employee ID from the loaded employees
+                        // Format: TEAMPAY0001, TEAMPAY0002, etc.
+                        let maxId = 0;
+                        $('#employees-table-body tr').each(function () {
+                            const idCell = $(this).find('td').eq(0).text();
+                            const match = idCell.match(/^TEAMPAY(\d+)$/);
+                            if (match) {
+                                const num = parseInt(match[1], 10);
+                                if (num > maxId) maxId = num;
+                            }
+                        });
+                        const nextId = maxId + 1;
+                        return `TEAMPAY${nextId.toString().padStart(4, '0')}`;
                     }
 
                     // Helper function to show validation error

@@ -535,6 +535,14 @@ async function downloadPayslip(payslipId) {
     a.click();
     window.URL.revokeObjectURL(url);
     document.body.removeChild(a);
+
+    Swal.fire({
+      icon: 'success',
+      title: 'Payslip Downloaded',
+      text: 'Your payslip has been downloaded successfully.',
+      timer: 2000,
+      showConfirmButton: false
+    });
     
   } catch (error) {
     console.error('Error downloading payslip:', error);
