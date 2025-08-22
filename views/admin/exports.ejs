@@ -1,0 +1,1833 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TPS - Employees Management</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/admin.css">
+
+    <!-- Page-specific CSS -->
+    <link rel="stylesheet" href="/css/departments.css">
+
+    <!-- SweetAlert2 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+
+    <style>
+        /* Enhanced Employee Management Styles */
+        .employee-card {
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+            border: 1px solid #e0e0e0;
+        }
+
+        .employee-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .employee-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background-color: #f0f2f5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #4a6cf7;
+        }
+
+        .employee-status-badge {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .status-active {
+            background-color: #e6f7ee;
+            color: #28a745;
+        }
+
+        .status-inactive {
+            background-color: #fef0f0;
+            color: #dc3545;
+        }
+
+        .employee-actions .btn {
+            padding: 5px 10px;
+            font-size: 13px;
+            border-radius: 5px;
+        }
+
+        /* Enhanced Form Styles */
+        .form-section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #4a6cf7;
+            border-bottom: 1px solid #e0e0e0;
+            padding-bottom: 8px;
+            margin-bottom: 20px;
+        }
+
+        .form-card {
+            border-radius: 10px;
+            border: 1px solid #e0e0e0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .form-card .card-header {
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #e0e0e0;
+            padding: 15px 20px;
+        }
+
+        .form-card .card-body {
+            padding: 25px;
+        }
+
+        .form-label {
+            font-weight: 500;
+            color: #495057;
+            margin-bottom: 8px;
+        }
+
+        .form-control,
+        .form-select {
+            border-radius: 6px;
+            padding: 10px 15px;
+            border: 1px solid #ced4da;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            border-color: #4a6cf7;
+            box-shadow: 0 0 0 0.2rem rgba(74, 108, 247, 0.25);
+        }
+
+        /* Enhanced Table Styles */
+        .table-responsive {
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .table {
+            margin-bottom: 0;
+        }
+
+        .table thead th {
+            background-color: #f8f9fa;
+            color: #495057;
+            font-weight: 600;
+            border-bottom-width: 1px;
+            padding: 12px 15px;
+        }
+
+        .table tbody td {
+            padding: 12px 15px;
+            vertical-align: middle;
+        }
+
+        .table-hover tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        /* Enhanced Modal Styles */
+        .employee-details-modal .modal-header {
+            border-bottom: 1px solid #e0e0e0;
+            padding: 15px 20px;
+        }
+
+        .employee-details-modal .modal-body {
+            padding: 20px;
+        }
+
+        .employee-details-modal .detail-group {
+            margin-bottom: 15px;
+        }
+
+        .employee-details-modal .detail-label {
+            font-weight: 500;
+            color: #6c757d;
+            margin-bottom: 5px;
+        }
+
+        .employee-details-modal .detail-value {
+            font-weight: 400;
+            color: #212529;
+        }
+
+        /* Custom Tabs */
+        .nav-tabs-custom .nav-link {
+            border: none;
+            color: #6c757d;
+            font-weight: 500;
+            padding: 12px 20px;
+            border-radius: 8px 8px 0 0;
+            margin-right: 5px;
+        }
+
+        .nav-tabs-custom .nav-link.active {
+            color: #4a6cf7;
+            background-color: #f8f9fa;
+            border-bottom: 2px solid #4a6cf7;
+        }
+
+        .nav-tabs-custom .nav-link:hover:not(.active) {
+            color: #4a6cf7;
+            background-color: rgba(74, 108, 247, 0.05);
+        }
+
+        /* Loading spinner */
+        .loading-spinner {
+            display: inline-block;
+            width: 2rem;
+            height: 2rem;
+            vertical-align: text-bottom;
+            border: 0.25em solid currentColor;
+            border-right-color: transparent;
+            border-radius: 50%;
+            animation: spinner-border .75s linear infinite;
+        }
+
+        @keyframes spinner-border {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Sidebar Overlay for Mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Sidebar -->
+    <!-- <%- include('./partials/sidebar', { currentPage: 'employees' }) %> -->
+
+    <!-- Main Content -->
+    <div class="main-content" id="mainContent">
+        <!-- Header -->
+        <!-- <%- include('./partials/header', { title: 'Employee Management' , user: typeof user !=='undefined' ? user :
+            { name: 'User' , email: '' , avatar: 'U' } }) %> -->
+
+        <!-- Page Content -->
+        <main class="dashboard-content">
+            <div class="container-fluid ">
+                <div class="row">
+                    <!-- Main Content -->
+
+                    <!-- Tab Navigation -->
+                    <ul class="nav nav-tabs nav-tabs-custom mb-4" id="employeeTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="employees-tab" data-bs-toggle="tab"
+                                data-bs-target="#employees" type="button" role="tab">
+                                <i class="fas fa-users me-2"></i>Employees
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="add-employee-tab" data-bs-toggle="tab"
+                                data-bs-target="#add-employee" type="button" role="tab">
+                                <i class="fas fa-user-plus me-2"></i>Add Employee
+                            </button>
+                        </li>
+                    </ul>
+
+                    <!-- Tab Content -->
+                    <div class="tab-content" id="employeeTabsContent">
+                        <!-- Employees List Section -->
+                        <div class="tab-pane fade show active" id="employees" role="tabpanel">
+                            <div class="card form-card mb-4">
+                                <div class="card-header">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h5 class="mb-0">Employee Directory</h5>
+                                        <div class="d-flex">
+                                            <div class="input-group input-group-sm" style="width: 250px;">
+                                                <span class="input-group-text bg-white"><i
+                                                        class="fas fa-search"></i></span>
+                                                <input type="text" class="form-control" id="employee-search"
+                                                    placeholder="Search employees...">
+                                            </div>
+                                            <button class="btn btn-sm btn-outline-primary ms-2"
+                                                id="refresh-btn">
+                                                <i class="fas fa-sync-alt"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-success ms-2" id="export-btn">
+                                                <i class="fas fa-download"></i> Export
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-hover align-middle" id="employees-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>ID</th>
+                                                    <th>Employee</th>
+                                                    <th>Contact</th>
+                                                    <th>Department</th>
+                                                    <th>Position</th>
+                                                    <th>Status</th>
+                                                    <th>Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="employees-table-body">
+                                                <!-- Employees will be loaded here -->
+                                                <tr>
+                                                    <td colspan="7" class="text-center py-4">
+                                                        <div class="loading-spinner text-primary"></div>
+                                                        <p class="mt-2">Loading employees...</p>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <nav aria-label="Page navigation" class="mt-3">
+                                        <ul class="pagination justify-content-center" id="employees-pagination">
+                                            <!-- Pagination will be loaded here -->
+                                        </ul>
+                                    </nav>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Add Employee Section -->
+                        <div class="tab-pane fade" id="add-employee" role="tabpanel">
+                            <div class="card form-card mb-4">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Add New Employee</h5>
+                                </div>
+                                <div class="card-body">
+                                    <form id="add-employee-form">
+                                        <div class="row mb-4">
+                                            <div class="col-12">
+                                                <h6 class="form-section-title">
+                                                    <i class="fas fa-user-circle me-2"></i>Basic Information
+                                                </h6>
+                                            </div>
+
+                                            <div class="col-md-6 mb-3">
+                                                <label for="user-select" class="form-label">Select User</label>
+                                                <select class="form-select" id="user-select" required style="width: 100%;">
+                                                    <option value="" selected disabled>Select a user</option>
+                                                    <!-- Users will be loaded here -->
+                                                </select>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="employee-id" class="form-label">Employee ID</label>
+                                                <div class="input-group">
+                                                    <input type="text" class="form-control" id="employee-id"
+                                                        placeholder="Will be auto-generated">
+                                                    <button class="btn btn-outline-secondary" type="button"
+                                                        id="generate-id-btn">
+                                                        <i class="fas fa-sync-alt"></i> Generate
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <div class="col-md-4 mb-3">
+                                                <label for="first-name" class="form-label">First Name</label>
+                                                <input type="text" class="form-control" id="first-name"
+                                                    required>
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label for="middle-name" class="form-label">Middle Name</label>
+                                                <input type="text" class="form-control" id="middle-name">
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label for="last-name" class="form-label">Last Name</label>
+                                                <input type="text" class="form-control" id="last-name" required>
+                                            </div>
+
+                                            <div class="col-md-4 mb-3">
+                                                <label for="date-of-birth" class="form-label">Date of
+                                                    Birth</label>
+                                                <input type="date" class="form-control" id="date-of-birth"
+                                                    required>
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label for="gender" class="form-label">Gender</label>
+                                                <select class="form-select" id="gender" required>
+                                                    <option value="" selected disabled>Select gender</option>
+                                                    <option value="male">Male</option>
+                                                    <option value="female">Female</option>
+                                                    <option value="other">Other</option>
+                                                    <option value="prefer_not_to_say">Prefer not to say</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label for="nationality" class="form-label">Nationality</label>
+                                                <input type="text" class="form-control" id="nationality"
+                                                    required>
+                                            </div>
+                                        </div>
+
+                                        <!-- Address Information -->
+                                        <div class="row mb-4">
+                                            <div class="col-12">
+                                                <h6 class="form-section-title">
+                                                    <i class="fas fa-home me-2"></i>Address Information
+                                                </h6>
+                                            </div>
+
+                                            <div class="col-md-6 mb-3">
+                                                <label for="street-address" class="form-label">Street
+                                                    Address</label>
+                                                <input type="text" class="form-control" id="street-address"
+                                                    required>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="city" class="form-label">City</label>
+                                                <input type="text" class="form-control" id="city" required>
+                                            </div>
+
+                                            <div class="col-md-4 mb-3">
+                                                <label for="state" class="form-label">State/Province</label>
+                                                <input type="text" class="form-control" id="state" required>
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label for="zip-code" class="form-label">Zip/Postal Code</label>
+                                                <input type="text" class="form-control" id="zip-code" required>
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label for="country" class="form-label">Country</label>
+                                                <input type="text" class="form-control" id="country"
+                                                    value="United States" required>
+                                            </div>
+                                        </div>
+
+                                        <!-- Contact Information -->
+                                        <div class="row mb-4">
+                                            <div class="col-12">
+                                                <h6 class="form-section-title">
+                                                    <i class="fas fa-phone-alt me-2"></i>Contact Information
+                                                </h6>
+                                            </div>
+
+                                            <div class="col-md-6 mb-3">
+                                                <label for="email" class="form-label">Email</label>
+                                                <input type="email" class="form-control" id="email" required>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="phone-number" class="form-label">Phone
+                                                    Number</label>
+                                                <input type="tel" class="form-control" id="phone-number"
+                                                    required>
+                                            </div>
+                                        </div>
+
+                                        <!-- Emergency Contact -->
+                                        <div class="row mb-4">
+                                            <div class="col-12">
+                                                <h6 class="form-section-title">
+                                                    <i class="fas fa-exclamation-triangle me-2"></i>Emergency
+                                                    Contact
+                                                </h6>
+                                            </div>
+
+                                            <div class="col-md-4 mb-3">
+                                                <label for="emergency-contact-name" class="form-label">Full
+                                                    Name</label>
+                                                <input type="text" class="form-control"
+                                                    id="emergency-contact-name" required>
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label for="emergency-contact-relationship"
+                                                    class="form-label">Relationship</label>
+                                                <input type="text" class="form-control"
+                                                    id="emergency-contact-relationship" required>
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label for="emergency-contact-phone" class="form-label">Phone
+                                                    Number</label>
+                                                <input type="tel" class="form-control"
+                                                    id="emergency-contact-phone" required>
+                                            </div>
+                                        </div>
+
+                                        <!-- Employment Information -->
+                                        <div class="row mb-4">
+                                            <div class="col-12">
+                                                <h6 class="form-section-title">
+                                                    <i class="fas fa-briefcase me-2"></i>Employment Information
+                                                </h6>
+                                            </div>
+
+                                            <div class="col-md-4 mb-3">
+                                                <label for="department" class="form-label">Department</label>
+                                                <select class="form-select" id="department" required>
+                                                    <option value="" selected disabled>Select department
+                                                    </option>
+                                                    <!-- Departments will be loaded here -->
+                                                </select>
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label for="position" class="form-label">Position</label>
+                                                <select class="form-select" id="position" required>
+                                                    <option value="" selected disabled>Select position</option>
+                                                    <!-- Positions will be loaded here -->
+                                                </select>
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label for="grade" class="form-label">Grade</label>
+                                                <select class="form-select" id="grade" required>
+                                                    <option value="" selected disabled>Select grade</option>
+                                                    <!-- Grades will be loaded here -->
+                                                </select>
+                                            </div>
+
+                                            <div class="col-md-6 mb-3">
+                                                <label for="salary" class="form-label">Salary</label>
+                                                <div class="input-group">
+                                                    <span class="input-group-text">$</span>
+                                                    <input type="number" class="form-control" id="salary"
+                                                        min="0" step="0.01" required>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="employment-type" class="form-label">Employment
+                                                    Type</label>
+                                                <select class="form-select" id="employment-type" required>
+                                                    <option value="" selected disabled>Select employment type
+                                                    </option>
+                                                    <option value="full-time">Full-time</option>
+                                                    <option value="part-time">Part-time</option>
+                                                    <option value="contract">Contract</option>
+                                                    <option value="temporary">Temporary</option>
+                                                    <option value="intern">Intern</option>
+                                                </select>
+                                            </div>
+
+                                            <div class="col-md-6 mb-3">
+                                                <label for="start-date" class="form-label">Start Date</label>
+                                                <input type="date" class="form-control" id="start-date"
+                                                    required>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="probation-period" class="form-label">Probation
+                                                    Period</label>
+                                                <div class="input-group">
+                                                    <input type="number" class="form-control"
+                                                        id="probation-period" min="1" value="3">
+                                                    <span class="input-group-text">months</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Bank Information -->
+                                        <div class="row mb-4">
+                                            <div class="col-12">
+                                                <h6 class="form-section-title">
+                                                    <i class="fas fa-university me-2"></i>Bank Information
+                                                </h6>
+                                            </div>
+
+                                            <div class="col-md-4 mb-3">
+                                                <label for="bank-name" class="form-label">Bank Name</label>
+                                                <input type="text" class="form-control" id="bank-name" required>
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label for="account-name" class="form-label">Account
+                                                    Name</label>
+                                                <input type="text" class="form-control" id="account-name"
+                                                    required>
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label for="account-number" class="form-label">Account
+                                                    Number</label>
+                                                <input type="text" class="form-control" id="account-number"
+                                                    required>
+                                            </div>
+
+                                            <div class="col-md-4 mb-3">
+                                                <label for="routing-number" class="form-label">Routing
+                                                    Number</label>
+                                                <input type="text" class="form-control" id="routing-number">
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label for="bank-code" class="form-label">Bank Code</label>
+                                                <input type="text" class="form-control" id="bank-code">
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label for="iban" class="form-label">IBAN</label>
+                                                <input type="text" class="form-control" id="iban">
+                                            </div>
+                                        </div>
+
+                                        <div class="d-flex justify-content-end border-top pt-4">
+                                            <button type="button" class="btn btn-outline-secondary me-3 px-4"
+                                                id="cancel-add-employee">
+                                                Cancel
+                                            </button>
+                                            <button type="submit" class="btn btn-primary px-4"
+                                                id="submit-employee">
+                                                <span id="submit-employee-text">Add Employee</span>
+                                                <span class="spinner-border spinner-border-sm d-none"
+                                                    id="submit-employee-spinner"></span>
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Employee Details Modal -->
+        <div class="modal fade employee-details-modal" id="employeeDetailsModal" tabindex="-1"
+            aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="employeeDetailsModalTitle">Employee Details</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body" id="employeeDetailsModalBody">
+                        <div class="row">
+                            <div class="col-md-4 text-center mb-4">
+                                <div class="employee-avatar mx-auto mb-3" id="employee-avatar">
+                                    JD
+                                </div>
+                                <h5 id="employee-full-name">John Doe</h5>
+                                <div class="badge bg-primary" id="employee-position">Software Engineer</div>
+                            </div>
+
+                            <div class="col-md-8">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="detail-group">
+                                            <div class="detail-label">Employee ID</div>
+                                            <div class="detail-value" id="employee-id-detail">EMP-001</div>
+                                        </div>
+
+                                        <div class="detail-group">
+                                            <div class="detail-label">Department</div>
+                                            <div class="detail-value" id="employee-department">Engineering</div>
+                                        </div>
+
+                                        <div class="detail-group">
+                                            <div class="detail-label">Grade</div>
+                                            <div class="detail-value" id="employee-grade">Senior</div>
+                                        </div>
+
+                                        <div class="detail-group">
+                                            <div class="detail-label">Salary</div>
+                                            <div class="detail-value" id="employee-salary">$85,000.00</div>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <div class="detail-group">
+                                            <div class="detail-label">Email</div>
+                                            <div class="detail-value" id="employee-email">john.doe@example.com
+                                            </div>
+                                        </div>
+
+                                        <div class="detail-group">
+                                            <div class="detail-label">Phone</div>
+                                            <div class="detail-value" id="employee-phone">(555) 123-4567</div>
+                                        </div>
+
+                                        <div class="detail-group">
+                                            <div class="detail-label">Status</div>
+                                            <div class="detail-value">
+                                                <span class="badge bg-success"
+                                                    id="employee-status">Active</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="detail-group">
+                                            <div class="detail-label">Start Date</div>
+                                            <div class="detail-value" id="employee-start-date">Jan 15, 2020
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mt-4">
+                                    <h6 class="form-section-title mb-3">Additional Information</h6>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="detail-group">
+                                                <div class="detail-label">Date of Birth</div>
+                                                <div class="detail-value" id="employee-dob">May 10, 1985</div>
+                                            </div>
+
+                                            <div class="detail-group">
+                                                <div class="detail-label">Gender</div>
+                                                <div class="detail-value" id="employee-gender">Male</div>
+                                            </div>
+
+                                            <div class="detail-group">
+                                                <div class="detail-label">Nationality</div>
+                                                <div class="detail-value" id="employee-nationality">American
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            <div class="detail-group">
+                                                <div class="detail-label">Bank Name</div>
+                                                <div class="detail-value" id="employee-bank-name">Chase Bank
+                                                </div>
+                                            </div>
+
+                                            <div class="detail-group">
+                                                <div class="detail-label">Account Number</div>
+                                                <div class="detail-value" id="employee-account-number">
+                                                    ******7890</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" id="edit-employee-btn">Edit Employee</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit Employee Modal -->
+        <div class="modal fade" id="editEmployeeModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Edit Employee</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body" id="editEmployeeModalBody">
+                        <!-- Form will be populated here -->
+                        <form id="edit-employee-form">
+                            <input type="hidden" id="edit-employee-id">
+                            <!-- Repeat the same form fields as add employee form but with edit- prefix -->
+                            <!-- This should include all fields including bank details -->
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="save-employee-changes">
+                            <span id="save-employee-text">Save Changes</span>
+                            <span class="spinner-border spinner-border-sm d-none" id="save-employee-spinner"></span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- jQuery must come first -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <!-- Org Chart JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/orgchart/3.8.1/js/jquery.orgchart.min.js"></script>
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Axios -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <!-- Moment.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+
+    <script>
+        // Update your JavaScript to handle tab changes if needed
+        $(document).ready(function () {
+            // Initialize tabs
+            const tabEl = document.querySelector('button[data-bs-toggle="tab"]');
+            if (tabEl) {
+                tabEl.addEventListener('shown.bs.tab', function (event) {
+                    const activeTab = event.target.getAttribute('data-bs-target');
+                    if (activeTab === '#employees') {
+                        loadEmployees();
+                    }
+                });
+            }
+
+            // Your existing JavaScript code...
+        });
+    </script>
+    <script>
+        // Global variables
+        let currentPage = 1;
+        const itemsPerPage = 10;
+        let totalEmployees = 0;
+        let departments = [];
+        let positions = [];
+        let grades = [];
+        let users = [];
+        let allEmployees = []; // For export functionality
+
+        // Helper function to show loading state
+        function showLoading(selector, message) {
+            $(selector).html(`
+                <tr>
+                    <td colspan="7" class="text-center py-4">
+                        <div class="loading-spinner text-primary"></div>
+                        <p class="mt-2">${message}</p>
+                    </td>
+                </tr>
+            `);
+        }
+
+        // Helper function to show error state
+        function showError(selector, message) {
+            $(selector).html(`
+                <tr>
+                    <td colspan="7" class="text-center py-4 text-danger">
+                        <i class="fas fa-exclamation-circle fa-2x"></i>
+                        <p class="mt-2">${message}</p>
+                    </td>
+                </tr>
+            `);
+        }
+
+        // Helper function to show SweetAlert error
+        function showSwalError(message) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: message,
+                confirmButtonText: 'OK',
+                customClass: {
+                    confirmButton: 'btn btn-primary'
+                },
+                buttonsStyling: false
+            });
+        }
+
+        // Initialize the page
+        $(document).ready(function () {
+            // Check if user is logged in
+            const authToken = localStorage.getItem('authToken');
+            if (!authToken) {
+                window.location.href = '/login.html';
+                return;
+            }
+
+            // Set up Axios defaults
+            axios.defaults.headers.common['Authorization'] = `Bearer ${authToken}`;
+
+            // Load initial data
+            loadEmployees();
+            loadDepartments();
+            loadPositions();
+            loadGrades();
+            loadUsers();
+
+            // Set up event listeners
+            $('#employees-link').click(function (e) {
+                e.preventDefault();
+                showEmployeesSection();
+            });
+
+            $('#add-employee-link').click(function (e) {
+                e.preventDefault();
+                showAddEmployeeSection();
+            });
+
+            $('#refresh-btn').click(function () {
+                loadEmployees();
+            });
+
+            $('#export-btn').click(function () {
+                exportEmployees();
+            });
+
+            $('#cancel-add-employee').click(function () {
+                showEmployeesSection();
+            });
+
+            $('#employee-search').on('input', function () {
+                loadEmployees();
+            });
+
+            $('#department').change(function () {
+                updatePositionsDropdown();
+            });
+
+            $('#position').change(function () {
+                updateGradeDropdown();
+                updateSalaryField();
+            });
+
+            $('#grade').change(function () {
+                updateSalaryField();
+            });
+
+            $('#add-employee-form').submit(function (e) {
+                e.preventDefault();
+                addEmployee();
+            });
+
+            // Generate employee ID button
+            $('#generate-id-btn').click(function () {
+                $('#employee-id').val(generateEmployeeId());
+            });
+
+            // Edit employee button
+            $('#edit-employee-btn').click(function () {
+                const employeeId = $(this).data('id');
+                loadEmployeeForEdit(employeeId);
+            });
+
+            // Save changes in edit modal
+            $('#save-employee-changes').click(function () {
+                updateEmployee();
+            });
+
+            // Initialize edit modal event listeners
+            initEditModal();
+        });
+
+        // Function to initialize edit modal event listeners
+        function initEditModal() {
+            // Event delegation for edit buttons (since they're dynamically created)
+            $(document).on('click', '.edit-employee', function () {
+                const employeeId = $(this).data('id');
+                loadEmployeeForEdit(employeeId);
+            });
+        }
+
+        // Function to show employees section
+        function showEmployeesSection() {
+            $('#page-title').text('Employee Management');
+            $('#employees-section').removeClass('d-none');
+            $('#add-employee-section').addClass('d-none');
+        }
+
+        // Function to show add employee section
+        function showAddEmployeeSection() {
+            $('#page-title').text('Add New Employee');
+            $('#employees-section').addClass('d-none');
+            $('#add-employee-section').removeClass('d-none');
+        }
+
+        // Function to load employees with pagination
+        function loadEmployees(page = 1) {
+            currentPage = page;
+            const searchTerm = $('#employee-search').val();
+
+            showLoading('#employees-table-body', 'Loading employees...');
+
+            // Simulate API call with mock data
+            setTimeout(() => {
+                // Mock data for demonstration
+                const mockEmployees = [
+                    {
+                        _id: '1',
+                        employeeId: 'TEAMPAY0001',
+                        personalInfo: {
+                            firstName: 'John',
+                            lastName: 'Doe',
+                            email: 'john.doe@example.com',
+                            phoneNumber: '(555) 123-4567'
+                        },
+                        employmentInfo: {
+                            departmentId: { name: 'Engineering' },
+                            positionId: { name: 'Software Engineer' },
+                            status: 'active',
+                            currentSalary: 85000
+                        }
+                    },
+                    {
+                        _id: '2',
+                        employeeId: 'TEAMPAY0002',
+                        personalInfo: {
+                            firstName: 'Jane',
+                            lastName: 'Smith',
+                            email: 'jane.smith@example.com',
+                            phoneNumber: '(555) 987-6543'
+                        },
+                        employmentInfo: {
+                            departmentId: { name: 'Marketing' },
+                            positionId: { name: 'Marketing Manager' },
+                            status: 'active',
+                            currentSalary: 75000
+                        }
+                    }
+                ];
+
+                totalEmployees = 2;
+                allEmployees = mockEmployees;
+
+                renderEmployeesTable(mockEmployees);
+                renderPagination();
+            }, 1000);
+        }
+
+        // Function to render employees table with edit buttons
+        function renderEmployeesTable(employees) {
+            const tableBody = $('#employees-table-body');
+            tableBody.empty();
+
+            if (employees.length === 0) {
+                tableBody.append('<tr><td colspan="7" class="text-center py-4">No employees found</td></tr>');
+                return;
+            }
+
+            employees.forEach(employee => {
+                const firstName = employee.personalInfo.firstName || '';
+                const lastName = employee.personalInfo.lastName || '';
+                const initials = (firstName.charAt(0) + lastName.charAt(0)).toUpperCase();
+
+                const row = `
+                    <tr>
+                        <td>${employee.employeeId || 'N/A'}</td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="employee-avatar me-3">${initials}</div>
+                                <div>
+                                    <div class="fw-semibold">${firstName} ${lastName}</div>
+                                    <div class="text-muted small">${employee.employmentInfo.positionId?.name || 'N/A'}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="text-muted">${employee.personalInfo.email || 'N/A'}</div>
+                            <div class="small">${employee.personalInfo.phoneNumber || 'N/A'}</div>
+                        </td>
+                        <td>${employee.employmentInfo.departmentId?.name || 'N/A'}</td>
+                        <td>${employee.employmentInfo.positionId?.name || 'N/A'}</td>
+                        <td>
+                            <span class="employee-status-badge ${employee.employmentInfo.status === 'active' ? 'status-active' : 'status-inactive'}">
+                                ${employee.employmentInfo.status || 'N/A'}
+                            </span>
+                        </td>
+                        <td class="employee-actions">
+                            <button class="btn btn-sm btn-outline-primary view-employee" data-id="${employee._id}">
+                                <i class="fas fa-eye me-1"></i> View
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary edit-employee" data-id="${employee._id}">
+                                <i class="fas fa-edit me-1"></i> Edit
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                tableBody.append(row);
+            });
+
+            // Add event listener to view buttons
+            $('.view-employee').click(function () {
+                const employeeId = $(this).data('id');
+                viewEmployeeDetails(employeeId);
+            });
+        }
+
+
+        // Function to view employee details
+        function viewEmployeeDetails(employeeId) {
+            showLoading('#employeeDetailsModalBody', 'Loading employee details...');
+
+            // Simulate API call with mock data
+            setTimeout(() => {
+                const mockEmployee = {
+                    _id: employeeId,
+                    employeeId: 'TEAMPAY0001',
+                    personalInfo: {
+                        firstName: 'John',
+                        lastName: 'Doe',
+                        email: 'john.doe@example.com',
+                        phoneNumber: '(555) 123-4567',
+                        dateOfBirth: '1985-05-10',
+                        gender: 'male',
+                        nationality: 'American',
+                        address: {
+                            street: '123 Main St',
+                            city: 'New York',
+                            state: 'NY',
+                            zipCode: '10001',
+                            country: 'United States'
+                        }
+                    },
+                    employmentInfo: {
+                        departmentId: { name: 'Engineering' },
+                        positionId: { name: 'Software Engineer' },
+                        gradeId: { name: 'Senior' },
+                        status: 'active',
+                        currentSalary: 85000,
+                        startDate: '2020-01-15'
+                    },
+                    bankInfo: {
+                        bankName: 'Chase Bank',
+                        accountNumber: '1234567890'
+                    }
+                };
+
+                renderEmployeeDetails(mockEmployee);
+                $('#employeeDetailsModal').modal('show');
+            }, 1000);
+        }
+
+        // Function to render employee details
+        function renderEmployeeDetails(employee) {
+            const modalBody = $('#employeeDetailsModalBody');
+            modalBody.empty();
+
+            const firstName = employee.personalInfo.firstName || '';
+            const lastName = employee.personalInfo.lastName || '';
+            const initials = (firstName.charAt(0) + lastName.charAt(0)).toUpperCase();
+
+            const details = `
+                <div class="row">
+                    <div class="col-md-4 text-center mb-4">
+                        <div class="employee-avatar mx-auto mb-3">${initials}</div>
+                        <h5>${firstName} ${lastName}</h5>
+                        <div class="badge bg-primary">${employee.employmentInfo.positionId?.name || 'N/A'}</div>
+                    </div>
+                    
+                    <div class="col-md-8">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="detail-group">
+                                    <div class="detail-label">Employee ID</div>
+                                    <div class="detail-value">${employee.employeeId || 'N/A'}</div>
+                                </div>
+                                
+                                <div class="detail-group">
+                                    <div class="detail-label">Department</div>
+                                    <div class="detail-value">${employee.employmentInfo.departmentId?.name || 'N/A'}</div>
+                                </div>
+                                
+                                <div class="detail-group">
+                                    <div class="detail-label">Grade</div>
+                                    <div class="detail-value">${employee.employmentInfo.gradeId?.name || 'N/A'}</div>
+                                </div>
+                                
+                                <div class="detail-group">
+                                    <div class="detail-label">Salary</div>
+                                    <div class="detail-value">$${(employee.employmentInfo.currentSalary || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="detail-group">
+                                    <div class="detail-label">Email</div>
+                                    <div class="detail-value">${employee.personalInfo.email || 'N/A'}</div>
+                                </div>
+                                
+                                <div class="detail-group">
+                                    <div class="detail-label">Phone</div>
+                                    <div class="detail-value">${employee.personalInfo.phoneNumber || 'N/A'}</div>
+                                </div>
+                                
+                                <div class="detail-group">
+                                    <div class="detail-label">Status</div>
+                                    <div class="detail-value">
+                                        <span class="badge ${employee.employmentInfo.status === 'active' ? 'bg-success' : 'bg-secondary'}">
+                                            ${employee.employmentInfo.status || 'N/A'}
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                <div class="detail-group">
+                                    <div class="detail-label">Start Date</div>
+                                    <div class="detail-value">${employee.employmentInfo.startDate ? new Date(employee.employmentInfo.startDate).toLocaleDateString() : 'N/A'}</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <h6 class="form-section-title mb-3">Additional Information</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="detail-group">
+                                        <div class="detail-label">Date of Birth</div>
+                                        <div class="detail-value">${employee.personalInfo.dateOfBirth ? new Date(employee.personalInfo.dateOfBirth).toLocaleDateString() : 'N/A'}</div>
+                                    </div>
+                                    
+                                    <div class="detail-group">
+                                        <div class="detail-label">Gender</div>
+                                        <div class="detail-value">${employee.personalInfo.gender || 'N/A'}</div>
+                                    </div>
+                                    
+                                    <div class="detail-group">
+                                        <div class="detail-label">Nationality</div>
+                                        <div class="detail-value">${employee.personalInfo.nationality || 'N/A'}</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="detail-group">
+                                        <div class="detail-label">Bank Name</div>
+                                        <div class="detail-value">${employee.bankInfo?.bankName || 'N/A'}</div>
+                                    </div>
+                                    
+                                    <div class="detail-group">
+                                        <div class="detail-label">Account Number</div>
+                                        <div class="detail-value">${employee.bankInfo?.accountNumber ? '••••••' + employee.bankInfo.accountNumber.slice(-4) : 'N/A'}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            modalBody.append(details);
+            
+            // Set the employee ID on the edit button
+            $('#edit-employee-btn').data('id', employee._id);
+        }
+
+        // Function to load employee data for editing
+        function loadEmployeeForEdit(employeeId) {
+            showLoading('#editEmployeeModalBody', 'Loading employee data...');
+
+            // Simulate API call with mock data
+            setTimeout(() => {
+                const mockEmployee = {
+                    _id: employeeId,
+                    employeeId: 'TEAMPAY0001',
+                    personalInfo: {
+                        firstName: 'John',
+                        middleName: 'Michael',
+                        lastName: 'Doe',
+                        email: 'john.doe@example.com',
+                        phoneNumber: '(555) 123-4567',
+                        dateOfBirth: '1985-05-10',
+                        gender: 'male',
+                        nationality: 'American',
+                        address: {
+                            street: '123 Main St',
+                            city: 'New York',
+                            state: 'NY',
+                            zipCode: '10001',
+                            country: 'United States'
+                        }
+                    },
+                    employmentInfo: {
+                        departmentId: 'dept1',
+                        positionId: 'pos1',
+                        gradeId: 'grade1',
+                        currentSalary: 85000,
+                        employmentType: 'full-time',
+                        status: 'active',
+                        startDate: '2020-01-15'
+                    },
+                    bankInfo: {
+                        bankName: 'Chase Bank',
+                        accountName: 'John Doe',
+                        accountNumber: '1234567890',
+                        routingNumber: '021000021',
+                        bankCode: 'CHASUS33',
+                        iban: 'US6000000000000000000000'
+                    },
+                    emergencyContact: {
+                        name: 'Jane Doe',
+                        relationship: 'Spouse',
+                        phoneNumber: '(555) 987-6543'
+                    }
+                };
+
+                populateEditForm(mockEmployee);
+                $('#editEmployeeModal').modal('show');
+            }, 1000);
+        }
+
+        // Function to populate edit form with employee data
+        function populateEditForm(employee) {
+            // Basic Information
+            $('#edit-employee-id').val(employee._id);
+            $('#edit-first-name').val(employee.personalInfo.firstName || '');
+            $('#edit-middle-name').val(employee.personalInfo.middleName || '');
+            $('#edit-last-name').val(employee.personalInfo.lastName || '');
+            $('#edit-date-of-birth').val(employee.personalInfo.dateOfBirth ? new Date(employee.personalInfo.dateOfBirth).toISOString().split('T')[0] : '');
+            $('#edit-gender').val(employee.personalInfo.gender || '');
+            $('#edit-nationality').val(employee.personalInfo.nationality || '');
+            $('#edit-email').val(employee.personalInfo.email || '');
+            $('#edit-phone-number').val(employee.personalInfo.phoneNumber || '');
+
+            // Address Information
+            $('#edit-street-address').val(employee.personalInfo.address?.street || '');
+            $('#edit-city').val(employee.personalInfo.address?.city || '');
+            $('#edit-state').val(employee.personalInfo.address?.state || '');
+            $('#edit-zip-code').val(employee.personalInfo.address?.zipCode || '');
+            $('#edit-country').val(employee.personalInfo.address?.country || '');
+
+            // Employment Information
+            $('#edit-department').val(employee.employmentInfo.departmentId || '');
+            $('#edit-position').val(employee.employmentInfo.positionId || '');
+            $('#edit-grade').val(employee.employmentInfo.gradeId || '');
+            $('#edit-salary').val(employee.employmentInfo.currentSalary || '');
+            $('#edit-employment-type').val(employee.employmentInfo.employmentType || '');
+            $('#edit-start-date').val(employee.employmentInfo.startDate ? new Date(employee.employmentInfo.startDate).toISOString().split('T')[0] : '');
+            $('#edit-status').val(employee.employmentInfo.status || 'active');
+
+            // Bank Information
+            $('#edit-bank-name').val(employee.bankInfo?.bankName || '');
+            $('#edit-account-name').val(employee.bankInfo?.accountName || '');
+            $('#edit-account-number').val(employee.bankInfo?.accountNumber || '');
+            $('#edit-routing-number').val(employee.bankInfo?.routingNumber || '');
+            $('#edit-bank-code').val(employee.bankInfo?.bankCode || '');
+            $('#edit-iban').val(employee.bankInfo?.iban || '');
+
+            // Emergency Contact
+            $('#edit-emergency-contact-name').val(employee.emergencyContact?.name || '');
+            $('#edit-emergency-contact-relationship').val(employee.emergencyContact?.relationship || '');
+            $('#edit-emergency-contact-phone').val(employee.emergencyContact?.phoneNumber || '');
+        }
+
+        // Function to update employee
+        function updateEmployee() {
+            const employeeId = $('#edit-employee-id').val();
+            const submitBtn = $('#save-employee-changes');
+            const submitText = $('#save-employee-text');
+            const spinner = $('#save-employee-spinner');
+
+            // Show loading state
+            submitBtn.prop('disabled', true);
+            submitText.addClass('d-none');
+            spinner.removeClass('d-none');
+
+            // Get form data
+            const employeeData = {
+                personalInfo: {
+                    firstName: $('#edit-first-name').val(),
+                    middleName: $('#edit-middle-name').val(),
+                    lastName: $('#edit-last-name').val(),
+                    dateOfBirth: $('#edit-date-of-birth').val(),
+                    gender: $('#edit-gender').val(),
+                    nationality: $('#edit-nationality').val(),
+                    email: $('#edit-email').val(),
+                    phoneNumber: $('#edit-phone-number').val(),
+                    address: {
+                        street: $('#edit-street-address').val(),
+                        city: $('#edit-city').val(),
+                        state: $('#edit-state').val(),
+                        zipCode: $('#edit-zip-code').val(),
+                        country: $('#edit-country').val()
+                    }
+                },
+                employmentInfo: {
+                    departmentId: $('#edit-department').val(),
+                    positionId: $('#edit-position').val(),
+                    gradeId: $('#edit-grade').val(),
+                    currentSalary: parseFloat($('#edit-salary').val()),
+                    employmentType: $('#edit-employment-type').val(),
+                    startDate: $('#edit-start-date').val(),
+                    status: $('#edit-status').val()
+                },
+                bankInfo: {
+                    bankName: $('#edit-bank-name').val(),
+                    accountName: $('#edit-account-name').val(),
+                    accountNumber: $('#edit-account-number').val(),
+                    routingNumber: $('#edit-routing-number').val(),
+                    bankCode: $('#edit-bank-code').val(),
+                    iban: $('#edit-iban').val()
+                },
+                emergencyContact: {
+                    name: $('#edit-emergency-contact-name').val(),
+                    relationship: $('#edit-emergency-contact-relationship').val(),
+                    phoneNumber: $('#edit-emergency-contact-phone').val()
+                }
+            };
+
+            // Simulate API call
+            setTimeout(() => {
+                // Show success message
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success',
+                    text: 'Employee updated successfully!',
+                    confirmButtonText: 'OK',
+                    customClass: {
+                        confirmButton: 'btn btn-primary'
+                    },
+                    buttonsStyling: false
+                }).then(() => {
+                    // Close modal
+                    $('#editEmployeeModal').modal('hide');
+                    // Refresh employees list
+                    loadEmployees(currentPage);
+                });
+                
+                // Reset button state
+                submitBtn.prop('disabled', false);
+                submitText.removeClass('d-none');
+                spinner.addClass('d-none');
+            }, 1000);
+        }
+
+        // Function to export employees
+        function exportEmployees() {
+            // If we don't have all employees loaded, fetch them
+            if (allEmployees.length === 0) {
+                // Simulate API call
+                setTimeout(() => {
+                    allEmployees = [
+                        {
+                            employeeId: 'TEAMPAY0001',
+                            personalInfo: {
+                                firstName: 'John',
+                                lastName: 'Doe',
+                                email: 'john.doe@example.com',
+                                phoneNumber: '(555) 123-4567'
+                            },
+                            employmentInfo: {
+                                departmentId: { name: 'Engineering' },
+                                positionId: { name: 'Software Engineer' },
+                                status: 'active',
+                                currentSalary: 85000,
+                                startDate: '2020-01-15'
+                            },
+                            bankInfo: {
+                                bankName: 'Chase Bank',
+                                accountNumber: '1234567890'
+                            }
+                        },
+                        {
+                            employeeId: 'TEAMPAY0002',
+                            personalInfo: {
+                                firstName: 'Jane',
+                                lastName: 'Smith',
+                                email: 'jane.smith@example.com',
+                                phoneNumber: '(555) 987-6543'
+                            },
+                            employmentInfo: {
+                                departmentId: { name: 'Marketing' },
+                                positionId: { name: 'Marketing Manager' },
+                                status: 'active',
+                                currentSalary: 75000,
+                                startDate: '2019-03-10'
+                            },
+                            bankInfo: {
+                                bankName: 'Bank of America',
+                                accountNumber: '0987654321'
+                            }
+                        }
+                    ];
+                    downloadCSV(allEmployees);
+                }, 500);
+            } else {
+                downloadCSV(allEmployees);
+            }
+        }
+
+        // Function to download CSV
+        function downloadCSV(employees) {
+            // CSV headers
+            const headers = [
+                'Employee ID',
+                'First Name',
+                'Last Name',
+                'Email',
+                'Phone',
+                'Department',
+                'Position',
+                'Status',
+                'Salary',
+                'Bank Name',
+                'Account Number',
+                'Start Date'
+            ];
+
+            // CSV data rows
+            const rows = employees.map(employee => [
+                employee.employeeId || '',
+                employee.personalInfo.firstName || '',
+                employee.personalInfo.lastName || '',
+                employee.personalInfo.email || '',
+                employee.personalInfo.phoneNumber || '',
+                employee.employmentInfo.departmentId?.name || '',
+                employee.employmentInfo.positionId?.name || '',
+                employee.employmentInfo.status || '',
+                employee.employmentInfo.currentSalary || '',
+                employee.bankInfo?.bankName || '',
+                employee.bankInfo?.accountNumber || '',
+                employee.employmentInfo.startDate ? new Date(employee.employmentInfo.startDate).toLocaleDateString() : ''
+            ]);
+
+            // Create CSV content
+            let csvContent = headers.join(',') + '\n';
+            rows.forEach(row => {
+                csvContent += row.map(field => `"${field}"`).join(',') + '\n';
+            });
+
+            // Create download link
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            
+            link.setAttribute('href', url);
+            link.setAttribute('download', `employees_export_${new Date().toISOString().split('T')[0]}.csv`);
+            link.style.visibility = 'hidden';
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Function to load departments
+        function loadDepartments() {
+            // Simulate API call with mock data
+            setTimeout(() => {
+                departments = [
+                    { _id: 'dept1', name: 'Engineering' },
+                    { _id: 'dept2', name: 'Marketing' },
+                    { _id: 'dept3', name: 'Sales' },
+                    { _id: 'dept4', name: 'Human Resources' }
+                ];
+                renderDepartmentsDropdown();
+            }, 500);
+        }
+
+        // Function to render departments dropdown
+        function renderDepartmentsDropdown() {
+            const dropdown = $('#department');
+            dropdown.empty();
+            dropdown.append('<option value="" selected disabled>Select department</option>');
+
+            departments.forEach(dept => {
+                dropdown.append(`<option value="${dept._id}">${dept.name}</option>`);
+            });
+        }
+
+        // Function to load positions
+        function loadPositions() {
+            // Simulate API call with mock data
+            setTimeout(() => {
+                positions = [
+                    { _id: 'pos1', name: 'Software Engineer', departmentId: 'dept1' },
+                    { _id: 'pos2', name: 'Senior Developer', departmentId: 'dept1' },
+                    { _id: 'pos3', name: 'Marketing Manager', departmentId: 'dept2' },
+                    { _id: 'pos4', name: 'Sales Representative', departmentId: 'dept3' },
+                    { _id: 'pos5', name: 'HR Specialist', departmentId: 'dept4' }
+                ];
+                renderPositionsDropdown();
+            }, 500);
+        }
+
+        // Function to render positions dropdown
+        function renderPositionsDropdown() {
+            const dropdown = $('#position');
+            dropdown.empty();
+            dropdown.append('<option value="" selected disabled>Select position</option>');
+
+            positions.forEach(pos => {
+                dropdown.append(`<option value="${pos._id}" data-department="${pos.departmentId}">${pos.name}</option>`);
+            });
+        }
+
+        // Function to update positions dropdown based on selected department
+        function updatePositionsDropdown() {
+            const departmentId = $('#department').val();
+            const dropdown = $('#position');
+
+            dropdown.empty();
+            dropdown.append('<option value="" selected disabled>Select position</option>');
+
+            if (!departmentId) {
+                return;
+            }
+
+            const filteredPositions = positions.filter(pos => pos.departmentId === departmentId);
+
+            if (filteredPositions.length === 0) {
+                dropdown.append('<option value="" disabled>No positions available for this department</option>');
+                return;
+            }
+
+            filteredPositions.forEach(pos => {
+                dropdown.append(`<option value="${pos._id}">${pos.name}</option>`);
+            });
+        }
+
+        // Function to load grades
+        function loadGrades() {
+            // Simulate API call with mock data
+            setTimeout(() => {
+                grades = [
+                    { _id: 'grade1', name: 'Junior', salaryRange: { minimum: 40000, maximum: 60000 } },
+                    { _id: 'grade2', name: 'Mid-level', salaryRange: { minimum: 60000, maximum: 80000 } },
+                    { _id: 'grade3', name: 'Senior', salaryRange: { minimum: 80000, maximum: 100000 } },
+                    { _id: 'grade4', name: 'Lead', salaryRange: { minimum: 100000, maximum: 120000 } },
+                    { _id: 'grade5', name: 'Principal', salaryRange: { minimum: 120000, maximum: 150000 } }
+                ];
+                renderGradesDropdown();
+            }, 500);
+        }
+
+        // Function to render grades dropdown
+        function renderGradesDropdown() {
+            const dropdown = $('#grade');
+            dropdown.empty();
+            dropdown.append('<option value="" selected disabled>Select grade</option>');
+
+            grades.forEach(grade => {
+                dropdown.append(`<option value="${grade._id}">${grade.name} ($${grade.salaryRange.minimum} - $${grade.salaryRange.maximum})</option>`);
+            });
+        }
+
+        // Function to update grade dropdown based on selected position
+        function updateGradeDropdown() {
+            const positionId = $('#position').val();
+            const dropdown = $('#grade');
+
+            if (!positionId) {
+                dropdown.val('');
+                return;
+            }
+
+            // Simple logic for demonstration - in real app, you'd have position-grade mapping
+            const selectedPosition = positions.find(pos => pos._id === positionId);
+            if (selectedPosition) {
+                // Set to mid-level grade for demonstration
+                dropdown.val('grade2');
+            }
+        }
+
+        // Function to update salary field based on selected grade
+        function updateSalaryField() {
+            const gradeId = $('#grade').val();
+
+            if (!gradeId) {
+                $('#salary').val('');
+                return;
+            }
+
+            const selectedGrade = grades.find(grade => grade._id === gradeId);
+            if (selectedGrade) {
+                // Set salary to the midpoint of the grade range
+                const midpoint = (selectedGrade.salaryRange.minimum + selectedGrade.salaryRange.maximum) / 2;
+                $('#salary').val(midpoint.toFixed(2));
+            }
+        }
+
+        // Function to load users
+        function loadUsers() {
+            // Simulate API call with mock data
+            setTimeout(() => {
+                users = [
+                    { _id: 'user1', email: 'john.doe@example.com', role: 'Employee' },
+                    { _id: 'user2', email: 'jane.smith@example.com', role: 'Manager' },
+                    { _id: 'user3', email: 'admin@example.com', role: 'Administrator' }
+                ];
+                renderUsersDropdown();
+            }, 500);
+        }
+
+        // Function to render users dropdown
+        function renderUsersDropdown() {
+            const dropdown = $('#user-select');
+            dropdown.empty();
+            dropdown.append('<option value="" selected disabled>Select a user</option>');
+
+            users.forEach(user => {
+                dropdown.append(`<option value="${user._id}">${user.email} (${user.role})</option>`);
+            });
+        }
+
+        // Function to add a new employee
+        function addEmployee() {
+            const submitBtn = $('#submit-employee');
+            const submitText = $('#submit-employee-text');
+            const spinner = $('#submit-employee-spinner');
+
+            // Show loading state
+            submitBtn.prop('disabled', true);
+            submitText.addClass('d-none');
+            spinner.removeClass('d-none');
+
+            // Get form data
+            const userId = $('#user-select').val();
+            const employeeId = $('#employee-id').val() || generateEmployeeId();
+            const firstName = $('#first-name').val();
+            const middleName = $('#middle-name').val();
+            const lastName = $('#last-name').val();
+            const dateOfBirth = $('#date-of-birth').val();
+            const gender = $('#gender').val();
+            const nationality = $('#nationality').val();
+            const email = $('#email').val();
+            const phoneNumber = $('#phone-number').val();
+            const departmentId = $('#department').val();
+            const positionId = $('#position').val();
+            const gradeId = $('#grade').val();
+            const salary = parseFloat($('#salary').val());
+            const employmentType = $('#employment-type').val();
+            const startDate = $('#start-date').val();
+            const probationPeriod = parseInt($('#probation-period').val());
+
+            // Address fields
+            const street = $('#street-address').val();
+            const city = $('#city').val();
+            const state = $('#state').val();
+            const zipCode = $('#zip-code').val();
+            const country = $('#country').val();
+
+            // Emergency contact fields
+            const emergencyContactName = $('#emergency-contact-name').val();
+            const emergencyContactRelationship = $('#emergency-contact-relationship').val();
+            const emergencyContactPhone = $('#emergency-contact-phone').val();
+
+            //Bank information fields
+            const bankName = $('#bank-name').val();
+            const accountName = $('#account-name').val();
+            const accountNumber = $('#account-number').val();
+            const routingNumber = $('#routing-number').val();
+            const bankCode = $('#bank-code').val();
+            const iban = $('#iban').val();
+
+            if (employeeId && !/^[A-Z0-9-]+$/.test(employeeId)) {
+                showValidationError('Employee ID must contain only uppercase letters, numbers, and hyphens');
+                return;
+            }
+
+            // Validate required fields
+            if (!dateOfBirth || new Date().getFullYear() - new Date(dateOfBirth).getFullYear() < 16) {
+                showValidationError('Employee must be at least 16 years old');
+                return;
+            }
+
+            // Validate account number (numeric only)
+            if (!/^\d+$/.test(accountNumber)) {
+                showValidationError('Account number must contain only numbers');
+                return;
+            }
+
+            // Validate IBAN format if provided
+            if (iban && !/^[A-Z0-9]+$/.test(iban)) {
+                showValidationError('IBAN must contain only uppercase letters and numbers');
+                return;
+            }
+
+            // Prepare employee data with all required fields
+            const employeeData = {
+                userId: userId,
+                employeeId: employeeId,
+                personalInfo: {
+                    firstName: firstName,
+                    middleName: middleName,
+                    lastName: lastName,
+                    dateOfBirth: dateOfBirth,
+                    gender: gender,
+                    nationality: nationality,
+                    idNumber: 'TEAMPAY_ID_' + Math.random().toString(36).substr(2, 9), // Temporary until you add ID field
+                    phoneNumber: phoneNumber,
+                    email: email,
+                    address: {
+                        street: street,
+                        city: city,
+                        state: state,
+                        zipCode: zipCode,
+                        country: country || 'United States'
+                    }
+                },
+                employmentInfo: {
+                    positionId: positionId,
+                    departmentId: departmentId,
+                    gradeId: gradeId,
+                    currentSalary: salary,
+                    employmentType: employmentType,
+                    startDate: startDate,
+                    isOnProbation: true,
+                    probationEndDate: new Date(new Date(startDate).setMonth(new Date(startDate).getMonth() + probationPeriod)).toISOString(),
+                    status: 'active'
+                },
+                bankInfo: {
+                    bankName: bankName,
+                    accountName: accountName,
+                    accountNumber: accountNumber,
+                    routingNumber: routingNumber || undefined,
+                    bankCode: bankCode || undefined,
+                    iban: iban ? iban.toUpperCase() : undefined
+                },
+                emergencyContact: {
+                    name: emergencyContactName,
+                    relationship: emergencyContactRelationship,
+                    phoneNumber: emergencyContactPhone
+                }
+            };
+
+            // Simulate API call
+            setTimeout(() => {
+                // Reset form
+                $('#add-employee-form')[0].reset();
+
+                // Show success message
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success',
+                    text: 'Employee created successfully!',
+                    confirmButtonText: 'OK',
+                    customClass: {
+                        confirmButton: 'btn btn-primary'
+                    },
+                    buttonsStyling: false
+                }).then(() => {
+                    // Return to employees list
+                    showEmployeesSection();
+                    // Refresh employees list
+                    loadEmployees();
+                });
+                
+                // Reset button state
+                submitBtn.prop('disabled', false);
+                submitText.removeClass('d-none');
+                spinner.addClass('d-none');
+            }, 1000);
+        }
+
+        function generateEmployeeId() {
+            // Get the last employee ID from the loaded employees
+            // Format: TEAMPAY0001, TEAMPAY0002, etc.
+            let maxId = 0;
+            $('#employees-table-body tr').each(function () {
+                const idCell = $(this).find('td').eq(0).text();
+                const match = idCell.match(/^TEAMPAY(\d+)$/);
+                if (match) {
+                    const num = parseInt(match[1], 10);
+                    if (num > maxId) maxId = num;
+                }
+            });
+            const nextId = maxId + 1;
+            return `TEAMPAY${nextId.toString().padStart(4, '0')}`;
+        }
+
+        // Helper function to show validation error
+        function showValidationError(message) {
+            const submitBtn = $('#submit-employee');
+            const submitText = $('#submit-employee-text');
+            const spinner = $('#submit-employee-spinner');
+
+            // Reset button state
+            submitBtn.prop('disabled', false);
+            submitText.removeClass('d-none');
+            spinner.addClass('d-none');
+
+            Swal.fire({
+                icon: 'error',
+                title: 'Validation Error',
+                text: message,
+                confirmButtonText: 'OK',
+                customClass: {
+                    confirmButton: 'btn btn-primary'
+                },
+                buttonsStyling: false
+            });
+        }
+    </script>
+
+    <!-- Custom JS -->
+    <!-- <script src="/js/admin.js"></script> -->
+
+</body>
+
+</html>
