@@ -620,8 +620,11 @@
           // Simple payslip preview
           const previewHtml = `
             <div class="payslip-header text-center">
-              <h4>${escapeHtml(process.env.COMPANY_NAME || 'Company Name')}</h4>
-              <p class="mb-0">${escapeHtml(process.env.COMPANY_ADDRESS || 'Company Address')}</p>
+              <img src="/logo.png" alt="Company Logo" style="height: 60px; margin-bottom: 10px;">
+              <h4>Team Pay</h4>
+              <p class="mb-0">Umoyo Building, Blantyre, Malawi</p>
+              <p class="mb-0"><strong>Bank:</strong> National Bank of Malawi</p>
+              <p class="mb-0"><strong>Account:</strong> 123456789012</p>
               <h5 class="mt-2">PAYSLIP</h5>
             </div>
             

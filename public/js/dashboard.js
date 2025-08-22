@@ -408,7 +408,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 labels: ['Active Employees', 'Inactive Employees'],
                 datasets: [{
                     data: [activeCount, inactiveCount],
-                    backgroundColor: ['#28a745', '#dc3545'],
+                    backgroundColor: ['#0a1f3a', '#e86029'],
                     borderWidth: 1
                 }]
             },
@@ -485,7 +485,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function generateColors(count) {
-        const baseColors = ['#0a1f3a', '#e86029', '#f7d7b3', '#28a745', '#0f2a4d'];
+        const baseColors = ['#0a1f3a', '#e86029', '#f7d7b3', '#0f2a4d'];
         const colors = [];
         
         for (let i = 0; i < count; i++) {
