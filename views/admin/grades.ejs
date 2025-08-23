@@ -553,7 +553,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
     <!-- Axios -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.2/axios.min.js"></script>
-    
+    <!-- Add this before your custom scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>    
     <!-- Custom JS -->
     <script src="/js/admin.js"></script>
     
@@ -616,37 +617,58 @@
             confirmActionBtn.addEventListener('click', performConfirmedAction);
             
             // Load grades with filters
-            function loadGrades() {
-                const filters = {
-                    search: searchInput.value,
-                    activeOnly: statusFilter.value === 'true',
-                };
-                
-                // Parse salary range filter
-                const salaryRange = salaryFilter.value;
-                if (salaryRange) {
-                    const [min, max] = salaryRange.split('-');
-                    if (min) filters.minSalary = min;
-                    if (max) filters.maxSalary = max;
-                }
-                
-                showLoading();
-                
-                axios.get('/grades', { params: filters })
-                    .then(response => {
-                        grades = response.data;
-                        renderGradesTable();
-                        renderStats();
-                    })
-                    .catch(error => {
-                        showError('Failed to load grades. Please try again.');
-                        console.error('Error loading grades:', error);
-                    })
-                    .finally(() => {
-                        hideLoading();
-                    });
-            }
+// Load grades with filters - UPDATED to include employee count
+function loadGrades() {
+    const filters = {
+        search: searchInput.value,
+        activeOnly: statusFilter.value === 'true',
+    };
+    
+    // Parse salary range filter
+    const salaryRange = salaryFilter.value;
+    if (salaryRange) {
+        const [min, max] = salaryRange.split('-');
+        if (min) filters.minSalary = min;
+        if (max) filters.maxSalary = max;
+    }
+    
+    showLoading();
+    
+    axios.get('/grades', { params: filters })
+        .then(response => {
+            grades = response.data;
             
+            // Get employee count for each grade
+            return Promise.all(grades.map(async (grade) => {
+                try {
+                    const empResponse = await axios.get('/employees', {
+                        params: {
+                            gradeId: grade._id,
+                            status: 'active',
+                            limit: 1 // We just need the count
+                        }
+                    });
+                    grade.employeeCount = empResponse.data.pagination?.total || 0;
+                } catch (error) {
+                    console.error(`Error loading employees for grade ${grade._id}:`, error);
+                    grade.employeeCount = 0;
+                }
+                return grade;
+            }));
+        })
+        .then(gradesWithCount => {
+            grades = gradesWithCount;
+            renderGradesTable();
+            renderStats();
+        })
+        .catch(error => {
+            showError('Failed to load grades. Please try again.');
+            console.error('Error loading grades:', error);
+        })
+        .finally(() => {
+            hideLoading();
+        });
+}
             // Load next grades for promotion dropdowns
             function loadNextGrades() {
                 axios.get('/grades')
@@ -741,7 +763,360 @@
                 document.querySelectorAll('.activate-btn').forEach(btn => {
                     btn.addEventListener('click', () => confirmActivateGrade(btn.dataset.id));
                 });
+
+            
             }
+
+        function createEditModalForm() {
+            const editModal = document.getElementById('editGradeModal');
+            if (!editModal) return;
+            
+            const modalBody = editModal.querySelector('.modal-body');
+            if (!modalBody) return;
+            
+            // Create the edit form with all the same fields as add form
+            modalBody.innerHTML = `
+                <form id="editGradeForm">
+                    <input type="hidden" id="editGradeId">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editGradeName" class="form-label">Grade Name *</label>
+                                <input type="text" class="form-control" id="editGradeName" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="editGradeCode" class="form-label">Grade Code *</label>
+                                <input type="text" class="form-control" id="editGradeCode" required>
+                                <div class="form-text">Uppercase letters and numbers only</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="editGradeLevel" class="form-label">Grade Level *</label>
+                                <input type="number" class="form-control" id="editGradeLevel" min="1" max="20" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="editGradeDescription" class="form-label">Description</label>
+                                <textarea class="form-control" id="editGradeDescription" rows="2"></textarea>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editCurrency" class="form-label">Currency *</label>
+                                <select class="form-select" id="editCurrency" required>
+                                    <option value="MWK">MWK (Malawian Kwacha)</option>
+                                    <option value="USD">USD (US Dollar)</option>
+                                    <option value="EUR">EUR (Euro)</option>
+                                    <option value="GBP">GBP (British Pound)</option>
+                                    <option value="CAD">CAD (Canadian Dollar)</option>
+                                    <option value="AUD">AUD (Australian Dollar)</option>
+                                    <option value="NGN">NGN (Nigerian Naira)</option>
+                                    <option value="KES">KES (Kenyan Shilling)</option>
+                                    <option value="GHS">GHS (Ghanaian Cedi)</option>
+                                    <option value="ZAR">ZAR (South African Rand)</option>
+                                </select>
+                            </div>
+                            <div class="mb-3 form-check">
+                                <input type="checkbox" class="form-check-input" id="editIsActive" checked>
+                                <label class="form-check-label" for="editIsActive">Active</label>
+                            </div>
+                            <div class="mb-3">
+                                <label for="editEffectiveDate" class="form-label">Effective Date</label>
+                                <input type="date" class="form-control" id="editEffectiveDate">
+                            </div>
+                            <div class="mb-3">
+                                <label for="editExpiryDate" class="form-label">Expiry Date (optional)</label>
+                                <input type="date" class="form-control" id="editExpiryDate">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion mb-3" id="editSalaryAccordion">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#editSalaryCollapse">
+                                    Salary Information
+                                </button>
+                            </h2>
+                            <div id="editSalaryCollapse" class="accordion-collapse collapse show" data-bs-parent="#editSalaryAccordion">
+                                <div class="accordion-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="editBaseSalary" class="form-label">Base Salary *</label>
+                                                <div class="input-group">
+                                                    <span class="input-group-text">$</span>
+                                                    <input type="number" class="form-control" id="editBaseSalary" min="0" step="100" required>
+                                                </div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="editMinSalary" class="form-label">Minimum Salary *</label>
+                                                <div class="input-group">
+                                                    <span class="input-group-text">$</span>
+                                                    <input type="number" class="form-control" id="editMinSalary" min="0" step="100" required>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="editMaxSalary" class="form-label">Maximum Salary *</label>
+                                                <div class="input-group">
+                                                    <span class="input-group-text">$</span>
+                                                    <input type="number" class="form-control" id="editMaxSalary" min="0" step="100" required>
+                                                </div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="editTaxBracket" class="form-label">Tax Bracket *</label>
+                                                <select class="form-select" id="editTaxBracket" required>
+                                                    <option value="low">Low</option>
+                                                    <option value="medium" selected>Medium</option>
+                                                    <option value="high">High</option>
+                                                    <option value="executive">Executive</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion mb-3" id="editPayrollAccordion">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#editPayrollCollapse">
+                                    Payroll Settings
+                                </button>
+                            </h2>
+                            <div id="editPayrollCollapse" class="accordion-collapse collapse" data-bs-parent="#editPayrollAccordion">
+                                <div class="accordion-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="editPayeePercent" class="form-label">PAYE Percentage</label>
+                                                <div class="input-group">
+                                                    <input type="number" class="form-control" id="editPayeePercent" min="0" max="100" step="0.1" value="0">
+                                                    <span class="input-group-text">%</span>
+                                                </div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="editPensionPercent" class="form-label">Pension Percentage</label>
+                                                <div class="input-group">
+                                                    <input type="number" class="form-control" id="editPensionPercent" min="0" max="100" step="0.1" value="0">
+                                                    <span class="input-group-text">%</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="editOvertimeRate" class="form-label">Overtime Rate</label>
+                                                <div class="input-group">
+                                                    <span class="input-group-text">$</span>
+                                                    <input type="number" class="form-control" id="editOvertimeRate" min="0" step="0.5" value="0">
+                                                </div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="editOvertimeMultiplier" class="form-label">Overtime Multiplier</label>
+                                                <input type="number" class="form-control" id="editOvertimeMultiplier" min="1" step="0.1" value="1.5">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion mb-3" id="editAllowancesAccordion">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#editAllowancesCollapse">
+                                    Allowances
+                                </button>
+                            </h2>
+                            <div id="editAllowancesCollapse" class="accordion-collapse collapse" data-bs-parent="#editAllowancesAccordion">
+                                <div class="accordion-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="editTransportAllowance" class="form-label">Transport Allowance</label>
+                                                <div class="input-group">
+                                                    <span class="input-group-text">$</span>
+                                                    <input type="number" class="form-control" id="editTransportAllowance" min="0" step="10" value="0">
+                                                </div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="editHousingAllowance" class="form-label">Housing Allowance</label>
+                                                <div class="input-group">
+                                                    <span class="input-group-text">$</span>
+                                                    <input type="number" class="form-control" id="editHousingAllowance" min="0" step="100" value="0">
+                                                </div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="editMedicalAllowance" class="form-label">Medical Allowance</label>
+                                                <div class="input-group">
+                                                    <span class="input-group-text">$</span>
+                                                    <input type="number" class="form-control" id="editMedicalAllowance" min="0" step="10" value="0">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="editMealsAllowance" class="form-label">Meals Allowance</label>
+                                                <div class="input-group">
+                                                    <span class="input-group-text">$</span>
+                                                    <input type="number" class="form-control" id="editMealsAllowance" min="0" step="10" value="0">
+                                                </div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="editCommunicationAllowance" class="form-label">Communication Allowance</label>
+                                                <div class="input-group">
+                                                    <span class="input-group-text">$</span>
+                                                    <input type="number" class="form-control" id="editCommunicationAllowance" min="0" step="10" value="0">
+                                                </div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="editOtherAllowance" class="form-label">Other Allowance</label>
+                                                <div class="input-group">
+                                                    <span class="input-group-text">$</span>
+                                                    <input type="number" class="form-control" id="editOtherAllowance" min="0" step="10" value="0">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion mb-3" id="editPromotionAccordion">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#editPromotionCollapse">
+                                    Promotion Settings
+                                </button>
+                            </h2>
+                            <div id="editPromotionCollapse" class="accordion-collapse collapse" data-bs-parent="#editPromotionAccordion">
+                                <div class="accordion-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="editNextGrade" class="form-label">Next Grade</label>
+                                                <select class="form-select" id="editNextGrade">
+                                                    <option value="">None</option>
+                                                    <!-- Next grades will be loaded here -->
+                                                </select>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="editMinimumTenure" class="form-label">Minimum Tenure (months)</label>
+                                                <input type="number" class="form-control" id="editMinimumTenure" min="0" value="12">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="editPerformanceThreshold" class="form-label">Performance Threshold</label>
+                                                <input type="number" class="form-control" id="editPerformanceThreshold" min="1" max="5" step="0.1" value="3.5">
+                                            </div>
+                                            <div class="mb-3 form-check">
+                                                <input type="checkbox" class="form-check-input" id="editRequiresApproval" checked>
+                                                <label class="form-check-label" for="editRequiresApproval">Requires Approval</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion mb-3" id="editRequirementsAccordion">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#editRequirementsCollapse">
+                                    Job Requirements
+                                </button>
+                            </h2>
+                            <div id="editRequirementsCollapse" class="accordion-collapse collapse" data-bs-parent="#editRequirementsAccordion">
+                                <div class="accordion-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="editMinEducation" class="form-label">Minimum Education</label>
+                                                <select class="form-select" id="editMinEducation">
+                                                    <option value="high_school">High School</option>
+                                                    <option value="diploma">Diploma</option>
+                                                    <option value="bachelor">Bachelor's Degree</option>
+                                                    <option value="master">Master's Degree</option>
+                                                    <option value="phd">PhD</option>
+                                                </select>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="editPrefEducation" class="form-label">Preferred Education</label>
+                                                <select class="form-select" id="editPrefEducation">
+                                                    <option value="">None</option>
+                                                    <option value="high_school">High School</option>
+                                                    <option value="diploma">Diploma</option>
+                                                    <option value="bachelor">Bachelor's Degree</option>
+                                                    <option value="master">Master's Degree</option>
+                                                    <option value="phd">PhD</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="editMinExperience" class="form-label">Minimum Experience (years)</label>
+                                                <input type="number" class="form-control" id="editMinExperience" min="0" value="0">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="editPrefExperience" class="form-label">Preferred Experience (years)</label>
+                                                <input type="number" class="form-control" id="editPrefExperience" min="0" value="0">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            `;
+            
+            // Populate next grade dropdown in edit form
+            populateNextGradeDropdowns();
+        }
+        
+
+                function calculateSalary() {
+            const gradeId = document.getElementById('calcGradeId').value;
+            const overtimeHours = document.getElementById('overtimeHours').value;
+            
+            if (!gradeId) return;
+            
+            axios.get(`/grades/${gradeId}/calculate-salary?overtime=${overtimeHours}`)
+                .then(response => {
+                    const salaryDetails = response.data;
+                    const grade = grades.find(g => g._id === gradeId);
+                    
+                    if (grade) {
+                        document.getElementById('calcBaseSalary').textContent = 
+                            formatCurrency(grade.baseSalary, grade.currency);
+                        document.getElementById('calcAllowances').textContent = 
+                            formatCurrency(grade.totalAllowances, grade.currency);
+                        document.getElementById('calcOvertime').textContent = 
+                            formatCurrency(salaryDetails.overtimePay, grade.currency);
+                        document.getElementById('calcGrossSalary').textContent = 
+                            formatCurrency(salaryDetails.grossSalary, grade.currency);
+                        document.getElementById('calcPaye').textContent = 
+                            formatCurrency(salaryDetails.deductions.paye, grade.currency);
+                        document.getElementById('calcPension').textContent = 
+                            formatCurrency(salaryDetails.deductions.pension, grade.currency);
+                        document.getElementById('calcAdditionalTax').textContent = 
+                            formatCurrency(salaryDetails.deductions.additionalTax, grade.currency);
+                        document.getElementById('calcTotalDeductions').textContent = 
+                            formatCurrency(salaryDetails.deductions.total, grade.currency);
+                        document.getElementById('calcNetSalary').textContent = 
+                            formatCurrency(salaryDetails.netSalary, grade.currency);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error calculating salary:', error);
+                });
+        }
             
             // Render grade stats
             function renderStats() {
@@ -979,7 +1354,8 @@
                 axios.post('/grades', gradeData)
                     .then(response => {
                         showSuccess('Grade created successfully');
-                        $('#addGradeModal').modal('hide');
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('addGradeModal'));
+                        modal.hide()
                         addGradeForm.reset();
                         loadGrades();
                         loadNextGrades(); // Refresh next grade list
@@ -994,71 +1370,73 @@
             }
             
             // Open edit modal
-            function openEditModal(gradeId) {
-                showLoading();
-                
-                axios.get(`/grades/${gradeId}`)
-                    .then(response => {
-                        const grade = response.data;
-                        
-                        // Set form values
-                        document.getElementById('editGradeId').value = grade._id;
-                        document.getElementById('editGradeName').value = grade.name;
-                        document.getElementById('editGradeCode').value = grade.code;
-                        document.getElementById('editGradeLevel').value = grade.level;
-                        document.getElementById('editGradeDescription').value = grade.description || '';
-                        document.getElementById('editCurrency').value = grade.currency;
-                        document.getElementById('editIsActive').checked = grade.isActive;
-                        document.getElementById('editEffectiveDate').value = grade.effectiveDate ? 
-                            new Date(grade.effectiveDate).toISOString().split('T')[0] : '';
-                        document.getElementById('editExpiryDate').value = grade.expiryDate ? 
-                            new Date(grade.expiryDate).toISOString().split('T')[0] : '';
-                        
-                        // Salary data
-                        document.getElementById('editBaseSalary').value = grade.baseSalary;
-                        document.getElementById('editMinSalary').value = grade.salaryRange.minimum;
-                        document.getElementById('editMaxSalary').value = grade.salaryRange.maximum;
-                        
-                        // Payroll settings
-                        document.getElementById('editPayeePercent').value = grade.payrollSettings.payeePercent;
-                        document.getElementById('editPensionPercent').value = grade.payrollSettings.pensionPercent;
-                        document.getElementById('editOvertimeRate').value = grade.payrollSettings.overtimeRate;
-                        document.getElementById('editOvertimeMultiplier').value = grade.payrollSettings.overtimeMultiplier;
-                        
-                        // Allowances
-                        document.getElementById('editTransportAllowance').value = grade.allowances.transport;
-                        document.getElementById('editHousingAllowance').value = grade.allowances.housing;
-                        document.getElementById('editMedicalAllowance').value = grade.allowances.medical;
-                        document.getElementById('editMealsAllowance').value = grade.allowances.meals;
-                        document.getElementById('editCommunicationAllowance').value = grade.allowances.communication;
-                        document.getElementById('editOtherAllowance').value = grade.allowances.other;
-                        
-                        // Promotion settings
-                        document.getElementById('editNextGrade').value = grade.promotion?.nextGrade?._id || '';
-                        document.getElementById('editMinimumTenure').value = grade.promotion?.minimumTenure || 12;
-                        document.getElementById('editPerformanceThreshold').value = grade.promotion?.performanceThreshold || 3.5;
-                        document.getElementById('editRequiresApproval').checked = grade.promotion?.requiresApproval !== false;
-                        
-                        // Job requirements
-                        document.getElementById('editMinEducation').value = grade.requirements?.education?.minimum || 'high_school';
-                        document.getElementById('editPrefEducation').value = grade.requirements?.education?.preferred || '';
-                        document.getElementById('editMinExperience').value = grade.requirements?.experience?.minimum || 0;
-                        document.getElementById('editPrefExperience').value = grade.requirements?.experience?.preferred || 0;
-                        
-                        // Tax bracket
-                        document.getElementById('editTaxBracket').value = grade.taxBracket?.bracket || 'medium';
-                        
-                        $('#editGradeModal').modal('show');
-                    })
-                    .catch(error => {
-                        const errorMessage = error.response?.data?.error || 'Failed to load grade data';
-                        showError(errorMessage);
-                    })
-                    .finally(() => {
-                        hideLoading();
-                    });
-            }
+                    function openEditModal(gradeId) {
+            showLoading();
             
+            // Create edit form if it doesn't exist
+            createEditModalForm();
+            
+            axios.get(`/grades/${gradeId}`)
+                .then(response => {
+                    const grade = response.data;
+                    
+                    // Set form values
+                    document.getElementById('editGradeId').value = grade._id;
+                    document.getElementById('editGradeName').value = grade.name;
+                    document.getElementById('editGradeCode').value = grade.code;
+                    document.getElementById('editGradeLevel').value = grade.level;
+                    document.getElementById('editGradeDescription').value = grade.description || '';
+                    document.getElementById('editCurrency').value = grade.currency;
+                    document.getElementById('editIsActive').checked = grade.isActive;
+                    document.getElementById('editEffectiveDate').value = grade.effectiveDate ? 
+                        new Date(grade.effectiveDate).toISOString().split('T')[0] : '';
+                    document.getElementById('editExpiryDate').value = grade.expiryDate ? 
+                        new Date(grade.expiryDate).toISOString().split('T')[0] : '';
+                    
+                    // Salary data
+                    document.getElementById('editBaseSalary').value = grade.baseSalary;
+                    document.getElementById('editMinSalary').value = grade.salaryRange.minimum;
+                    document.getElementById('editMaxSalary').value = grade.salaryRange.maximum;
+                    
+                    // Payroll settings
+                    document.getElementById('editPayeePercent').value = grade.payrollSettings.payeePercent;
+                    document.getElementById('editPensionPercent').value = grade.payrollSettings.pensionPercent;
+                    document.getElementById('editOvertimeRate').value = grade.payrollSettings.overtimeRate;
+                    document.getElementById('editOvertimeMultiplier').value = grade.payrollSettings.overtimeMultiplier;
+                    
+                    // Allowances
+                    document.getElementById('editTransportAllowance').value = grade.allowances.transport;
+                    document.getElementById('editHousingAllowance').value = grade.allowances.housing;
+                    document.getElementById('editMedicalAllowance').value = grade.allowances.medical;
+                    document.getElementById('editMealsAllowance').value = grade.allowances.meals;
+                    document.getElementById('editCommunicationAllowance').value = grade.allowances.communication;
+                    document.getElementById('editOtherAllowance').value = grade.allowances.other;
+                    
+                    // Promotion settings
+                    document.getElementById('editNextGrade').value = grade.promotion?.nextGrade?._id || '';
+                    document.getElementById('editMinimumTenure').value = grade.promotion?.minimumTenure || 12;
+                    document.getElementById('editPerformanceThreshold').value = grade.promotion?.performanceThreshold || 3.5;
+                    document.getElementById('editRequiresApproval').checked = grade.promotion?.requiresApproval !== false;
+                    
+                    // Job requirements
+                    document.getElementById('editMinEducation').value = grade.requirements?.education?.minimum || 'high_school';
+                    document.getElementById('editPrefEducation').value = grade.requirements?.education?.preferred || '';
+                    document.getElementById('editMinExperience').value = grade.requirements?.experience?.minimum || 0;
+                    document.getElementById('editPrefExperience').value = grade.requirements?.experience?.preferred || 0;
+                    
+                    // Tax bracket
+                    document.getElementById('editTaxBracket').value = grade.taxBracket?.bracket || 'medium';
+                    
+                    $('#editGradeModal').modal('show');
+                })
+                .catch(error => {
+                    const errorMessage = error.response?.data?.error || 'Failed to load grade data';
+                    showError(errorMessage);
+                })
+                .finally(() => {
+                    hideLoading();
+                });
+        }
             // Update grade
             function updateGrade() {
                 const id = document.getElementById('editGradeId').value;
@@ -1169,7 +1547,8 @@
                 axios.put(`/grades/${id}`, updateData)
                     .then(response => {
                         showSuccess('Grade updated successfully');
-                        $('#editGradeModal').modal('hide');
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('editGradeModal'));
+                        modal.hide();
                         loadGrades();
                         loadNextGrades(); // Refresh next grade list
                     })
@@ -1183,86 +1562,114 @@
             }
             
             // Open salary calculator
-            function openSalaryCalculator(gradeId) {
-                document.getElementById('calcGradeId').value = gradeId;
-                document.getElementById('overtimeHours').value = 0;
-                
-                // Get grade details
-                axios.get(`/grades/${gradeId}`)
-                    .then(response => {
-                        const grade = response.data;
-                        
-                        // Calculate salary with 0 overtime
-                        axios.get(`/grades/${gradeId}/calculate-salary?overtime=0`)
-                            .then(salaryResponse => {
-                                const salaryDetails = salaryResponse.data;
-                                
-                                // Update calculator display
-                                document.getElementById('calcBaseSalary').textContent = 
-                                    formatCurrency(grade.baseSalary, grade.currency);
-                                document.getElementById('calcAllowances').textContent = 
-                                    formatCurrency(grade.totalAllowances, grade.currency);
-                                document.getElementById('calcOvertime').textContent = 
-                                    formatCurrency(salaryDetails.overtimePay, grade.currency);
-                                document.getElementById('calcGrossSalary').textContent = 
-                                    formatCurrency(salaryDetails.grossSalary, grade.currency);
-                                document.getElementById('calcPaye').textContent = 
-                                    formatCurrency(salaryDetails.deductions.paye, grade.currency);
-                                document.getElementById('calcPension').textContent = 
-                                    formatCurrency(salaryDetails.deductions.pension, grade.currency);
-                                document.getElementById('calcAdditionalTax').textContent = 
-                                    formatCurrency(salaryDetails.deductions.additionalTax, grade.currency);
-                                document.getElementById('calcTotalDeductions').textContent = 
-                                    formatCurrency(salaryDetails.deductions.total, grade.currency);
-                                document.getElementById('calcNetSalary').textContent = 
-                                    formatCurrency(salaryDetails.netSalary, grade.currency);
-                                
-                                $('#salaryCalculatorModal').modal('show');
-                            })
-                            .catch(error => {
-                                console.error('Error calculating salary:', error);
-                                showError('Failed to calculate salary');
-                            });
-                    })
-                    .catch(error => {
-                        console.error('Error loading grade:', error);
-                        showError('Failed to load grade data');
-                    });
-            }
+// Fix: Move this event listener to the openSalaryCalculator function
+function openSalaryCalculator(gradeId) {
+    document.getElementById('calcGradeId').value = gradeId;
+    document.getElementById('overtimeHours').value = 0;
+    
+    // Add event listener here instead of in renderGradesTable
+    document.getElementById('overtimeHours').addEventListener('input', function() {
+        calculateSalary();
+    });
+    
+    // Rest of the function remains the same...
+    // Get grade details
+    axios.get(`/grades/${gradeId}`)
+        .then(response => {
+            const grade = response.data;
             
+            // Calculate salary with 0 overtime
+            axios.get(`/grades/${gradeId}/calculate-salary?overtime=0`)
+                .then(salaryResponse => {
+                    const salaryDetails = salaryResponse.data;
+                    
+                    // Update calculator display
+                    document.getElementById('calcBaseSalary').textContent = 
+                        formatCurrency(grade.baseSalary, grade.currency);
+                    document.getElementById('calcAllowances').textContent = 
+                        formatCurrency(grade.totalAllowances, grade.currency);
+                    document.getElementById('calcOvertime').textContent = 
+                        formatCurrency(salaryDetails.overtimePay, grade.currency);
+                    document.getElementById('calcGrossSalary').textContent = 
+                        formatCurrency(salaryDetails.grossSalary, grade.currency);
+                    document.getElementById('calcPaye').textContent = 
+                        formatCurrency(salaryDetails.deductions.paye, grade.currency);
+                    document.getElementById('calcPension').textContent = 
+                        formatCurrency(salaryDetails.deductions.pension, grade.currency);
+                    document.getElementById('calcAdditionalTax').textContent = 
+                        formatCurrency(salaryDetails.deductions.additionalTax, grade.currency);
+                    document.getElementById('calcTotalDeductions').textContent = 
+                        formatCurrency(salaryDetails.deductions.total, grade.currency);
+                    document.getElementById('calcNetSalary').textContent = 
+                        formatCurrency(salaryDetails.netSalary, grade.currency);
+                    
+                    const modal = new bootstrap.Modal(document.getElementById('salaryCalculatorModal'));
+                    modal.show();
+                })
+                .catch(error => {
+                    console.error('Error calculating salary:', error);
+                    showError('Failed to calculate salary');
+                });
+        })
+        .catch(error => {
+            console.error('Error loading grade:', error);
+            showError('Failed to load grade data');
+        });
+}        
             // Confirm deactivate grade
-            function confirmDeactivateGrade(gradeId) {
-                document.getElementById('confirmationModalBody').innerHTML = `
-                    <p>Are you sure you want to deactivate this grade?</p>
-                    <p class="text-muted">Employees in this grade will need to be reassigned.</p>
-                `;
-                
-                confirmActionBtn.onclick = () => {
-                    $('#confirmationModal').modal('hide');
-                    deactivateGrade(gradeId);
-                };
-                
-                $('#confirmationModal').modal('show');
-            }
-            
+// Confirm deactivate grade - FIXED to use vanilla JS
+function confirmDeactivateGrade(gradeId) {
+    document.getElementById('confirmationModalBody').innerHTML = `
+        <p>Are you sure you want to deactivate this grade?</p>
+        <p class="text-muted">Employees in this grade will need to be reassigned.</p>
+    `;
+    
+    confirmActionBtn.onclick = () => {
+        // Use vanilla JS instead of jQuery
+        const modal = bootstrap.Modal.getInstance(document.getElementById('confirmationModal'));
+        modal.hide();
+        deactivateGrade(gradeId);
+    };
+    
+    // Use vanilla JS to show modal
+    const modal = new bootstrap.Modal(document.getElementById('confirmationModal'));
+    modal.show();
+}
+
+// Confirm activate grade - FIXED to use vanilla JS
+function confirmActivateGrade(gradeId) {
+    document.getElementById('confirmationModalBody').innerHTML = `
+        <p>Are you sure you want to activate this grade?</p>
+    `;
+    
+    confirmActionBtn.onclick = () => {
+        // Use vanilla JS instead of jQuery
+        const modal = bootstrap.Modal.getInstance(document.getElementById('confirmationModal'));
+        modal.hide();
+        activateGrade(gradeId);
+    };
+    
+    // Use vanilla JS to show modal
+    const modal = new bootstrap.Modal(document.getElementById('confirmationModal'));
+    modal.show();
+}            
             // Deactivate grade
-            function deactivateGrade(gradeId) {
-                showLoading();
-                
-                axios.patch(`/grades/${gradeId}/deactivate`)
-                    .then(response => {
-                        showSuccess('Grade deactivated successfully');
-                        loadGrades();
-                    })
-                    .catch(error => {
-                        const errorMessage = error.response?.data?.error || 'Failed to deactivate grade';
-                        showError(errorMessage);
-                    })
-                    .finally(() => {
-                        hideLoading();
-                    });
-            }
+                 function deactivateGrade(gradeId) {
+            showLoading();
             
+            axios.patch(`/grades/${gradeId}/deactivate`)
+                .then(response => {
+                    showSuccess('Grade deactivated successfully');
+                    loadGrades();
+                })
+                .catch(error => {
+                    const errorMessage = error.response?.data?.error || 'Failed to deactivate grade';
+                    showError(errorMessage);
+                })
+                .finally(() => {
+                    hideLoading();
+                });
+        }
             // Confirm activate grade
             function confirmActivateGrade(gradeId) {
                 document.getElementById('confirmationModalBody').innerHTML = `
@@ -1278,23 +1685,22 @@
             }
             
             // Activate grade
-            function activateGrade(gradeId) {
-                showLoading();
-                
-                axios.put(`/grades/${gradeId}`, { isActive: true })
-                    .then(response => {
-                        showSuccess('Grade activated successfully');
-                        loadGrades();
-                    })
-                    .catch(error => {
-                        const errorMessage = error.response?.data?.error || 'Failed to activate grade';
-                        showError(errorMessage);
-                    })
-                    .finally(() => {
-                        hideLoading();
-                    });
-            }
+              function activateGrade(gradeId) {
+            showLoading();
             
+            axios.put(`/grades/${gradeId}`, { isActive: true })
+                .then(response => {
+                    showSuccess('Grade activated successfully');
+                    loadGrades();
+                })
+                .catch(error => {
+                    const errorMessage = error.response?.data?.error || 'Failed to activate grade';
+                    showError(errorMessage);
+                })
+                .finally(() => {
+                    hideLoading();
+                });
+        }
             // Perform confirmed action
             function performConfirmedAction() {
                 // This is handled by the individual confirmation functions
@@ -1322,16 +1728,105 @@
             }
             
             // Show success message
-            function showSuccess(message) {
-                // Implement your success notification
-                alert('Success: ' + message);
+              axios.interceptors.response.use(
+            response => response,
+            error => {
+                if (error.response?.status === 401) {
+                    // Token expired or invalid
+                    localStorage.removeItem('authToken');
+                    localStorage.removeItem('user');
+                    window.location.href = '/login';
+                }
+                return Promise.reject(error);
             }
+        );
+        
+        // Fix: Add proper loading indicators
+        function showLoading() {
+            document.body.style.cursor = 'wait';
+            // Add a loading overlay if needed
+            const loadingOverlay = document.createElement('div');
+            loadingOverlay.id = 'loadingOverlay';
+            loadingOverlay.style.position = 'fixed';
+            loadingOverlay.style.top = '0';
+            loadingOverlay.style.left = '0';
+            loadingOverlay.style.width = '100%';
+            loadingOverlay.style.height = '100%';
+            loadingOverlay.style.backgroundColor = 'rgba(255, 255, 255, 0.8)';
+            loadingOverlay.style.zIndex = '9999';
+            loadingOverlay.style.display = 'flex';
+            loadingOverlay.style.justifyContent = 'center';
+            loadingOverlay.style.alignItems = 'center';
+            loadingOverlay.innerHTML = '<div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>';
+            document.body.appendChild(loadingOverlay);
+        }
+        
+        function hideLoading() {
+            document.body.style.cursor = 'default';
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            if (loadingOverlay) {
+                loadingOverlay.remove();
+            }
+        }
+        
+        // Fix: Add better notification system (replace alerts)
+        function showSuccess(message) {
+            // Create a toast notification
+            const toast = document.createElement('div');
+            toast.className = 'toast align-items-center text-white bg-success border-0';
+            toast.style.position = 'fixed';
+            toast.style.top = '20px';
+            toast.style.right = '20px';
+            toast.style.zIndex = '1060';
+            toast.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">
+                        <i class="fas fa-check-circle me-2"></i>${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            `;
+            document.body.appendChild(toast);
             
-            // Show error message
-            function showError(message) {
-                // Implement your error notification
-                alert('Error: ' + message);
-            }
+            const bsToast = new bootstrap.Toast(toast);
+            bsToast.show();
+            
+            // Remove toast after it hides
+            toast.addEventListener('hidden.bs.toast', () => {
+                toast.remove();
+            });
+        }
+        
+        function showError(message) {
+            // Create a toast notification
+            const toast = document.createElement('div');
+            toast.className = 'toast align-items-center text-white bg-danger border-0';
+            toast.style.position = 'fixed';
+            toast.style.top = '20px';
+            toast.style.right = '20px';
+            toast.style.zIndex = '1060';
+            toast.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">
+                        <i class="fas fa-exclamation-circle me-2"></i>${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            `;
+            document.body.appendChild(toast);
+            
+            const bsToast = new bootstrap.Toast(toast);
+            bsToast.show();
+            
+            // Remove toast after it hides
+            toast.addEventListener('hidden.bs.toast', () => {
+                toast.remove();
+            });
+        }
+        
+        // Initialize the page
+        loadGrades();
+        loadNextGrades();
         });
     </script>
 </body>
