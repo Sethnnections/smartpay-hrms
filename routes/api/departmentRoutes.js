@@ -81,6 +81,16 @@ router.post('/:id/expenses', requireHROrAdmin, async (req, res) => {
   }
 });
 
+// Get employees by department
+router.get('/:id/employees', async (req, res) => {
+  try {
+    const employees = await departmentController.getDepartmentEmployees(req.params.id);
+    res.json(employees);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // List departments with filters
 router.get('/', async (req, res) => {
   try {

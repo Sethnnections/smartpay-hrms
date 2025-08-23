@@ -1,23 +1,25 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TPS - Department Management</title>
-    
+
     <!-- Bootstrap CSS -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome Icons -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
+
     <!-- Custom CSS -->
     <link rel="stylesheet" href="/css/admin.css">
-    
+
     <!-- Page-specific CSS -->
     <link rel="stylesheet" href="/css/departments.css">
 </head>
+
 <body>
     <!-- Sidebar Overlay for Mobile -->
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
@@ -25,1103 +27,1257 @@
     <!-- Sidebar -->
     <%- include('./partials/sidebar', { currentPage: 'departments' }) %>
 
-    <!-- Main Content -->
-    <div class="main-content" id="mainContent">
-        <!-- Header -->
-        <%- include('./partials/header', { 
-            title: 'Department Management', 
-            user: typeof user !== 'undefined' ? user : { name: 'User', email: '', avatar: 'U' } 
-        }) %>
+        <!-- Main Content -->
+        <div class="main-content" id="mainContent">
+            <!-- Header -->
+            <%- include('./partials/header', { title: 'Department Management' , user: typeof user !=='undefined' ? user
+                : { name: 'User' , email: '' , avatar: 'U' } }) %>
 
-        <!-- Page Content -->
-        <main class="dashboard-content">
-            <div class="container-fluid px-1">
-                <!-- Page Header -->
-                <div class="page-header">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <div>
-                            <p class="text-muted">Organize your company structure</p>
+                <!-- Page Content -->
+                <main class="dashboard-content">
+                    <div class="container-fluid px-1">
+                        <!-- Page Header -->
+                        <div class="page-header">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <div>
+                                    <p class="text-muted">Organize your company structure</p>
+                                </div>
+                                <button class="btn btn-primary" data-bs-toggle="modal"
+                                    data-bs-target="#addDepartmentModal" id="addDepartmentBtn">
+                                    <i class="fas fa-plus me-2"></i>Add Department
+                                </button>
+                            </div>
                         </div>
-                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addDepartmentModal" id="addDepartmentBtn">
-                            <i class="fas fa-plus me-2"></i>Add Department
-                        </button>
+
+                        <!-- Department Stats -->
+                        <div class="row mb-4" id="departmentStats">
+                            <!-- Stats will be loaded here -->
+                        </div>
+
+                        <!-- Filters -->
+                        <div class="card mb-4">
+                            <div class="card-body">
+                                <form id="filterForm" class="row g-3">
+                                    <div class="col-md-4">
+                                        <label for="searchInput" class="form-label">Search</label>
+                                        <input type="text" class="form-control" id="searchInput"
+                                            placeholder="Name, code or tags">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="statusFilter" class="form-label">Status</label>
+                                        <select class="form-select" id="statusFilter">
+                                            <option value="true">Active Only</option>
+                                            <option value="false">Include Inactive</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="budgetFilter" class="form-label">Budget Range</label>
+                                        <select class="form-select" id="budgetFilter">
+                                            <option value="">All Budgets</option>
+                                            <option value="0-50000000">Under MWK 50M</option>
+                                            <option value="50000000-200000000">MWK 50M - MWK 200M</option>
+                                            <option value="200000000-500000000">MWK 200M - MWK 500M</option>
+                                            <option value="500000000-1000000000">MWK 500M - MWK 1B</option>
+                                            <option value="1000000000-">Over MWK 1B</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2 d-flex align-items-end">
+                                        <button type="submit" class="btn btn-primary me-2">
+                                            <i class="fas fa-filter me-1"></i>Filter
+                                        </button>
+                                        <button type="reset" class="btn btn-outline-secondary">
+                                            <i class="fas fa-undo me-1"></i>Reset
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- View Options - Updated to show table as default -->
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="toggleViewMode" >
+                                <label class="form-check-label" for="toggleViewMode">Card View</label>
+                            </div>
+                            <div class="btn-group" role="group">
+                                <button type="button" class="btn btn-outline-secondary" id="cardViewBtn">
+                                    <i class="fas fa-th-large"></i>
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary active" id="listViewBtn">
+                                    <i class="fas fa-list"></i>
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary" id="hierarchyViewBtn">
+                                    <i class="fas fa-sitemap"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Departments Table (Visible by default) -->
+                        <div class="card mt-4" id="departmentsTableContainer">
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-hover" id="departmentsTable">
+                                        <thead>
+                                            <tr>
+                                                <th>Name</th>
+                                                <th>Code</th>
+                                                <th>Manager</th>
+                                                <th>Employees</th>
+                                                <th>Budget</th>
+                                                <th>Utilization</th>
+                                                <th>Status</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="departmentsTableBody">
+                                            <!-- Table rows will be loaded here -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Departments Grid (Hidden by default) -->
+                        <div class="row d-none" id="departmentsGrid">
+                            <!-- Departments will be loaded here -->
+                        </div>
+
+                        <!-- Hierarchy View (Hidden by default) -->
+                        <div class="card d-none mt-4" id="hierarchyViewContainer">
+                            <div class="card-body">
+                                <div id="orgChart" class="org-chart">
+                                    <!-- Organization chart will be rendered here -->
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                </div>
+                </main>
+        </div>
 
-                <!-- Department Stats -->
-                <div class="row mb-4" id="departmentStats">
-                    <!-- Stats will be loaded here -->
-                </div>
+        <!-- Add Department Modal -->
+        <div class="modal fade" id="addDepartmentModal" tabindex="-1" aria-labelledby="addDepartmentModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="addDepartmentModalLabel">Add New Department</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="addDepartmentForm">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="departmentName" class="form-label">Department Name *</label>
+                                        <input type="text" class="form-control" id="departmentName" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="departmentCode" class="form-label">Department Code *</label>
+                                        <input type="text" class="form-control" id="departmentCode" required>
+                                        <div class="form-text">3-10 uppercase alphanumeric characters</div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="parentDepartment" class="form-label">Parent Department</label>
+                                        <select class="form-select" id="parentDepartment">
+                                            <option value="">None</option>
+                                            <!-- Parent departments will be loaded here -->
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="headOfDepartment" class="form-label">Head of Department</label>
+                                        <select class="form-select" id="headOfDepartment">
+                                            <option value="">None</option>
+                                            <!-- Employees will be loaded here -->
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="departmentIcon" class="form-label">Icon</label>
+                                        <select class="form-select" id="departmentIcon">
+                                            <option value="fas fa-code">Code (IT)</option>
+                                            <option value="fas fa-users">Users (HR)</option>
+                                            <option value="fas fa-calculator">Calculator (Finance)</option>
+                                            <option value="fas fa-chart-line">Chart (Sales)</option>
+                                            <option value="fas fa-cogs">Cogs (Operations)</option>
+                                            <option value="fas fa-bullhorn">Bullhorn (Marketing)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="departmentDescription" class="form-label">Description</label>
+                                <textarea class="form-control" id="departmentDescription" rows="3"></textarea>
+                            </div>
 
-                <!-- Filters -->
-                <div class="card mb-4">
-                    <div class="card-body">
-                        <form id="filterForm" class="row g-3">
-                            <div class="col-md-4">
-                                <label for="searchInput" class="form-label">Search</label>
-                                <input type="text" class="form-control" id="searchInput" placeholder="Name, code or tags">
+                            <div class="accordion mb-3" id="locationAccordion">
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                                            data-bs-target="#locationCollapse">
+                                            Location Details
+                                        </button>
+                                    </h2>
+                                    <div id="locationCollapse" class="accordion-collapse collapse show"
+                                        data-bs-parent="#locationAccordion">
+                                        <div class="accordion-body">
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="locationType" class="form-label">Location
+                                                            Type</label>
+                                                        <select class="form-select" id="locationType">
+                                                            <option value="physical">Physical</option>
+                                                            <option value="virtual">Virtual</option>
+                                                            <option value="hybrid">Hybrid</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label for="streetAddress" class="form-label">Street
+                                                            Address</label>
+                                                        <input type="text" class="form-control" id="streetAddress">
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label for="city" class="form-label">City</label>
+                                                        <input type="text" class="form-control" id="city">
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label for="state" class="form-label">State/Province</label>
+                                                        <input type="text" class="form-control" id="state">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="zipCode" class="form-label">Zip/Postal Code</label>
+                                                        <input type="text" class="form-control" id="zipCode">
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label for="country" class="form-label">Country</label>
+                                                        <input type="text" class="form-control" id="country"
+                                                            value="United States">
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label for="building" class="form-label">Building</label>
+                                                        <input type="text" class="form-control" id="building">
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label for="floor" class="form-label">Floor</label>
+                                                        <input type="text" class="form-control" id="floor">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="col-md-3">
-                                <label for="statusFilter" class="form-label">Status</label>
-                                <select class="form-select" id="statusFilter">
-                                    <option value="true">Active Only</option>
-                                    <option value="false">Include Inactive</option>
-                                </select>
+
+                            <div class="accordion mb-3" id="budgetAccordion">
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed" type="button"
+                                            data-bs-toggle="collapse" data-bs-target="#budgetCollapse">
+                                            Budget Information
+                                        </button>
+                                    </h2>
+                                    <div id="budgetCollapse" class="accordion-collapse collapse"
+                                        data-bs-parent="#budgetAccordion">
+                                        <div class="accordion-body">
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="allocatedBudget" class="form-label">Allocated
+                                                            Budget</label>
+                                                        <div class="input-group">
+                                                            <span class="input-group-text">$</span>
+                                                            <input type="number" class="form-control"
+                                                                id="allocatedBudget" min="0" step="1000">
+                                                        </div>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label for="fiscalYear" class="form-label">Fiscal Year</label>
+                                                        <input type="number" class="form-control" id="fiscalYear"
+                                                            min="2000" max="2100">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="currency" class="form-label">Currency</label>
+                                                        <select class="form-select" id="currency">
+                                                            <option value="MWK">MWK (Malawian Kwacha)</option>
+                                                            <option value="USD">USD (US Dollar)</option>
+                                                            <option value="EUR">EUR (Euro)</option>
+                                                            <option value="GBP">GBP (British Pound)</option>
+                                                            <option value="CAD">CAD (Canadian Dollar)</option>
+                                                            <option value="AUD">AUD (Australian Dollar)</option>
+                                                            <option value="NGN">NGN (Nigerian Naira)</option>
+                                                            <option value="KES">KES (Kenyan Shilling)</option>
+                                                            <option value="GHS">GHS (Ghanaian Cedi)</option>
+                                                            <option value="ZAR">ZAR (South African Rand)</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label for="costCenter" class="form-label">Cost Center
+                                                            Code</label>
+                                                        <input type="text" class="form-control" id="costCenter">
+                                                        <div class="form-text">3-20 alphanumeric characters</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="col-md-3">
-                                <label for="budgetFilter" class="form-label">Budget Range</label>
-                                <select class="form-select" id="budgetFilter">
-                                    <option value="">All Budgets</option>
-                                    <option value="0-50000000">Under MWK 50M</option>
-                                    <option value="50000000-200000000">MWK 50M - MWK 200M</option>
-                                    <option value="200000000-500000000">MWK 200M - MWK 500M</option>
-                                    <option value="500000000-1000000000">MWK 500M - MWK 1B</option>
-                                    <option value="1000000000-">Over MWK 1B</option>
-                                </select>
-                            </div>
-                            <div class="col-md-2 d-flex align-items-end">
-                                <button type="submit" class="btn btn-primary me-2">
-                                    <i class="fas fa-filter me-1"></i>Filter
-                                </button>
-                                <button type="reset" class="btn btn-outline-secondary">
-                                    <i class="fas fa-undo me-1"></i>Reset
-                                </button>
+
+                            <div class="mb-3">
+                                <label for="departmentTags" class="form-label">Tags</label>
+                                <input type="text" class="form-control" id="departmentTags"
+                                    placeholder="Enter tags separated by commas">
+                                <div class="form-text">Example: engineering, technology, development</div>
                             </div>
                         </form>
                     </div>
-                </div>
-
-                <!-- Departments Grid -->
-                <div class="row" id="departmentsGrid">
-                    <!-- Departments will be loaded here -->
-                </div>
-
-                <!-- View Options -->
-                <div class="d-flex justify-content-between align-items-center mt-4">
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" id="toggleViewMode">
-                        <label class="form-check-label" for="toggleViewMode">Table View</label>
-                    </div>
-                    <div class="btn-group" role="group">
-                        <button type="button" class="btn btn-outline-secondary active" id="cardViewBtn">
-                            <i class="fas fa-th-large"></i>
-                        </button>
-                        <button type="button" class="btn btn-outline-secondary" id="listViewBtn">
-                            <i class="fas fa-list"></i>
-                        </button>
-                        <button type="button" class="btn btn-outline-secondary" id="hierarchyViewBtn">
-                            <i class="fas fa-sitemap"></i>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Departments Table (Hidden by default) -->
-                <div class="card d-none mt-4" id="departmentsTableContainer">
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-hover" id="departmentsTable">
-                                <thead>
-                                    <tr>
-                                        <th>Name</th>
-                                        <th>Code</th>
-                                        <th>Manager</th>
-                                        <th>Employees</th>
-                                        <th>Budget</th>
-                                        <th>Utilization</th>
-                                        <th>Status</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="departmentsTableBody">
-                                    <!-- Table rows will be loaded here -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Hierarchy View (Hidden by default) -->
-                <div class="card d-none mt-4" id="hierarchyViewContainer">
-                    <div class="card-body">
-                        <div id="orgChart" class="org-chart">
-                            <!-- Organization chart will be rendered here -->
-                        </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="saveDepartmentBtn">Save Department</button>
                     </div>
                 </div>
             </div>
-        </main>
-    </div>
+        </div>
 
-    <!-- Add Department Modal -->
-    <div class="modal fade" id="addDepartmentModal" tabindex="-1" aria-labelledby="addDepartmentModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="addDepartmentModalLabel">Add New Department</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="addDepartmentForm">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="departmentName" class="form-label">Department Name *</label>
-                                    <input type="text" class="form-control" id="departmentName" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="departmentCode" class="form-label">Department Code *</label>
-                                    <input type="text" class="form-control" id="departmentCode" required>
-                                    <div class="form-text">3-10 uppercase alphanumeric characters</div>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="parentDepartment" class="form-label">Parent Department</label>
-                                    <select class="form-select" id="parentDepartment">
-                                        <option value="">None</option>
-                                        <!-- Parent departments will be loaded here -->
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="headOfDepartment" class="form-label">Head of Department</label>
-                                    <select class="form-select" id="headOfDepartment">
-                                        <option value="">None</option>
-                                        <!-- Employees will be loaded here -->
-                                    </select>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="departmentIcon" class="form-label">Icon</label>
-                                    <select class="form-select" id="departmentIcon">
-                                        <option value="fas fa-code">Code (IT)</option>
-                                        <option value="fas fa-users">Users (HR)</option>
-                                        <option value="fas fa-calculator">Calculator (Finance)</option>
-                                        <option value="fas fa-chart-line">Chart (Sales)</option>
-                                        <option value="fas fa-cogs">Cogs (Operations)</option>
-                                        <option value="fas fa-bullhorn">Bullhorn (Marketing)</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="departmentDescription" class="form-label">Description</label>
-                            <textarea class="form-control" id="departmentDescription" rows="3"></textarea>
-                        </div>
-                        
-                        <div class="accordion mb-3" id="locationAccordion">
-                            <div class="accordion-item">
-                                <h2 class="accordion-header">
-                                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#locationCollapse">
-                                        Location Details
-                                    </button>
-                                </h2>
-                                <div id="locationCollapse" class="accordion-collapse collapse show" data-bs-parent="#locationAccordion">
-                                    <div class="accordion-body">
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <div class="mb-3">
-                                                    <label for="locationType" class="form-label">Location Type</label>
-                                                    <select class="form-select" id="locationType">
-                                                        <option value="physical">Physical</option>
-                                                        <option value="virtual">Virtual</option>
-                                                        <option value="hybrid">Hybrid</option>
-                                                    </select>
-                                                </div>
-                                                <div class="mb-3">
-                                                    <label for="streetAddress" class="form-label">Street Address</label>
-                                                    <input type="text" class="form-control" id="streetAddress">
-                                                </div>
-                                                <div class="mb-3">
-                                                    <label for="city" class="form-label">City</label>
-                                                    <input type="text" class="form-control" id="city">
-                                                </div>
-                                                <div class="mb-3">
-                                                    <label for="state" class="form-label">State/Province</label>
-                                                    <input type="text" class="form-control" id="state">
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="mb-3">
-                                                    <label for="zipCode" class="form-label">Zip/Postal Code</label>
-                                                    <input type="text" class="form-control" id="zipCode">
-                                                </div>
-                                                <div class="mb-3">
-                                                    <label for="country" class="form-label">Country</label>
-                                                    <input type="text" class="form-control" id="country" value="United States">
-                                                </div>
-                                                <div class="mb-3">
-                                                    <label for="building" class="form-label">Building</label>
-                                                    <input type="text" class="form-control" id="building">
-                                                </div>
-                                                <div class="mb-3">
-                                                    <label for="floor" class="form-label">Floor</label>
-                                                    <input type="text" class="form-control" id="floor">
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="accordion mb-3" id="budgetAccordion">
-                            <div class="accordion-item">
-                                <h2 class="accordion-header">
-                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#budgetCollapse">
-                                        Budget Information
-                                    </button>
-                                </h2>
-                                <div id="budgetCollapse" class="accordion-collapse collapse" data-bs-parent="#budgetAccordion">
-                                    <div class="accordion-body">
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <div class="mb-3">
-                                                    <label for="allocatedBudget" class="form-label">Allocated Budget</label>
-                                                    <div class="input-group">
-                                                        <span class="input-group-text">$</span>
-                                                        <input type="number" class="form-control" id="allocatedBudget" min="0" step="1000">
-                                                    </div>
-                                                </div>
-                                                <div class="mb-3">
-                                                    <label for="fiscalYear" class="form-label">Fiscal Year</label>
-                                                    <input type="number" class="form-control" id="fiscalYear" min="2000" max="2100">
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="mb-3">
-                                                    <label for="currency" class="form-label">Currency</label>
-                                                    <select class="form-select" id="currency">
-                                                        <option value="MWK">MWK (Malawian Kwacha)</option>
-                                                        <option value="USD">USD (US Dollar)</option>
-                                                        <option value="EUR">EUR (Euro)</option>
-                                                        <option value="GBP">GBP (British Pound)</option>
-                                                        <option value="CAD">CAD (Canadian Dollar)</option>
-                                                        <option value="AUD">AUD (Australian Dollar)</option>
-                                                        <option value="NGN">NGN (Nigerian Naira)</option>
-                                                        <option value="KES">KES (Kenyan Shilling)</option>
-                                                        <option value="GHS">GHS (Ghanaian Cedi)</option>
-                                                        <option value="ZAR">ZAR (South African Rand)</option>
-                                                    </select>
-                                                </div>
-                                                <div class="mb-3">
-                                                    <label for="costCenter" class="form-label">Cost Center Code</label>
-                                                    <input type="text" class="form-control" id="costCenter">
-                                                    <div class="form-text">3-20 alphanumeric characters</div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="departmentTags" class="form-label">Tags</label>
-                            <input type="text" class="form-control" id="departmentTags" placeholder="Enter tags separated by commas">
-                            <div class="form-text">Example: engineering, technology, development</div>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="saveDepartmentBtn">Save Department</button>
+        <!-- Edit Department Modal -->
+        <div class="modal fade" id="editDepartmentModal" tabindex="-1" aria-labelledby="editDepartmentModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editDepartmentModalLabel">Edit Department</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="editDepartmentForm">
+                            <input type="hidden" id="editDepartmentId">
+                            <!-- Same form fields as add department, prefilled with data -->
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="updateDepartmentBtn">Update
+                            Department</button>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Edit Department Modal -->
-    <div class="modal fade" id="editDepartmentModal" tabindex="-1" aria-labelledby="editDepartmentModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="editDepartmentModalLabel">Edit Department</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="editDepartmentForm">
-                        <input type="hidden" id="editDepartmentId">
-                        <!-- Same form fields as add department, prefilled with data -->
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="updateDepartmentBtn">Update Department</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Budget Allocation Modal -->
-    <div class="modal fade" id="budgetAllocationModal" tabindex="-1" aria-labelledby="budgetAllocationModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="budgetAllocationModalLabel">Allocate Budget</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="budgetAllocationForm">
-                        <input type="hidden" id="budgetDepartmentId">
-                        <div class="mb-3">
-                            <label for="budgetAmount" class="form-label">Amount</label>
-                            <div class="input-group">
-                                <span class="input-group-text">$</span>
-                                <input type="number" class="form-control" id="budgetAmount" min="0" step="1000" required>
+        <!-- Budget Allocation Modal -->
+        <div class="modal fade" id="budgetAllocationModal" tabindex="-1" aria-labelledby="budgetAllocationModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="budgetAllocationModalLabel">Allocate Budget</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="budgetAllocationForm">
+                            <input type="hidden" id="budgetDepartmentId">
+                            <div class="mb-3">
+                                <label for="budgetAmount" class="form-label">Amount</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" class="form-control" id="budgetAmount" min="0" step="1000"
+                                        required>
+                                </div>
                             </div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="budgetFiscalYear" class="form-label">Fiscal Year</label>
-                            <input type="number" class="form-control" id="budgetFiscalYear" min="2000" max="2100" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="budgetCurrency" class="form-label">Currency</label>
-                            <select class="form-select" id="budgetCurrency" required>
-                                <option value="MWK">MWK (Malawian Kwacha)</option>
-                                <option value="USD">USD (US Dollar)</option>
-                                <option value="EUR">EUR (Euro)</option>
-                                <option value="GBP">GBP (British Pound)</option>
-                                <option value="CAD">CAD (Canadian Dollar)</option>
-                                <option value="AUD">AUD (Australian Dollar)</option>
-                                <option value="NGN">NGN (Nigerian Naira)</option>
-                                <option value="KES">KES (Kenyan Shilling)</option>
-                                <option value="GHS">GHS (Ghanaian Cedi)</option>
-                                <option value="ZAR">ZAR (South African Rand)</option>
-                            </select>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="saveBudgetBtn">Allocate Budget</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Confirmation Modal -->
-    <div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="confirmationModalLabel">Confirm Action</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body" id="confirmationModalBody">
-                    <!-- Message will be inserted here -->
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-danger" id="confirmActionBtn">Confirm</button>
+                            <div class="mb-3">
+                                <label for="budgetFiscalYear" class="form-label">Fiscal Year</label>
+                                <input type="number" class="form-control" id="budgetFiscalYear" min="2000" max="2100"
+                                    required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="budgetCurrency" class="form-label">Currency</label>
+                                <select class="form-select" id="budgetCurrency" required>
+                                    <option value="MWK">MWK (Malawian Kwacha)</option>
+                                    <option value="USD">USD (US Dollar)</option>
+                                    <option value="EUR">EUR (Euro)</option>
+                                    <option value="GBP">GBP (British Pound)</option>
+                                    <option value="CAD">CAD (Canadian Dollar)</option>
+                                    <option value="AUD">AUD (Australian Dollar)</option>
+                                    <option value="NGN">NGN (Nigerian Naira)</option>
+                                    <option value="KES">KES (Kenyan Shilling)</option>
+                                    <option value="GHS">GHS (Ghanaian Cedi)</option>
+                                    <option value="ZAR">ZAR (South African Rand)</option>
+                                </select>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="saveBudgetBtn">Allocate Budget</button>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Bootstrap JS -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
-    <!-- Axios -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.2/axios.min.js"></script>
-    <!-- Org Chart JS -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/orgchart/3.8.1/js/jquery.orgchart.min.js"></script>
-    
-    <!-- Custom JS -->
-    <script src="/js/admin.js"></script>
-    
-    <!-- Page-specific JS -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Get auth token and user from localStorage
-            const authToken = localStorage.getItem('authToken');
-            const currentUser = JSON.parse(localStorage.getItem('user'));
-            
-            if (!authToken || !currentUser) {
-                window.location.href = '/';
-                return;
-            }
-            
-            // Set up axios defaults
-            axios.defaults.baseURL = '/api';
-            axios.defaults.headers.common['Authorization'] = `Bearer ${authToken}`;
-            
-            // DOM elements
-            const departmentsGrid = document.getElementById('departmentsGrid');
-            const departmentStats = document.getElementById('departmentStats');
-            const filterForm = document.getElementById('filterForm');
-            const searchInput = document.getElementById('searchInput');
-            const statusFilter = document.getElementById('statusFilter');
-            const budgetFilter = document.getElementById('budgetFilter');
-            
-            // Modal elements
-            const addDepartmentForm = document.getElementById('addDepartmentForm');
-            const saveDepartmentBtn = document.getElementById('saveDepartmentBtn');
-            const editDepartmentForm = document.getElementById('editDepartmentForm');
-            const updateDepartmentBtn = document.getElementById('updateDepartmentBtn');
-            const budgetAllocationForm = document.getElementById('budgetAllocationForm');
-            const saveBudgetBtn = document.getElementById('saveBudgetBtn');
-            const confirmActionBtn = document.getElementById('confirmActionBtn');
-            
-            // View toggle elements
-            const toggleViewMode = document.getElementById('toggleViewMode');
-            const cardViewBtn = document.getElementById('cardViewBtn');
-            const listViewBtn = document.getElementById('listViewBtn');
-            const hierarchyViewBtn = document.getElementById('hierarchyViewBtn');
-            const departmentsTableContainer = document.getElementById('departmentsTableContainer');
-            const departmentsTableBody = document.getElementById('departmentsTableBody');
-            const hierarchyViewContainer = document.getElementById('hierarchyViewContainer');
-            const orgChart = document.getElementById('orgChart');
-            
-            // State variables
-            let departments = [];
-            let employees = [];
-            let parentDepartments = [];
-            let currentView = 'card'; // card, list, hierarchy
-            
-            // Initialize the page
-            loadDepartments();
-            loadEmployees();
-            loadParentDepartments();
-            
-            // Event listeners
-            filterForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                loadDepartments();
-            });
-            
-            filterForm.addEventListener('reset', function() {
-                loadDepartments();
-            });
-            
-            saveDepartmentBtn.addEventListener('click', addDepartment);
-            updateDepartmentBtn.addEventListener('click', updateDepartment);
-            saveBudgetBtn.addEventListener('click', allocateBudget);
-            confirmActionBtn.addEventListener('click', performConfirmedAction);
-            
-            // View toggle events
-            toggleViewMode.addEventListener('change', toggleView);
-            cardViewBtn.addEventListener('click', () => switchView('card'));
-            listViewBtn.addEventListener('click', () => switchView('list'));
-            hierarchyViewBtn.addEventListener('click', () => switchView('hierarchy'));
-            
-            // Load departments with filters
-            function loadDepartments() {
-                const filters = {
-                    search: searchInput.value,
-                    activeOnly: statusFilter.value === 'true',
-                };
-                
-                // Parse budget range filter
-                const budgetRange = budgetFilter.value;
-                if (budgetRange) {
-                    const [min, max] = budgetRange.split('-');
-                    if (min) filters.minBudget = min;
-                    if (max) filters.maxBudget = max;
+        <!-- Confirmation Modal -->
+        <div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="confirmationModalLabel">Confirm Action</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body" id="confirmationModalBody">
+                        <!-- Message will be inserted here -->
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-danger" id="confirmActionBtn">Confirm</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bootstrap JS -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+        <!-- jQuery (needed for Bootstrap modals) -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+        <!-- Axios -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.2/axios.min.js"></script>
+        <!-- SweetAlert2 -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.7.12/sweetalert2.all.min.js"></script>
+        <!-- Custom JS -->
+        <script src="/js/admin.js"></script>
+
+        <!-- Page-specific JS -->
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                // Get auth token and user from localStorage
+                const authToken = localStorage.getItem('authToken');
+                const currentUser = JSON.parse(localStorage.getItem('user'));
+
+                if (!authToken || !currentUser) {
+                    window.location.href = '/';
+                    return;
                 }
-                
-                showLoading();
-                
-                axios.get('/departments', { params: filters })
-                    .then(response => {
+
+                // Set up axios defaults
+                axios.defaults.baseURL = '/api';
+                axios.defaults.headers.common['Authorization'] = `Bearer ${authToken}`;
+
+                // DOM elements
+                const departmentsGrid = document.getElementById('departmentsGrid');
+                const departmentStats = document.getElementById('departmentStats');
+                const filterForm = document.getElementById('filterForm');
+                const searchInput = document.getElementById('searchInput');
+                const statusFilter = document.getElementById('statusFilter');
+                const budgetFilter = document.getElementById('budgetFilter');
+
+                // Modal elements
+                const addDepartmentForm = document.getElementById('addDepartmentForm');
+                const saveDepartmentBtn = document.getElementById('saveDepartmentBtn');
+                const editDepartmentForm = document.getElementById('editDepartmentForm');
+                const updateDepartmentBtn = document.getElementById('updateDepartmentBtn');
+                const budgetAllocationForm = document.getElementById('budgetAllocationForm');
+                const saveBudgetBtn = document.getElementById('saveBudgetBtn');
+                const confirmActionBtn = document.getElementById('confirmActionBtn');
+
+                // View toggle elements
+                const toggleViewMode = document.getElementById('toggleViewMode');
+                const cardViewBtn = document.getElementById('cardViewBtn');
+                const listViewBtn = document.getElementById('listViewBtn');
+                const hierarchyViewBtn = document.getElementById('hierarchyViewBtn');
+                const departmentsTableContainer = document.getElementById('departmentsTableContainer');
+                const departmentsTableBody = document.getElementById('departmentsTableBody');
+                const hierarchyViewContainer = document.getElementById('hierarchyViewContainer');
+                const orgChart = document.getElementById('orgChart');
+
+                // State variables
+                let departments = [];
+                let employees = [];
+                let parentDepartments = [];
+                let currentView = 'list'; // Changed default to list view
+                let currentAction = null;
+                let currentDepartmentId = null; // For confirmation modal
+
+                // Initialize the page
+                initializePage();
+
+                async function initializePage() {
+                    try {
+                        await Promise.all([
+                            loadDepartments(),
+                            loadEmployees(),
+                            loadParentDepartments()
+                        ]);
+                    } catch (error) {
+                        console.error('Error initializing page:', error);
+                        showError('Failed to initialize page. Please refresh and try again.');
+                    }
+                }
+
+                // Event listeners
+                filterForm.addEventListener('submit', function (e) {
+                    e.preventDefault();
+                    loadDepartments();
+                });
+
+                filterForm.addEventListener('reset', function () {
+                    setTimeout(() => loadDepartments(), 100);
+                });
+
+                saveDepartmentBtn.addEventListener('click', addDepartment);
+                updateDepartmentBtn.addEventListener('click', updateDepartment);
+                saveBudgetBtn.addEventListener('click', allocateBudget);
+                confirmActionBtn.addEventListener('click', performConfirmedAction);
+
+                // View toggle events
+                toggleViewMode.addEventListener('change', toggleView);
+                cardViewBtn.addEventListener('click', () => switchView('card'));
+                listViewBtn.addEventListener('click', () => switchView('list'));
+                hierarchyViewBtn.addEventListener('click', () => switchView('hierarchy'));
+
+                // Load departments with filters
+                async function loadDepartments() {
+                    try {
+                        const filters = {
+                        search: searchInput.value.trim(),
+                        activeOnly: statusFilter.value === 'true',
+                        };
+                        
+                        // Parse budget range filter
+                        const budgetRange = budgetFilter.value;
+                        if (budgetRange) {
+                        const [min, max] = budgetRange.split('-');
+                        if (min) filters.minBudget = min;
+                        if (max) filters.maxBudget = max;
+                        }
+                        
+                        showLoading();
+                        
+                        const response = await axios.get('/departments', { params: filters });
                         departments = response.data;
+                        
+                        // Get employee count for each department
+                        await Promise.all(departments.map(async (dept) => {
+                        try {
+                            const empResponse = await axios.get(`/departments/${dept._id}/employees`);
+                            dept.employeeCount = empResponse.data.length || 0;
+                        } catch (error) {
+                            console.error(`Error loading employees for department ${dept._id}:`, error);
+                            dept.employeeCount = 0;
+                        }
+                        }));
+                        
                         renderDepartments();
                         renderStats();
-                    })
-                    .catch(error => {
-                        showError('Failed to load departments. Please try again.');
+                        
+                    } catch (error) {
                         console.error('Error loading departments:', error);
-                    })
-                    .finally(() => {
+                        showError('Failed to load departments. Please try again.');
+                    } finally {
                         hideLoading();
-                    });
-            }
-            
-            // Load employees for dropdowns
-            function loadEmployees() {
-                axios.get('/employees?limit=1000')
-                    .then(response => {
-                        employees = response.data.employees;
+                    }
+                    }
+
+                // Load employees for dropdowns
+                async function loadEmployees() {
+                    try {
+                        const response = await axios.get('/employees', { params: { limit: 1000 } });
+                        if (Array.isArray(response.data)) {
+                            employees = response.data;
+                        } else if (Array.isArray(response.data.employees)) {
+                            employees = response.data.employees;
+                        } else {
+                            employees = [];
+                        }
                         populateEmployeeDropdowns();
-                    })
-                    .catch(error => {
+                    } catch (error) {
                         console.error('Error loading employees:', error);
-                    });
-            }
-            
-            // Load parent departments for dropdowns
-            function loadParentDepartments() {
-                axios.get('/departments')
-                    .then(response => {
+                        employees = [];
+                    }
+                }
+
+                // Load parent departments for dropdowns
+                async function loadParentDepartments() {
+                    try {
+                        const response = await axios.get('/departments');
                         parentDepartments = response.data;
                         populateParentDepartmentDropdowns();
-                    })
-                    .catch(error => {
+                    } catch (error) {
                         console.error('Error loading parent departments:', error);
+                    }
+                }
+
+                // Render department cards
+                function renderDepartments() {
+                    if (currentView === 'card') {
+                        renderCardView();
+                    } else if (currentView === 'list') {
+                        renderListView();
+                    } else if (currentView === 'hierarchy') {
+                        renderHierarchyView();
+                    }
+                }
+
+                // Render card view
+                function renderCardView() {
+  departmentsGrid.innerHTML = '';
+  
+  if (departments.length === 0) {
+    departmentsGrid.innerHTML = `
+      <div class="col-12">
+        <div class="alert alert-info">No departments found matching your criteria</div>
+      </div>
+    `;
+    return;
+  }
+  
+  departments.forEach(dept => {
+    const col = document.createElement('div');
+    col.className = 'col-md-4 mb-4';
+    
+    // Format budget values
+    const budgetAllocated = dept.budget?.allocated ? 
+      formatCurrency(dept.budget.allocated, dept.budget?.currency || 'MWK') : 'Not set';
+    
+    const budgetUtilization = dept.budget?.allocated > 0 ? 
+      `${Math.round((dept.budget.spent / dept.budget.allocated) * 100)}%` : 'N/A';
+    
+    // Get manager info
+    let managerInfo = 'Not assigned';
+    let managerInitials = 'NA';
+    
+    if (dept.headOfDepartment) {
+      const manager = employees.find(e => e._id === dept.headOfDepartment._id || e._id === dept.headOfDepartment);
+      if (manager) {
+        const firstName = manager.personalInfo?.firstName || manager.firstName || '';
+        const lastName = manager.personalInfo?.lastName || manager.lastName || '';
+        const fullName = `${firstName} ${lastName}`.trim();
+        managerInitials = getInitials(firstName, lastName);
+        managerInfo = `
+          <div class="d-flex align-items-center mt-1">
+            <div class="user-avatar me-2">${managerInitials}</div>
+            <span class="fw-medium">${fullName}</span>
+          </div>
+        `;
+      }
+    }
+    
+    // Determine icon
+    let icon = 'fas fa-sitemap';
+    if (dept.name.toLowerCase().includes('it') || dept.name.toLowerCase().includes('tech')) {
+      icon = 'fas fa-code';
+    } else if (dept.name.toLowerCase().includes('hr') || dept.name.toLowerCase().includes('human')) {
+      icon = 'fas fa-users';
+    } else if (dept.name.toLowerCase().includes('finance') || dept.name.toLowerCase().includes('account')) {
+      icon = 'fas fa-calculator';
+    }
+    
+    // Get tags display
+    const tagsDisplay = dept.tags && dept.tags.length > 0 ? 
+      dept.tags.map(tag => `<span class="badge bg-light text-dark me-1">${tag}</span>`).join('') : 
+      '<span class="text-muted">No tags</span>';
+    
+    col.innerHTML = `
+      <div class="card department-card">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start mb-3">
+            <div class="department-icon">
+              <i class="${icon}"></i>
+            </div>
+            <div class="dropdown">
+              <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="dropdown">
+                <i class="fas fa-ellipsis-v"></i>
+              </button>
+              <ul class="dropdown-menu">
+                <li><button class="dropdown-item edit-btn" data-id="${dept._id}">
+                  <i class="fas fa-edit me-2"></i>Edit
+                </button></li>
+                <li><button class="dropdown-item budget-btn" data-id="${dept._id}">
+                  <i class="fas fa-dollar-sign me-2"></i>Budget
+                </button></li>
+                <li><button class="dropdown-item" onclick="viewEmployees('${dept._id}')">
+                  <i class="fas fa-users me-2"></i>View Employees
+                </button></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><button class="dropdown-item text-danger ${dept.isActive ? 'deactivate-btn' : 'activate-btn'}" data-id="${dept._id}">
+                  <i class="fas ${dept.isActive ? 'fa-user-slash' : 'fa-user-check'} me-2"></i>
+                  ${dept.isActive ? 'Deactivate' : 'Activate'}
+                </button></li>
+              </ul>
+            </div>
+          </div>
+          <h5 class="card-title">${dept.name}</h5>
+          <p class="card-text text-muted">${dept.description || 'No description provided'}</p>
+          
+          <div class="department-meta mb-2">
+            <small class="text-muted">Code:</small>
+            <span class="badge bg-secondary ms-2">${dept.code}</span>
+          </div>
+          
+          <div class="department-meta mb-2">
+            <small class="text-muted">Parent:</small>
+            <span class="ms-2">${dept.parentDepartment?.name || 'None'}</span>
+          </div>
+          
+          <div class="department-stats">
+            <div class="row text-center">
+              <div class="col-4">
+                <div class="stat-number">${dept.employeeCount || 0}</div>
+                <div class="stat-label">Employees</div>
+              </div>
+              <div class="col-4">
+                <div class="stat-number text-truncate" style="font-size: 0.9rem;">${budgetAllocated}</div>
+                <div class="stat-label">Budget</div>
+              </div>
+              <div class="col-4">
+                <div class="stat-number">${budgetUtilization}</div>
+                <div class="stat-label">Used</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="department-manager mt-3">
+            <small class="text-muted">Manager:</small>
+            ${managerInfo}
+          </div>
+          
+          <div class="department-tags mt-3">
+            <small class="text-muted">Tags:</small>
+            <div class="mt-1">${tagsDisplay}</div>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    departmentsGrid.appendChild(col);
+  });
+  
+  // Add event listeners to action buttons
+  attachActionListeners();
+}
+       // Render list view
+                function renderListView() {
+                    departmentsTableBody.innerHTML = '';
+
+                    if (departments.length === 0) {
+                        departmentsTableBody.innerHTML = `
+                <tr>
+                    <td colspan="8" class="text-center py-4">No departments found matching your criteria</td>
+                </tr>
+            `;
+                        return;
+                    }
+
+                    departments.forEach(dept => {
+                        const row = document.createElement('tr');
+
+                        // Format budget values
+                        const budgetAllocated = dept.budget?.allocated ?
+                            formatCurrency(dept.budget.allocated, dept.budget?.currency || 'MWK') : 'Not set';
+
+                        const budgetUtilization = dept.budget?.allocated > 0 ?
+                            `${Math.round((dept.budget.spent / dept.budget.allocated) * 100)}%` : 'N/A';
+
+                        // Get manager name
+                        let managerName = 'Not assigned';
+                        if (dept.headOfDepartment) {
+                            const manager = employees.find(e => e._id === dept.headOfDepartment._id || e._id === dept.headOfDepartment);
+                            if (manager) {
+                                managerName = `${manager.personalInfo?.firstName || manager.firstName || ''} ${manager.personalInfo?.lastName || manager.lastName || ''}`.trim();
+                            }
+                        }
+
+                        // Status badge
+                const statusBadge = dept.isActive ?
+                            '<span class="badge bg-success">Active</span>' :
+                            '<span class="badge bg-warning">Inactive</span>';
+
+                        row.innerHTML = `
+                <td>${dept.name}</td>
+                <td>${dept.code}</td>
+                <td>${managerName}</td>
+                <td>${dept.employeeCount || 0}</td>
+                <td>${budgetAllocated}</td>
+                <td>${budgetUtilization}</td>
+                <td>${statusBadge}</td>
+                <td>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-outline-primary edit-btn" data-id="${dept._id}" title="Edit">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary budget-btn" data-id="${dept._id}" title="Budget">
+                            <i class="fas fa-dollar-sign"></i>
+                        </button>
+                        ${dept.isActive ? `
+                            <button class="btn btn-sm btn-outline-danger deactivate-btn" data-id="${dept._id}" title="Deactivate">
+                                <i class="fas fa-user-slash"></i>
+                            </button>
+                        ` : `
+                            <button class="btn btn-sm btn-outline-success activate-btn" data-id="${dept._id}" title="Activate">
+                                <i class="fas fa-user-check"></i>
+                            </button>
+                        `}
+                    </div>
+                </td>
+            `;
+
+                        departmentsTableBody.appendChild(row);
                     });
-            }
-            
-            // Render department cards
-            function renderDepartments() {
-                if (currentView === 'card') {
-                    renderCardView();
-                } else if (currentView === 'list') {
-                    renderListView();
-                } else if (currentView === 'hierarchy') {
-                    renderHierarchyView();
+
+                    // Add event listeners to action buttons
+                    attachActionListeners();
                 }
-            }
-            
-            // Render card view
-            function renderCardView() {
-                departmentsGrid.innerHTML = '';
-                
-                if (departments.length === 0) {
-                    departmentsGrid.innerHTML = `
-                        <div class="col-12">
-                            <div class="alert alert-info">No departments found matching your criteria</div>
-                        </div>
-                    `;
-                    return;
+
+                // Attach event listeners to action buttons
+                function attachActionListeners() {
+                    document.querySelectorAll('.edit-btn').forEach(btn => {
+                        btn.addEventListener('click', () => openEditModal(btn.dataset.id));
+                    });
+
+                    document.querySelectorAll('.budget-btn').forEach(btn => {
+                        btn.addEventListener('click', () => openBudgetModal(btn.dataset.id));
+                    });
+
+                    document.querySelectorAll('.deactivate-btn').forEach(btn => {
+                        btn.addEventListener('click', () => confirmDeactivateDepartment(btn.dataset.id));
+                    });
+
+                    document.querySelectorAll('.activate-btn').forEach(btn => {
+                        btn.addEventListener('click', () => confirmActivateDepartment(btn.dataset.id));
+                    });
                 }
-                
-                departments.forEach(dept => {
-                    const col = document.createElement('div');
-                    col.className = 'col-md-4 mb-4';
-                    
-                    // Format budget values
-                    const budgetAllocated = dept.budget?.allocated ? 
-                        formatCurrency(dept.budget.allocated, dept.budget?.currency || 'USD') : 'Not set';
-                    
-                    const budgetUtilization = dept.budgetUtilization ? 
-                        `${dept.budgetUtilization}%` : 'N/A';
-                    
-                    const remainingBudget = dept.remainingBudget ? 
-                        formatCurrency(dept.remainingBudget, dept.budget?.currency || 'USD') : 'N/A';
-                    
-                    // Get manager info
-                    let managerInfo = 'Not assigned';
-                    if (dept.headOfDepartment) {
-                        const manager = employees.find(e => e._id === dept.headOfDepartment._id);
-                        if (manager) {
-                            const initials = getInitials(manager.personalInfo.firstName, manager.personalInfo.lastName);
-                            managerInfo = `
-                                <div class="d-flex align-items-center mt-1">
-                                    <div class="user-avatar me-2">${initials}</div>
-                                    <span class="fw-medium">${manager.personalInfo.firstName} ${manager.personalInfo.lastName}</span>
-                                </div>
-                            `;
-                        }
-                    }
-                    
-                    // Determine icon based on department name or use default
-                    let icon = 'fas fa-sitemap';
-                    if (dept.name.toLowerCase().includes('it') || dept.name.toLowerCase().includes('tech')) {
-                        icon = 'fas fa-code';
-                    } else if (dept.name.toLowerCase().includes('hr') || dept.name.toLowerCase().includes('human')) {
-                        icon = 'fas fa-users';
-                    } else if (dept.name.toLowerCase().includes('finance') || dept.name.toLowerCase().includes('account')) {
-                        icon = 'fas fa-calculator';
-                    }
-                    
-                    // Get tags display
-                    const tagsDisplay = dept.tags && dept.tags.length > 0 ? 
-                        dept.tags.map(tag => `<span class="badge bg-light text-dark me-1">${tag}</span>`).join('') : 
-                        '<span class="text-muted">No tags</span>';
-                    
-                    col.innerHTML = `
-                        <div class="card department-card">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-start mb-3">
-                                    <div class="department-icon">
-                                        <i class="${icon}"></i>
-                                    </div>
-                                    <div class="dropdown">
-                                        <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="dropdown">
-                                            <i class="fas fa-ellipsis-v"></i>
-                                        </button>
-                                        <ul class="dropdown-menu">
-                                            <li><button class="dropdown-item edit-btn" data-id="${dept._id}">
-                                                <i class="fas fa-edit me-2"></i>Edit
-                                            </button></li>
-                                            <li><button class="dropdown-item budget-btn" data-id="${dept._id}">
-                                                <i class="fas fa-dollar-sign me-2"></i>Budget
-                                            </button></li>
-                                            <li><button class="dropdown-item" onclick="viewEmployees('${dept._id}')">
-                                                <i class="fas fa-users me-2"></i>View Employees
-                                            </button></li>
-                                            <li><hr class="dropdown-divider"></li>
-                                            <li><button class="dropdown-item text-danger ${dept.isActive ? 'deactivate-btn' : 'activate-btn'}" data-id="${dept._id}">
-                                                <i class="fas ${dept.isActive ? 'fa-user-slash' : 'fa-user-check'} me-2"></i>
-                                                ${dept.isActive ? 'Deactivate' : 'Activate'}
-                                            </button></li>
-                                        </ul>
-                                    </div>
-                                </div>
-                                <h5 class="card-title">${dept.name}</h5>
-                                <p class="card-text text-muted">${dept.description || 'No description provided'}</p>
-                                
-                                <div class="department-meta mb-2">
-                                    <small class="text-muted">Code:</small>
-                                    <span class="badge bg-secondary ms-2">${dept.code}</span>
-                                </div>
-                                
-                                <div class="department-meta mb-2">
-                                    <small class="text-muted">Parent:</small>
-                                    <span class="ms-2">${dept.parentDepartment?.name || 'None'}</span>
-                                </div>
-                                
-                                <div class="department-stats">
-                                    <div class="row text-center">
-                                        <div class="col-4">
-                                            <div class="stat-number">${dept.employeeCount || 0}</div>
-                                            <div class="stat-label">Employees</div>
-                                        </div>
-                                        <div class="col-4">
-                                            <div class="stat-number">${budgetAllocated}</div>
-                                            <div class="stat-label">Budget</div>
-                                        </div>
-                                        <div class="col-4">
-                                            <div class="stat-number">${budgetUtilization}</div>
-                                            <div class="stat-label">Used</div>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="department-manager mt-3">
-                                    <small class="text-muted">Manager:</small>
-                                    ${managerInfo}
-                                </div>
-                                
-                                <div class="department-tags mt-3">
-                                    <small class="text-muted">Tags:</small>
-                                    <div class="mt-1">${tagsDisplay}</div>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                    
-                    departmentsGrid.appendChild(col);
-                });
-                
-                // Add event listeners to action buttons
-                document.querySelectorAll('.edit-btn').forEach(btn => {
-                    btn.addEventListener('click', () => openEditModal(btn.dataset.id));
-                });
-                
-                document.querySelectorAll('.budget-btn').forEach(btn => {
-                    btn.addEventListener('click', () => openBudgetModal(btn.dataset.id));
-                });
-                
-                document.querySelectorAll('.deactivate-btn').forEach(btn => {
-                    btn.addEventListener('click', () => confirmDeactivateDepartment(btn.dataset.id));
-                });
-                
-                document.querySelectorAll('.activate-btn').forEach(btn => {
-                    btn.addEventListener('click', () => confirmActivateDepartment(btn.dataset.id));
-                });
-            }
-            
-            // Render list view
-            function renderListView() {
-                departmentsTableBody.innerHTML = '';
-                
-                if (departments.length === 0) {
-                    departmentsTableBody.innerHTML = `
-                        <tr>
-                            <td colspan="8" class="text-center py-4">No departments found matching your criteria</td>
-                        </tr>
-                    `;
-                    return;
-                }
-                
-                departments.forEach(dept => {
-                    const row = document.createElement('tr');
-                    
-                    // Format budget values
-                    const budgetAllocated = dept.budget?.allocated ? 
-                        formatCurrency(dept.budget.allocated, dept.budget?.currency || 'USD') : 'Not set';
-                    
-                    const budgetUtilization = dept.budgetUtilization ? 
-                        `${dept.budgetUtilization}%` : 'N/A';
-                    
-                    // Get manager name
-                    let managerName = 'Not assigned';
-                    if (dept.headOfDepartment) {
-                        const manager = employees.find(e => e._id === dept.headOfDepartment._id);
-                        if (manager) {
-                            managerName = `${manager.personalInfo.firstName} ${manager.personalInfo.lastName}`;
-                        }
-                    }
-                    
-                    // Status badge
-                    const statusBadge = dept.isActive ? 
-                        '<span class="badge bg-success">Active</span>' : 
-                        '<span class="badge bg-warning">Inactive</span>';
-                    
-                    row.innerHTML = `
-                        <td>${dept.name}</td>
-                        <td>${dept.code}</td>
-                        <td>${managerName}</td>
-                        <td>${dept.employeeCount || 0}</td>
-                        <td>${budgetAllocated}</td>
-                        <td>${budgetUtilization}</td>
-                        <td>${statusBadge}</td>
-                        <td>
-                            <div class="d-flex gap-2">
-                                <button class="btn btn-sm btn-outline-primary edit-btn" data-id="${dept._id}">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline-secondary budget-btn" data-id="${dept._id}">
-                                    <i class="fas fa-dollar-sign"></i>
-                                </button>
-                                ${dept.isActive ? `
-                                    <button class="btn btn-sm btn-outline-danger deactivate-btn" data-id="${dept._id}">
-                                        <i class="fas fa-user-slash"></i>
-                                    </button>
-                                ` : `
-                                    <button class="btn btn-sm btn-outline-success activate-btn" data-id="${dept._id}">
-                                        <i class="fas fa-user-check"></i>
-                                    </button>
-                                `}
-                            </div>
-                        </td>
-                    `;
-                    
-                    departmentsTableBody.appendChild(row);
-                });
-                
-                // Add event listeners to action buttons
-                document.querySelectorAll('.edit-btn').forEach(btn => {
-                    btn.addEventListener('click', () => openEditModal(btn.dataset.id));
-                });
-                
-                document.querySelectorAll('.budget-btn').forEach(btn => {
-                    btn.addEventListener('click', () => openBudgetModal(btn.dataset.id));
-                });
-                
-                document.querySelectorAll('.deactivate-btn').forEach(btn => {
-                    btn.addEventListener('click', () => confirmDeactivateDepartment(btn.dataset.id));
-                });
-                
-                document.querySelectorAll('.activate-btn').forEach(btn => {
-                    btn.addEventListener('click', () => confirmActivateDepartment(btn.dataset.id));
-                });
-            }
-            
-            // Render hierarchy view
-            function renderHierarchyView() {
-                showLoading();
-                
-                axios.get('/departments/hierarchy')
-                    .then(response => {
+
+                // Render hierarchy view
+                async function renderHierarchyView() {
+                    try {
+                        showLoading();
+
+                        const response = await axios.get('/departments/hierarchy');
                         const hierarchy = response.data;
-                        
+
                         // Clear previous chart
                         orgChart.innerHTML = '';
-                        
+
                         if (hierarchy.length === 0) {
                             orgChart.innerHTML = '<p class="text-center py-4">No departments found</p>';
                             return;
                         }
-                        
-                        // Format data for orgchart
-                        const orgChartData = {
-                            id: 'root',
-                            name: 'Organization',
-                            title: 'All Departments',
-                            children: formatHierarchyForOrgChart(hierarchy)
-                        };
-                        
-                        // Initialize orgchart
-                        $(orgChart).orgchart({
-                            data: orgChartData,
-                            nodeContent: 'title',
-                            direction: 't2b',
-                            pan: true,
-                            zoom: true,
-                            createNode: function($node, data) {
-                                const dept = data.department;
-                                if (dept) {
-                                    const manager = dept.headOfDepartment ? 
-                                        `${dept.headOfDepartment.personalInfo.firstName} ${dept.headOfDepartment.personalInfo.lastName}` : 
-                                        'No manager';
-                                    
-                                    const budget = dept.budget?.allocated ? 
-                                        formatCurrency(dept.budget.allocated, dept.budget?.currency || 'USD') : 
-                                        'No budget';
-                                    
-                                    $node.append(`
-                                        <div class="org-node-content">
-                                            <div class="org-node-header">
-                                                <h4>${dept.name}</h4>
-                                                <small>${dept.code}</small>
-                                            </div>
-                                            <div class="org-node-body">
-                                                <div><i class="fas fa-user-tie"></i> ${manager}</div>
-                                                <div><i class="fas fa-users"></i> ${dept.employeeCount || 0} employees</div>
-                                                <div><i class="fas fa-dollar-sign"></i> ${budget}</div>
-                                            </div>
-                                        </div>
-                                    `);
-                                }
-                            }
-                        });
-                    })
-                    .catch(error => {
+
+                        // Simple hierarchy display (since we can't use external org chart library)
+                        const hierarchyHtml = buildHierarchyHTML(hierarchy);
+                        orgChart.innerHTML = hierarchyHtml;
+
+                    } catch (error) {
                         console.error('Error loading department hierarchy:', error);
                         orgChart.innerHTML = '<p class="text-center py-4 text-danger">Failed to load organization chart</p>';
-                    })
-                    .finally(() => {
+                    } finally {
                         hideLoading();
+                    }
+                }
+
+                // Build simple hierarchy HTML
+                function buildHierarchyHTML(departments, level = 0) {
+                    return departments.map(dept => {
+                        const manager = dept.headOfDepartment ?
+                            `${dept.headOfDepartment.personalInfo?.firstName || ''} ${dept.headOfDepartment.personalInfo?.lastName || ''}`.trim() :
+                            'No manager';
+
+                        const budget = dept.budget?.allocated ?
+                            formatCurrency(dept.budget.allocated, dept.budget?.currency || 'MWK') :
+                            'No budget';
+
+                        let html = `
+                <div class="org-node" style="margin-left: ${level * 30}px; margin-bottom: 15px;">
+                    <div class="org-node-content card" style="max-width: 300px;">
+                        <div class="card-body">
+                            <div class="org-node-header">
+                                <h5 class="card-title mb-1">${dept.name}</h5>
+                                <small class="text-muted">${dept.code}</small>
+                            </div>
+                            <div class="org-node-body mt-2">
+                                <div><i class="fas fa-user-tie me-2"></i>${manager}</div>
+                                <div><i class="fas fa-users me-2"></i>${dept.employeeCount || 0} employees</div>
+                                <div><i class="fas fa-dollar-sign me-2"></i>${budget}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+                        if (dept.subdepartments && dept.subdepartments.length > 0) {
+                            html += buildHierarchyHTML(dept.subdepartments, level + 1);
+                        }
+
+                        return html;
+                    }).join('');
+                }
+
+                // Render department stats
+                function renderStats() {
+                    const totalDepartments = departments.length;
+                    const activeDepartments = departments.filter(d => d.isActive).length;
+
+                    // Find department with most employees
+                    let largestDept = { name: 'None', employeeCount: 0 };
+                    if (departments.length > 0) {
+                        largestDept = departments.reduce((prev, current) =>
+                            (current.employeeCount || 0) > (prev.employeeCount || 0) ? current : prev
+                        );
+                    }
+
+                    // Calculate average team size
+                    const totalEmployees = departments.reduce((sum, dept) => sum + (dept.employeeCount || 0), 0);
+                    const avgTeamSize = departments.length > 0 ? Math.round(totalEmployees / departments.length) : 0;
+
+                    // Count managers (heads of department)
+                    const managerIds = new Set();
+                    departments.forEach(dept => {
+                        if (dept.headOfDepartment) {
+                            const id = dept.headOfDepartment._id || dept.headOfDepartment;
+                            managerIds.add(id.toString());
+                        }
                     });
-            }
-            
-            // Format hierarchy data for orgchart
-            function formatHierarchyForOrgChart(hierarchy) {
-                return hierarchy.map(dept => {
-                    const node = {
-                        id: dept._id,
-                        name: dept.name,
-                        title: dept.name,
-                        department: dept,
-                        children: []
-                    };
-                    
-                    if (dept.subdepartments && dept.subdepartments.length > 0) {
-                        node.children = formatHierarchyForOrgChart(dept.subdepartments);
-                    }
-                    
-                    return node;
-                });
-            }
-            
-            // Render department stats
-            function renderStats() {
-                const totalDepartments = departments.length;
-                const activeDepartments = departments.filter(d => d.isActive).length;
-                
-                // Find department with most employees
-                let largestDept = { name: 'None', employeeCount: 0 };
-                if (departments.length > 0) {
-                    largestDept = departments.reduce((prev, current) => 
-                        (current.employeeCount || 0) > (prev.employeeCount || 0) ? current : prev
-                    );
+                    const activeManagers = managerIds.size;
+
+                    departmentStats.innerHTML = `
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <p class="stat-title">Total Departments</p>
+                        <div class="stat-icon">
+                            <i class="fas fa-sitemap"></i>
+                        </div>
+                    </div>
+                    <div class="stat-value">${totalDepartments}</div>
+                    <div class="stat-trend">
+                        <span>${activeDepartments} active</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <p class="stat-title">Largest Department</p>
+                        <div class="stat-icon">
+                            <i class="fas fa-crown"></i>
+                        </div>
+                    </div>
+                    <div class="stat-value" style="font-size: 1.5rem;">${largestDept.name}</div>
+                    <div class="stat-trend">
+                        <i class="fas fa-users"></i>
+                        <span>${largestDept.employeeCount || 0} employees</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <p class="stat-title">Avg. Team Size</p>
+                        <div class="stat-icon">
+                            <i class="fas fa-user-friends"></i>
+                        </div>
+                    </div>
+                    <div class="stat-value">${avgTeamSize}</div>
+                    <div class="stat-trend">
+                        <span>${totalEmployees} total employees</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <p class="stat-title">Active Managers</p>
+                        <div class="stat-icon">
+                            <i class="fas fa-user-tie"></i>
+                        </div>
+                    </div>
+                    <div class="stat-value">${activeManagers}</div>
+                    <div class="stat-trend">
+                        <span>${departments.length - activeManagers} unassigned</span>
+                    </div>
+                </div>
+            </div>
+        `;
                 }
-                
-                // Calculate average team size
-                const totalEmployees = departments.reduce((sum, dept) => sum + (dept.employeeCount || 0), 0);
-                const avgTeamSize = departments.length > 0 ? Math.round(totalEmployees / departments.length) : 0;
-                
-                // Count managers (heads of department)
-                const managerIds = new Set();
-                departments.forEach(dept => {
-                    if (dept.headOfDepartment) {
-                        managerIds.add(dept.headOfDepartment._id.toString());
-                    }
-                });
-                const activeManagers = managerIds.size;
-                
-                departmentStats.innerHTML = `
-                    <div class="col-md-3">
-                        <div class="stat-card">
-                            <div class="stat-header">
-                                <p class="stat-title">Total Departments</p>
-                                <div class="stat-icon">
-                                    <i class="fas fa-sitemap"></i>
-                                </div>
-                            </div>
-                            <div class="stat-value">${totalDepartments}</div>
-                            <div class="stat-trend">
-                                <span>${activeDepartments} active</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="stat-card">
-                            <div class="stat-header">
-                                <p class="stat-title">Largest Department</p>
-                                <div class="stat-icon">
-                                    <i class="fas fa-crown"></i>
-                                </div>
-                            </div>
-                            <div class="stat-value">${largestDept.name}</div>
-                            <div class="stat-trend">
-                                <i class="fas fa-users"></i>
-                                <span>${largestDept.employeeCount || 0} employees</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="stat-card">
-                            <div class="stat-header">
-                                <p class="stat-title">Avg. Team Size</p>
-                                <div class="stat-icon">
-                                    <i class="fas fa-user-friends"></i>
-                                </div>
-                            </div>
-                            <div class="stat-value">${avgTeamSize}</div>
-                            <div class="stat-trend">
-                                <span>${totalEmployees} total employees</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="stat-card">
-                            <div class="stat-header">
-                                <p class="stat-title">Active Managers</p>
-                                <div class="stat-icon">
-                                    <i class="fas fa-user-tie"></i>
-                                </div>
-                            </div>
-                            <div class="stat-value">${activeManagers}</div>
-                            <div class="stat-trend">
-                                <span>${departments.length - activeManagers} unassigned</span>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }
-            
-            // Populate employee dropdowns
-            function populateEmployeeDropdowns() {
-                const headOfDepartmentDropdown = document.getElementById('headOfDepartment');
-                const editHeadOfDepartmentDropdown = document.getElementById('editHeadOfDepartment');
-                
-                // Clear existing options
-                headOfDepartmentDropdown.innerHTML = '<option value="">None</option>';
-                if (editHeadOfDepartmentDropdown) {
-                    editHeadOfDepartmentDropdown.innerHTML = '<option value="">None</option>';
-                }
-                
-                // Add employee options
-                employees.forEach(emp => {
-                    const option = document.createElement('option');
-                    option.value = emp._id;
-                    option.textContent = `${emp.personalInfo.firstName} ${emp.personalInfo.lastName} (${emp.employeeId})`;
+
+                // Populate employee dropdowns
+                function populateEmployeeDropdowns(departmentId = null) {
+                    const headOfDepartmentDropdown = document.getElementById('headOfDepartment');
+                    const editHeadOfDepartmentDropdown = document.getElementById('editHeadOfDepartment');
                     
-                    headOfDepartmentDropdown.appendChild(option);
-                    
+                    // Clear existing options
+                    headOfDepartmentDropdown.innerHTML = '<option value="">None</option>';
                     if (editHeadOfDepartmentDropdown) {
+                        editHeadOfDepartmentDropdown.innerHTML = '<option value="">None</option>';
+                    }
+                    
+                    // Filter employees by department if specified
+                    let filteredEmployees = employees;
+                    if (departmentId) {
+                        filteredEmployees = employees.filter(emp => 
+                        emp.employmentInfo?.departmentId?._id === departmentId || 
+                        emp.employmentInfo?.departmentId === departmentId
+                        );
+                    }
+                    
+                    // Add employee options
+                    filteredEmployees.forEach(emp => {
+                        const option = document.createElement('option');
+                        option.value = emp._id;
+                        const firstName = emp.personalInfo?.firstName || emp.firstName || '';
+                        const lastName = emp.personalInfo?.lastName || emp.lastName || '';
+                        const employeeId = emp.employeeId || emp.id || '';
+                        option.textContent = `${firstName} ${lastName} (${employeeId})`.trim();
+                        option.dataset.search = `${firstName} ${lastName} ${employeeId}`.toLowerCase();
+                        headOfDepartmentDropdown.appendChild(option);
+                        
+                        if (editHeadOfDepartmentDropdown) {
                         const editOption = option.cloneNode(true);
                         editHeadOfDepartmentDropdown.appendChild(editOption);
-                    }
-                });
-            }
-            
-            // Populate parent department dropdowns
-            function populateParentDepartmentDropdowns() {
-                const parentDepartmentDropdown = document.getElementById('parentDepartment');
-                const editParentDepartmentDropdown = document.getElementById('editParentDepartment');
-                
-                // Clear existing options
-                parentDepartmentDropdown.innerHTML = '<option value="">None</option>';
-                if (editParentDepartmentDropdown) {
-                    editParentDepartmentDropdown.innerHTML = '<option value="">None</option>';
-                }
-                
-                // Add department options
-                parentDepartments.forEach(dept => {
-                    const option = document.createElement('option');
-                    option.value = dept._id;
-                    option.textContent = `${dept.name} (${dept.code})`;
+                        }
+                    });
                     
-                    parentDepartmentDropdown.appendChild(option);
-                    
-                    if (editParentDepartmentDropdown) {
-                        const editOption = option.cloneNode(true);
-                        editParentDepartmentDropdown.appendChild(editOption);
+                    // Make dropdowns searchable
+                    makeDropdownSearchable('headOfDepartment');
+                    if (editHeadOfDepartmentDropdown) {
+                        makeDropdownSearchable('editHeadOfDepartment');
                     }
-                });
-            }
-            
-            // Add new department
-            function addDepartment() {
-                const name = document.getElementById('departmentName').value;
-                const code = document.getElementById('departmentCode').value;
-                const description = document.getElementById('departmentDescription').value;
-                const parentDepartment = document.getElementById('parentDepartment').value;
-                const headOfDepartment = document.getElementById('headOfDepartment').value;
-                const icon = document.getElementById('departmentIcon').value;
-                
-                // Location data
-                const location = {
-                    type: document.getElementById('locationType').value,
-                    address: {
-                        street: document.getElementById('streetAddress').value,
-                        city: document.getElementById('city').value,
-                        state: document.getElementById('state').value,
-                        zipCode: document.getElementById('zipCode').value,
-                        country: document.getElementById('country').value
-                    },
-                    building: document.getElementById('building').value,
-                    floor: document.getElementById('floor').value
-                };
-                
-                // Budget data
-                const budget = {
-                    allocated: document.getElementById('allocatedBudget').value ? 
-                        Number(document.getElementById('allocatedBudget').value) : 0,
-                    fiscalYear: document.getElementById('fiscalYear').value ? 
-                        Number(document.getElementById('fiscalYear').value) : new Date().getFullYear(),
-                    currency: document.getElementById('currency').value
-                };
-                
-                // Tags
-                const tagsInput = document.getElementById('departmentTags').value;
-                const tags = tagsInput ? 
-                    tagsInput.split(',').map(tag => tag.trim().toLowerCase()) : [];
-                
-                // Cost center
-                const costCenter = document.getElementById('costCenter').value;
-                
-                // Validate required fields
-                if (!name || !code) {
-                    showError('Department name and code are required');
-                    return;
+                    }
+
+                    function makeDropdownSearchable(dropdownId) {
+                        const dropdown = document.getElementById(dropdownId);
+                        if (!dropdown) return;
+                        
+                        // Create search input
+                        const searchContainer = document.createElement('div');
+                        searchContainer.className = 'dropdown-search-container';
+                        searchContainer.innerHTML = `
+                            <input type="text" class="form-control form-control-sm mb-2" 
+                                placeholder="Search employees..." id="${dropdownId}-search">
+                        `;
+                        
+                        dropdown.parentNode.insertBefore(searchContainer, dropdown);
+                        
+                        const searchInput = document.getElementById(`${dropdownId}-search`);
+                        searchInput.addEventListener('input', function() {
+                            const searchTerm = this.value.toLowerCase();
+                            const options = dropdown.options;
+                            
+                            for (let i = 0; i < options.length; i++) {
+                            const option = options[i];
+                            const searchText = option.dataset.search || option.textContent.toLowerCase();
+                            
+                            if (searchText.includes(searchTerm)) {
+                                option.style.display = '';
+                            } else {
+                                option.style.display = 'none';
+                            }
+                            }
+                        });
+                        }
+
+                // Populate parent department dropdowns
+                function populateParentDepartmentDropdowns() {
+                    const parentDepartmentDropdown = document.getElementById('parentDepartment');
+
+                    // Clear existing options
+                    parentDepartmentDropdown.innerHTML = '<option value="">None</option>';
+
+                    // Add department options
+                    parentDepartments.forEach(dept => {
+                        const option = document.createElement('option');
+                        option.value = dept._id;
+                        option.textContent = `${dept.name} (${dept.code})`;
+                        parentDepartmentDropdown.appendChild(option);
+                    });
                 }
-                
-                // Validate code format
-                const codeRegex = /^[A-Z0-9]{3,10}$/;
-                if (!codeRegex.test(code)) {
-                    showError('Code must be 3-10 uppercase alphanumeric characters');
-                    return;
-                }
-                
-                showLoading();
-                
-                const departmentData = {
-                    name,
-                    code,
-                    description,
-                    parentDepartment: parentDepartment || null,
-                    headOfDepartment: headOfDepartment || null,
-                    location,
-                    budget: budget.allocated > 0 ? budget : null,
-                    costCenter,
-                    tags
-                };
-                
-                axios.post('/departments', departmentData)
-                    .then(response => {
+
+                // Add new department
+                async function addDepartment() {
+                    try {
+                        const name = document.getElementById('departmentName').value.trim();
+                        const code = document.getElementById('departmentCode').value.trim().toUpperCase();
+                        const description = document.getElementById('departmentDescription').value.trim();
+                        const parentDepartment = document.getElementById('parentDepartment').value;
+                        const headOfDepartment = document.getElementById('headOfDepartment').value;
+
+                        // Validate required fields
+                        if (!name || !code) {
+                            showError('Department name and code are required');
+                            return;
+                        }
+
+                        // Validate code format
+                        const codeRegex = /^[A-Z0-9]{3,10}$/;
+                        if (!codeRegex.test(code)) {
+                            showError('Code must be 3-10 uppercase alphanumeric characters');
+                            return;
+                        }
+
+                        showLoading();
+
+                        // Location data
+                        const location = {
+                            type: document.getElementById('locationType')?.value || 'physical',
+                            address: {
+                                street: document.getElementById('streetAddress')?.value || '',
+                                city: document.getElementById('city')?.value || '',
+                                state: document.getElementById('state')?.value || '',
+                                zipCode: document.getElementById('zipCode')?.value || '',
+                                country: document.getElementById('country')?.value || 'Malawi'
+                            },
+                            building: document.getElementById('building')?.value || '',
+                            floor: document.getElementById('floor')?.value || ''
+                        };
+
+                        // Budget data
+                        const allocatedBudget = document.getElementById('allocatedBudget')?.value;
+                        const budget = allocatedBudget ? {
+                            allocated: Number(allocatedBudget),
+                            spent: 0,
+                            fiscalYear: document.getElementById('fiscalYear')?.value ?
+                                Number(document.getElementById('fiscalYear').value) : new Date().getFullYear(),
+                            currency: document.getElementById('currency')?.value || 'MWK'
+                        } : null;
+
+                        // Tags
+                        const tagsInput = document.getElementById('departmentTags')?.value || '';
+                        const tags = tagsInput ?
+                            tagsInput.split(',').map(tag => tag.trim().toLowerCase()).filter(tag => tag) : [];
+
+                        // Cost center
+                        const costCenter = document.getElementById('costCenter')?.value || '';
+
+                        const departmentData = {
+                            name,
+                            code,
+                            description,
+                            parentDepartment: parentDepartment || null,
+                            headOfDepartment: headOfDepartment || null,
+                            location,
+                            budget,
+                            costCenter,
+                            tags
+                        };
+
+                        await axios.post('/departments', departmentData);
+
                         showSuccess('Department created successfully');
                         $('#addDepartmentModal').modal('hide');
                         addDepartmentForm.reset();
-                        loadDepartments();
-                        loadParentDepartments(); // Refresh parent department list
-                    })
-                    .catch(error => {
-                        const errorMessage = error.response?.data?.error || 'Failed to create department';
+                        await loadDepartments();
+                        await loadParentDepartments(); // Refresh parent department list
+
+                    } catch (error) {
+                        console.error('Error creating department:', error);
+                        const errorMessage = error.response?.data?.error || error.response?.data?.message || 'Failed to create department';
                         showError(errorMessage);
-                    })
-                    .finally(() => {
+                    } finally {
                         hideLoading();
-                    });
-            }
-            
-            // Open edit modal
-            function openEditModal(departmentId) {
-                showLoading();
-                
-                axios.get(`/departments/${departmentId}`)
-                    .then(response => {
+                    }
+                }
+
+                // Create edit modal form dynamically
+                function createEditModalForm() {
+                    const editModal = document.getElementById('editDepartmentModal');
+                    if (!editModal) return;
+
+                    const modalBody = editModal.querySelector('.modal-body');
+                    if (!modalBody) return;
+
+                    modalBody.innerHTML = `
+            <form id="editDepartmentForm">
+                <input type="hidden" id="editDepartmentId">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="editDepartmentName" class="form-label">Department Name *</label>
+                            <input type="text" class="form-control" id="editDepartmentName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editDepartmentCode" class="form-label">Department Code *</label>
+                            <input type="text" class="form-control" id="editDepartmentCode" required>
+                            <div class="form-text">3-10 uppercase alphanumeric characters</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editParentDepartment" class="form-label">Parent Department</label>
+                            <select class="form-select" id="editParentDepartment">
+                                <option value="">None</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="editHeadOfDepartment" class="form-label">Head of Department</label>
+                            <select class="form-select" id="editHeadOfDepartment">
+                                <option value="">None</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="editDepartmentDescription" class="form-label">Description</label>
+                    <textarea class="form-control" id="editDepartmentDescription" rows="3"></textarea>
+                </div>
+                <div class="mb-3">
+                    <label for="editDepartmentTags" class="form-label">Tags</label>
+                    <input type="text" class="form-control" id="editDepartmentTags" placeholder="Enter tags separated by commas">
+                    <div class="form-text">Example: engineering, technology, development</div>
+                </div>
+            </form>
+        `;
+
+                    // Populate dropdowns in edit form
+                    populateEditDropdowns();
+                }
+
+                // Populate dropdowns in edit form
+                function populateEditDropdowns() {
+                    const editParentDropdown = document.getElementById('editParentDepartment');
+                    const editHeadDropdown = document.getElementById('editHeadOfDepartment');
+
+                    if (editParentDropdown) {
+                        editParentDropdown.innerHTML = '<option value="">None</option>';
+                        parentDepartments.forEach(dept => {
+                            const option = document.createElement('option');
+                            option.value = dept._id;
+                            option.textContent = `${dept.name} (${dept.code})`;
+                            editParentDropdown.appendChild(option);
+                        });
+                    }
+
+                    if (editHeadDropdown) {
+                        editHeadDropdown.innerHTML = '<option value="">None</option>';
+                        if (Array.isArray(employees)) {
+                            employees.forEach(emp => {
+                                const option = document.createElement('option');
+                                option.value = emp._id;
+                                const firstName = emp.personalInfo?.firstName || emp.firstName || '';
+                                const lastName = emp.personalInfo?.lastName || emp.lastName || '';
+                                const employeeId = emp.employeeId || emp.id || '';
+                                option.textContent = `${firstName} ${lastName} (${employeeId})`.trim();
+                                editHeadDropdown.appendChild(option);
+                            });
+                        }
+                    }
+                }
+
+                // Open edit modal
+                async function openEditModal(departmentId) {
+                    if (!departmentId) {
+                        showError('Invalid department ID');
+                        return;
+                    }
+                    
+                    try {
+                        showLoading();
+                        
+                        // Create edit form if it doesn't exist
+                        createEditModalForm();
+                        
+                        const response = await axios.get(`/departments/${departmentId}`);
                         const dept = response.data;
                         
                         // Set form values
@@ -1130,291 +1286,330 @@
                         document.getElementById('editDepartmentCode').value = dept.code;
                         document.getElementById('editDepartmentDescription').value = dept.description || '';
                         document.getElementById('editParentDepartment').value = dept.parentDepartment?._id || '';
+                        
+                        // Filter employees by this department for manager assignment
+                        populateEmployeeDropdowns(departmentId);
+                        
+                        // Set selected head of department
                         document.getElementById('editHeadOfDepartment').value = dept.headOfDepartment?._id || '';
-                        document.getElementById('editDepartmentIcon').value = 'fas fa-sitemap'; // Default icon
-                        
-                        // Location data
-                        if (dept.location) {
-                            document.getElementById('editLocationType').value = dept.location.type || 'physical';
-                            document.getElementById('editStreetAddress').value = dept.location.address?.street || '';
-                            document.getElementById('editCity').value = dept.location.address?.city || '';
-                            document.getElementById('editState').value = dept.location.address?.state || '';
-                            document.getElementById('editZipCode').value = dept.location.address?.zipCode || '';
-                            document.getElementById('editCountry').value = dept.location.address?.country || 'United States';
-                            document.getElementById('editBuilding').value = dept.location.building || '';
-                            document.getElementById('editFloor').value = dept.location.floor || '';
-                        }
-                        
-                        // Budget data
-                        if (dept.budget) {
-                            document.getElementById('editAllocatedBudget').value = dept.budget.allocated || 0;
-                            document.getElementById('editFiscalYear').value = dept.budget.fiscalYear || new Date().getFullYear();
-                            document.getElementById('editCurrency').value = dept.budget.currency || 'USD';
-                        }
                         
                         // Tags
                         document.getElementById('editDepartmentTags').value = dept.tags?.join(', ') || '';
                         
-                        // Cost center
-                        document.getElementById('editCostCenter').value = dept.costCenter || '';
-                        
                         $('#editDepartmentModal').modal('show');
-                    })
-                    .catch(error => {
-                        const errorMessage = error.response?.data?.error || 'Failed to load department data';
+                        
+                    } catch (error) {
+                        console.error('Error loading department data:', error);
+                        const errorMessage = error.response?.data?.error || error.response?.data?.message || 'Failed to load department data';
                         showError(errorMessage);
-                    })
-                    .finally(() => {
+                    } finally {
                         hideLoading();
-                    });
-            }
-            
-            // Update department
-            function updateDepartment() {
-                const id = document.getElementById('editDepartmentId').value;
-                const name = document.getElementById('editDepartmentName').value;
-                const code = document.getElementById('editDepartmentCode').value;
-                const description = document.getElementById('editDepartmentDescription').value;
-                const parentDepartment = document.getElementById('editParentDepartment').value;
-                const headOfDepartment = document.getElementById('editHeadOfDepartment').value;
-                
-                // Location data
-                const location = {
-                    type: document.getElementById('editLocationType').value,
-                    address: {
-                        street: document.getElementById('editStreetAddress').value,
-                        city: document.getElementById('editCity').value,
-                        state: document.getElementById('editState').value,
-                        zipCode: document.getElementById('editZipCode').value,
-                        country: document.getElementById('editCountry').value
-                    },
-                    building: document.getElementById('editBuilding').value,
-                    floor: document.getElementById('editFloor').value
-                };
-                
-                // Budget data
-                const budget = {
-                    allocated: document.getElementById('editAllocatedBudget').value ? 
-                        Number(document.getElementById('editAllocatedBudget').value) : 0,
-                    fiscalYear: document.getElementById('editFiscalYear').value ? 
-                        Number(document.getElementById('editFiscalYear').value) : new Date().getFullYear(),
-                    currency: document.getElementById('editCurrency').value
-                };
-                
-                // Tags
-                const tagsInput = document.getElementById('editDepartmentTags').value;
-                const tags = tagsInput ? 
-                    tagsInput.split(',').map(tag => tag.trim().toLowerCase()) : [];
-                
-                // Cost center
-                const costCenter = document.getElementById('editCostCenter').value;
-                
-                // Validate required fields
-                if (!name || !code) {
-                    showError('Department name and code are required');
-                    return;
-                }
-                
-                showLoading();
-                
-                const updateData = {
-                    name,
-                    code,
-                    description,
-                    parentDepartment: parentDepartment || null,
-                    headOfDepartment: headOfDepartment || null,
-                    location,
-                    budget: budget.allocated > 0 ? budget : null,
-                    costCenter,
-                    tags
-                };
-                
-                axios.put(`/departments/${id}`, updateData)
-                    .then(response => {
+                    }
+                    }
+                // Update department
+                async function updateDepartment() {
+                    try {
+                        const id = document.getElementById('editDepartmentId').value;
+                        const name = document.getElementById('editDepartmentName').value.trim();
+                        const code = document.getElementById('editDepartmentCode').value.trim().toUpperCase();
+                        const description = document.getElementById('editDepartmentDescription').value.trim();
+                        const parentDepartment = document.getElementById('editParentDepartment').value;
+                        const headOfDepartment = document.getElementById('editHeadOfDepartment').value;
+
+                        // Validate required fields
+                        if (!name || !code) {
+                            showError('Department name and code are required');
+                            return;
+                        }
+
+                        // Validate code format
+                        const codeRegex = /^[A-Z0-9]{3,10}$/;
+                        if (!codeRegex.test(code)) {
+                            showError('Code must be 3-10 uppercase alphanumeric characters');
+                            return;
+                        }
+
+                        // Prevent self-parent
+                        if (parentDepartment === id) {
+                            showError('Department cannot be its own parent');
+                            return;
+                        }
+
+                        showLoading();
+
+                        // Tags
+                        const tagsInput = document.getElementById('editDepartmentTags').value;
+                        const tags = tagsInput ?
+                            tagsInput.split(',').map(tag => tag.trim().toLowerCase()).filter(tag => tag) : [];
+
+                        const updateData = {
+                            name,
+                            code,
+                            description,
+                            parentDepartment: parentDepartment || null,
+                            headOfDepartment: headOfDepartment || null,
+                            tags
+                        };
+
+                        await axios.put(`/departments/${id}`, updateData);
+
                         showSuccess('Department updated successfully');
                         $('#editDepartmentModal').modal('hide');
-                        loadDepartments();
-                        loadParentDepartments(); // Refresh parent department list
-                    })
-                    .catch(error => {
-                        const errorMessage = error.response?.data?.error || 'Failed to update department';
+                        await loadDepartments();
+                        await loadParentDepartments(); // Refresh parent department list
+
+                    } catch (error) {
+                        console.error('Error updating department:', error);
+                        const errorMessage = error.response?.data?.error || error.response?.data?.message || 'Failed to update department';
                         showError(errorMessage);
-                    })
-                    .finally(() => {
+                    } finally {
                         hideLoading();
+                    }
+                }
+
+                // Open budget allocation modal
+                function openBudgetModal(departmentId) {
+                    document.getElementById('budgetDepartmentId').value = departmentId;
+                    budgetAllocationForm.reset();
+
+                    // Set current fiscal year as default
+                    document.getElementById('budgetFiscalYear').value = new Date().getFullYear();
+                    $('#budgetAllocationModal').modal('show');
+                }
+
+                // Allocate budget
+                async function allocateBudget() {
+                    try {
+                        const departmentId = document.getElementById('budgetDepartmentId').value;
+                        const amount = Number(document.getElementById('budgetAmount').value);
+                        const fiscalYear = Number(document.getElementById('budgetFiscalYear').value);
+                        const currency = document.getElementById('budgetCurrency').value;
+
+                        if (!amount || amount <= 0) {
+                            showError('Please enter a valid budget amount');
+                            return;
+                        }
+
+                        if (!fiscalYear || fiscalYear < 2000 || fiscalYear > 2100) {
+                            showError('Please enter a valid fiscal year (2000-2100)');
+                            return;
+                        }
+
+                        showLoading();
+
+                        await axios.post(`/departments/${departmentId}/budget`, {
+                            amount,
+                            fiscalYear,
+                            currency
+                        });
+
+                        showSuccess('Budget allocated successfully');
+                        $('#budgetAllocationModal').modal('hide');
+                        await loadDepartments();
+
+                    } catch (error) {
+                        console.error('Error allocating budget:', error);
+                        const errorMessage = error.response?.data?.error || error.response?.data?.message || 'Failed to allocate budget';
+                        showError(errorMessage);
+                    } finally {
+                        hideLoading();
+                    }
+                }
+
+                // Confirm deactivate department
+                function confirmDeactivateDepartment(departmentId) {
+                    currentAction = 'deactivate';
+                    currentDepartmentId = departmentId;
+
+                    const dept = departments.find(d => d._id === departmentId);
+                    const deptName = dept ? dept.name : 'this department';
+
+                    Swal.fire({
+                        title: 'Deactivate Department?',
+                        html: `
+                <p>Are you sure you want to deactivate <strong>${deptName}</strong>?</p>
+                <p class="text-muted">Employees in this department may need to be reassigned.</p>
+            `,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#dc3545',
+                        cancelButtonColor: '#6c757d',
+                        confirmButtonText: 'Yes, deactivate it!',
+                        cancelButtonText: 'Cancel'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            updateDepartmentStatus(departmentId, false);
+                        }
                     });
-            }
-            
-            // Open budget allocation modal
-            function openBudgetModal(departmentId) {
-                document.getElementById('budgetDepartmentId').value = departmentId;
-                budgetAllocationForm.reset();
-                
-                // Set current fiscal year as default
-                document.getElementById('budgetFiscalYear').value = new Date().getFullYear();
-                $('#budgetAllocationModal').modal('show');
-            }
-            
-            // Allocate budget
-            function allocateBudget() {
-                const departmentId = document.getElementById('budgetDepartmentId').value;
-                const amount = Number(document.getElementById('budgetAmount').value);
-                const fiscalYear = Number(document.getElementById('budgetFiscalYear').value);
-                const currency = document.getElementById('budgetCurrency').value;
-                
-                if (!amount || amount <= 0) {
-                    showError('Please enter a valid budget amount');
-                    return;
                 }
-                
-                if (!fiscalYear || fiscalYear < 2000 || fiscalYear > 2100) {
-                    showError('Please enter a valid fiscal year (2000-2100)');
-                    return;
+
+                // Confirm activate department
+                function confirmActivateDepartment(departmentId) {
+                    currentAction = 'activate';
+                    currentDepartmentId = departmentId;
+
+                    const dept = departments.find(d => d._id === departmentId);
+                    const deptName = dept ? dept.name : 'this department';
+
+                    Swal.fire({
+                        title: 'Activate Department?',
+                        html: `<p>Are you sure you want to activate <strong>${deptName}</strong>?</p>`,
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonColor: '#198754',
+                        cancelButtonColor: '#6c757d',
+                        confirmButtonText: 'Yes, activate it!',
+                        cancelButtonText: 'Cancel'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            updateDepartmentStatus(departmentId, true);
+                        }
+                    });
                 }
-                
-                showLoading();
-                
-                axios.post(`/departments/${departmentId}/budget`, {
-                    amount,
-                    fiscalYear,
-                    currency
-                })
-                .then(response => {
-                    showSuccess('Budget allocated successfully');
-                    $('#budgetAllocationModal').modal('hide');
-                    loadDepartments();
-                })
-                .catch(error => {
-                    const errorMessage = error.response?.data?.error || 'Failed to allocate budget';
-                    showError(errorMessage);
-                })
-                .finally(() => {
-                    hideLoading();
-                });
-            }
-            
-            // Confirm deactivate department
-            function confirmDeactivateDepartment(departmentId) {
-                document.getElementById('confirmationModalBody').innerHTML = `
-                    <p>Are you sure you want to deactivate this department?</p>
-                    <p class="text-muted">Employees in this department will need to be reassigned.</p>
-                `;
-                
-                confirmActionBtn.onclick = () => {
-                    $('#confirmationModal').modal('hide');
-                    updateDepartmentStatus(departmentId, false);
-                };
-                
-                $('#confirmationModal').modal('show');
-            }
-            
-            // Confirm activate department
-            function confirmActivateDepartment(departmentId) {
-                document.getElementById('confirmationModalBody').innerHTML = `
-                    <p>Are you sure you want to activate this department?</p>
-                `;
-                
-                confirmActionBtn.onclick = () => {
-                    $('#confirmationModal').modal('hide');
-                    updateDepartmentStatus(departmentId, true);
-                };
-                
-                $('#confirmationModal').modal('show');
-            }
-            
-            // Update department status (active/inactive)
-            function updateDepartmentStatus(departmentId, isActive) {
-                showLoading();
-                
-                axios.put(`/departments/${departmentId}`, { isActive })
-                    .then(response => {
+
+                // Update department status (active/inactive)
+                async function updateDepartmentStatus(departmentId, isActive) {
+                    try {
+                        showLoading();
+
+                        await axios.put(`/departments/${departmentId}`, { isActive });
+
                         showSuccess(`Department ${isActive ? 'activated' : 'deactivated'} successfully`);
-                        loadDepartments();
-                    })
-                    .catch(error => {
-                        const errorMessage = error.response?.data?.error || `Failed to ${isActive ? 'activate' : 'deactivate'} department`;
+                        await loadDepartments();
+
+                    } catch (error) {
+                        console.error('Error updating department status:', error);
+                        const errorMessage = error.response?.data?.error || error.response?.data?.message ||
+                            `Failed to ${isActive ? 'activate' : 'deactivate'} department`;
                         showError(errorMessage);
-                    })
-                    .finally(() => {
+                    } finally {
                         hideLoading();
+                    }
+                }
+
+                // Toggle view mode
+                function toggleView() {
+                    currentView = toggleViewMode.checked ? 'list' : 'card';
+                    switchView(currentView);
+                }
+
+                // Switch between views
+                function switchView(view) {
+                    currentView = view;
+
+                    // Update UI
+                    toggleViewMode.checked = view === 'card';
+                    cardViewBtn.classList.toggle('active', view === 'card');
+                    listViewBtn.classList.toggle('active', view === 'list');
+                    hierarchyViewBtn.classList.toggle('active', view === 'hierarchy');
+
+                    // Show/hide containers
+                    departmentsGrid.classList.toggle('d-none', view !== 'card');
+                    departmentsTableContainer.classList.toggle('d-none', view !== 'list');
+                    hierarchyViewContainer.classList.toggle('d-none', view !== 'hierarchy');
+
+                    // Render appropriate view
+                    renderDepartments();
+                }
+
+                // Perform confirmed action (legacy function for modal compatibility)
+                function performConfirmedAction() {
+                    if (currentAction === 'deactivate') {
+                        updateDepartmentStatus(currentDepartmentId, false);
+                    } else if (currentAction === 'activate') {
+                        updateDepartmentStatus(currentDepartmentId, true);
+                    }
+
+                    // Reset
+                    currentAction = null;
+                    currentDepartmentId = null;
+                }
+
+                // View employees in department
+                function viewEmployees(departmentId) {
+                    console.log('View employees in department:', departmentId);
+                    // Implement navigation to employees page filtered by department
+                    // window.location.href = `/employees?department=${departmentId}`;
+                    showInfo('Employee view functionality coming soon!');
+                }
+
+                // Helper function to format currency
+                function formatCurrency(amount, currency) {
+                    try {
+                        return new Intl.NumberFormat('en-US', {
+                            style: 'currency',
+                            currency: currency || 'MWK',
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 0
+                        }).format(amount);
+                    } catch (error) {
+                        // Fallback for unsupported currencies
+                        return `${currency || 'MWK'} ${amount.toLocaleString()}`;
+                    }
+                }
+
+                // Helper function to get initials
+                function getInitials(firstName, lastName) {
+                    const first = firstName?.charAt(0) || '';
+                    const last = lastName?.charAt(0) || '';
+                    return `${first}${last}`.toUpperCase() || 'U';
+                }
+
+                // Show loading state
+                function showLoading() {
+                    document.body.style.cursor = 'wait';
+                    // You can add a loading spinner here
+                    const loadingHtml = '<div class="text-center py-4"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div></div>';
+                    if (departmentsGrid) {
+                        departmentsGrid.innerHTML = loadingHtml;
+                    }
+                }
+
+                // Hide loading state
+                function hideLoading() {
+                    document.body.style.cursor = 'default';
+                }
+
+                // Show success message with SweetAlert
+                function showSuccess(message) {
+                    Swal.fire({
+                        title: 'Success!',
+                        text: message,
+                        icon: 'success',
+                        timer: 3000,
+                        timerProgressBar: true,
+                        showConfirmButton: false
                     });
-            }
+                }
+
+                // Show error message with SweetAlert
+                function showError(message) {
+                    Swal.fire({
+                        title: 'Error!',
+                        text: message,
+                        icon: 'error',
+                        confirmButtonColor: '#dc3545'
+                    });
+                }
+
+                // Show info message with SweetAlert
+                function showInfo(message) {
+                    Swal.fire({
+                        title: 'Info',
+                        text: message,
+                        icon: 'info',
+                        confirmButtonColor: '#0d6efd'
+                    });
+                }
+
+                // Global function for viewing employees (called from HTML)
+                window.viewEmployees = viewEmployees;
+            });
+
             
-            // Toggle view mode
-            function toggleView() {
-                currentView = toggleViewMode.checked ? 'list' : 'card';
-                switchView(currentView);
-            }
-            
-            // Switch between views
-            function switchView(view) {
-                currentView = view;
-                
-                // Update UI
-                toggleViewMode.checked = view === 'list';
-                cardViewBtn.classList.toggle('active', view === 'card');
-                listViewBtn.classList.toggle('active', view === 'list');
-                hierarchyViewBtn.classList.toggle('active', view === 'hierarchy');
-                
-                // Show/hide containers
-                departmentsGrid.classList.toggle('d-none', view !== 'card');
-                departmentsTableContainer.classList.toggle('d-none', view !== 'list');
-                hierarchyViewContainer.classList.toggle('d-none', view !== 'hierarchy');
-                
-                // Render appropriate view
-                renderDepartments();
-            }
-            
-            // Perform confirmed action
-            function performConfirmedAction() {
-                // This is handled by the individual confirmation functions
-            }
-            
-            // View employees in department
-            function viewEmployees(departmentId) {
-                // Implement navigation to employees page filtered by department
-                console.log('View employees in department:', departmentId);
-                // window.location.href = `/employees?department=${departmentId}`;
-            }
-            
-            // Helper function to format currency
-            function formatCurrency(amount, currency) {
-                return new Intl.NumberFormat('en-US', {
-                    style: 'currency',
-                    currency: currency || 'USD',
-                    minimumFractionDigits: 0,
-                    maximumFractionDigits: 0
-                }).format(amount);
-            }
-            
-            // Helper function to get initials
-            function getInitials(firstName, lastName) {
-                return `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`.toUpperCase();
-            }
-            
-            // Show loading state
-            function showLoading() {
-                // Implement your loading indicator
-                document.body.style.cursor = 'wait';
-            }
-            
-            // Hide loading state
-            function hideLoading() {
-                document.body.style.cursor = 'default';
-            }
-            
-            // Show success message
-            function showSuccess(message) {
-                // Implement your success notification
-                alert('Success: ' + message);
-            }
-            
-            // Show error message
-            function showError(message) {
-                // Implement your error notification
-                alert('Error: ' + message);
-            }
-        });
-    </script>
+        </script>
+
+        </script>
 </body>
+
 </html>

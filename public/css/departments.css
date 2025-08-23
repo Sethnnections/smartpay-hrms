@@ -195,7 +195,18 @@
     width: 20px;
     color: var(--golden-yellow);
 }
+/* Add this to your CSS */
+.dropdown-search-container {
+  position: relative;
+  z-index: 1060; /* Higher than modal z-index */
+}
 
+.dropdown-search-container input {
+  position: sticky;
+  top: 0;
+  background: white;
+  z-index: 1061;
+}
 /* Responsive adjustments */
 @media (max-width: 768px) {
     .department-card {

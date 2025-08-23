@@ -91,6 +91,18 @@ exports.addDepartmentExpense = async (id, amount, description) => {
   return department;
 };
 
+exports.getDepartmentEmployees = async (departmentId) => {
+  try {
+    const employees = await Employee.find({
+      'employmentInfo.departmentId': departmentId,
+      'employmentInfo.status': 'active'
+    }).select('_id personalInfo.firstName personalInfo.lastName employeeId');
+    
+    return employees;
+  } catch (error) {
+    throw error;
+  }
+};
 exports.listDepartments = async (filters = {}) => {
   const { search, activeOnly = true, minBudget, maxBudget } = filters;
 
