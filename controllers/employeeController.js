@@ -968,4 +968,321 @@ exports.deactivateEmployee = async (req, res) => {
   }
 };
 
+
+// Add these methods to your existing employeeController.js
+
+// Update employee details
+exports.updateEmployee = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { personalInfo, employmentInfo, bankInfo, emergencyContact } = req.body;
+
+    const employee = await Employee.findById(id);
+    if (!employee) {
+      return res.status(404).json({
+        success: false,
+        message: 'Employee not found'
+      });
+    }
+
+    // Validate grade and salary if being updated
+    if (employmentInfo && employmentInfo.gradeId && employmentInfo.currentSalary) {
+      const grade = await Grade.findById(employmentInfo.gradeId);
+      if (!grade) {
+        return res.status(400).json({
+          success: false,
+          message: 'Grade not found'
+        });
+      }
+
+      if (employmentInfo.currentSalary < grade.salaryRange.minimum || 
+          employmentInfo.currentSalary > grade.salaryRange.maximum) {
+        return res.status(400).json({
+          success: false,
+          message: `Salary must be between ${grade.salaryRange.minimum} and ${grade.salaryRange.maximum} for this grade`
+        });
+      }
+    }
+
+    // Validate department and position if being updated
+    if (employmentInfo && employmentInfo.departmentId) {
+      const department = await Department.findById(employmentInfo.departmentId);
+      if (!department) {
+        return res.status(400).json({
+          success: false,
+          message: 'Department not found'
+        });
+      }
+    }
+
+    // Update fields
+    if (personalInfo) {
+      Object.assign(employee.personalInfo, personalInfo);
+    }
+    
+    if (employmentInfo) {
+      Object.assign(employee.employmentInfo, employmentInfo);
+    }
+    
+    if (bankInfo) {
+      Object.assign(employee.bankInfo, bankInfo);
+    }
+    
+    if (emergencyContact) {
+      Object.assign(employee.emergencyContact, emergencyContact);
+    }
+
+    await employee.save();
+
+    // Populate the updated employee
+    const updatedEmployee = await Employee.findById(id)
+      .populate('employmentInfo.positionId', 'name code')
+      .populate('employmentInfo.departmentId', 'name code')
+      .populate('employmentInfo.gradeId', 'name code level')
+      .populate('employmentInfo.managerId', 'personalInfo.firstName personalInfo.lastName');
+
+    return res.status(200).json({
+      success: true,
+      message: 'Employee updated successfully',
+      data: updatedEmployee
+    });
+
+  } catch (error) {
+    console.error('Error updating employee:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error.message
+    });
+  }
+};
+
+// Update the existing getAllEmployees method to properly handle the populate fields
+exports.getAllEmployees = async (req, res) => {
+  try {
+    // Extract query parameters
+    const {
+      search,
+      departmentId,
+      positionId,
+      gradeId,
+      status = 'active',
+      minSalary,
+      maxSalary,
+      minGradeLevel,
+      maxGradeLevel,
+      page = 1,
+      limit = 10,
+      sortBy = 'personalInfo.lastName',
+      sortOrder = 'asc'
+    } = req.query;
+
+    // Build the query
+    const query = {
+      'employmentInfo.status': status
+    };
+
+    // Search filter
+    if (search) {
+      query.$or = [
+        { 'personalInfo.firstName': { $regex: search, $options: 'i' } },
+        { 'personalInfo.lastName': { $regex: search, $options: 'i' } },
+        { employeeId: { $regex: search, $options: 'i' } },
+        { 'personalInfo.email': { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    // Department filter
+    if (departmentId) {
+      query['employmentInfo.departmentId'] = departmentId;
+    }
+
+    // Position filter
+    if (positionId) {
+      query['employmentInfo.positionId'] = positionId;
+    }
+
+    // Grade filter
+    if (gradeId) {
+      query['employmentInfo.gradeId'] = gradeId;
+    }
+
+    // Salary range filter
+    if (minSalary || maxSalary) {
+      query['employmentInfo.currentSalary'] = {};
+      if (minSalary) query['employmentInfo.currentSalary'].$gte = Number(minSalary);
+      if (maxSalary) query['employmentInfo.currentSalary'].$lte = Number(maxSalary);
+    }
+
+    // Grade level filter (requires aggregation)
+    if (minGradeLevel || maxGradeLevel) {
+      const gradeFilter = {};
+      if (minGradeLevel) gradeFilter.level = { $gte: Number(minGradeLevel) };
+      if (maxGradeLevel) gradeFilter.level = { $lte: Number(maxGradeLevel) };
+      
+      const matchingGrades = await Grade.find(gradeFilter).select('_id');
+      const gradeIds = matchingGrades.map(g => g._id);
+      
+      query['employmentInfo.gradeId'] = { $in: gradeIds };
+    }
+
+    // Sorting
+    const sort = {};
+    sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
+
+    // Execute query with pagination
+    const employees = await Employee.find(query)
+      .populate({
+        path: 'employmentInfo.positionId',
+        select: 'name code',
+        model: 'Position'
+      })
+      .populate({
+        path: 'employmentInfo.departmentId',
+        select: 'name code',
+        model: 'Department'
+      })
+      .populate({
+        path: 'employmentInfo.gradeId',
+        select: 'name code level',
+        model: 'Grade'
+      })
+      .populate({
+        path: 'employmentInfo.managerId',
+        select: 'personalInfo.firstName personalInfo.lastName employeeId',
+        model: 'Employee'
+      })
+      .sort(sort)
+      .limit(Number(limit))
+      .skip((Number(page) - 1) * Number(limit))
+      .lean(); // Use lean() for better performance
+
+    // Count total documents for pagination info
+    const total = await Employee.countDocuments(query);
+
+    // Calculate stats
+    const [
+      totalEmployees,
+      activeEmployees,
+      totalDepartments,
+      departmentsWithEmployees,
+      totalPositions,
+      filledPositions,
+      averageTenureData,
+      newHiresThisYear
+    ] = await Promise.all([
+      Employee.countDocuments(),
+      Employee.countDocuments({ 'employmentInfo.status': 'active' }),
+      Department.countDocuments(),
+      Employee.distinct('employmentInfo.departmentId', { 'employmentInfo.status': 'active' }),
+      Position.countDocuments(),
+      Position.countDocuments({ 'capacity.filled': { $gt: 0 } }),
+      Employee.aggregate([
+        {
+          $match: { 'employmentInfo.status': 'active' }
+        },
+        {
+          $group: {
+            _id: null,
+            avgTenure: {
+              $avg: {
+                $divide: [
+                  { $subtract: [new Date(), '$employmentInfo.startDate'] },
+                  1000 * 60 * 60 * 24 * 365.25 // Convert to years
+                ]
+              }
+            }
+          }
+        }
+      ]),
+      Employee.countDocuments({
+        'employmentInfo.startDate': {
+          $gte: new Date(new Date().getFullYear(), 0, 1) // Start of current year
+        }
+      })
+    ]);
+
+    const stats = {
+      totalEmployees,
+      activeEmployees,
+      totalDepartments,
+      departmentsWithEmployees: departmentsWithEmployees.length,
+      totalPositions,
+      filledPositions,
+      averageTenure: averageTenureData[0]?.avgTenure ? Math.round(averageTenureData[0].avgTenure * 10) / 10 : 0,
+      newHiresThisYear
+    };
+
+    return res.status(200).json({
+      success: true,
+      data: employees,
+      stats,
+      pagination: {
+        total,
+        page: Number(page),
+        limit: Number(limit),
+        totalPages: Math.ceil(total / Number(limit))
+      }
+    });
+
+  } catch (error) {
+    console.error('Error fetching employees:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error.message
+    });
+  }
+};
+
+// Update getEmployeeDetails to properly populate references
+exports.getEmployeeDetails = async (req, res) => {
+  try {
+    const employee = await Employee.findById(req.params.id)
+      .populate({
+        path: 'employmentInfo.positionId',
+        select: 'name code',
+        model: 'Position'
+      })
+      .populate({
+        path: 'employmentInfo.departmentId',
+        select: 'name code',
+        model: 'Department'
+      })
+      .populate({
+        path: 'employmentInfo.gradeId',
+        select: 'name code level baseSalary salaryRange allowances',
+        model: 'Grade'
+      })
+      .populate({
+        path: 'employmentInfo.managerId',
+        select: 'personalInfo.firstName personalInfo.lastName employeeId',
+        model: 'Employee'
+      })
+      .populate({
+        path: 'userId',
+        select: 'email role',
+        model: 'User'
+      });
+
+    if (!employee) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Employee not found' 
+      });
+    }
+
+    return res.status(200).json({ 
+      success: true, 
+      data: employee 
+    });
+  } catch (error) {
+    console.error('Error fetching employee:', error);
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Internal server error',
+      error: error.message
+    });
+  }
+};
 module.exports = exports;

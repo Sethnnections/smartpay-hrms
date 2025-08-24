@@ -23,6 +23,13 @@ router.get(
   employeeController.getEmployeeDetails
 );
 
+// Update employee (HR or Admin only) - Add this route
+router.put(
+  '/:id',
+  requireHROrAdmin,
+  employeeController.updateEmployee
+);
+
 // Update employee grade (HR or Admin only)
 router.put(
   '/:id/grade',
