@@ -20,29 +20,7 @@
   <link rel="stylesheet" href="/css/admin.css">
   <!-- Page-specific CSS -->
   <link rel="stylesheet" href="/css/departments.css">
-  <style>
-
-    
-    
-    /* Status badges */
-    .badge-pending { background-color: #ffc107; color: #212529; }
-    .badge-paid { background-color: #28a745; color: white; }
-    .badge-rejected { background-color: #dc3545; color: white; }
-    .badge-approved { background-color: #17a2b8; color: white; }
-    
-    /* Action buttons */
-    .btn-action { padding: 0.25rem 0.5rem; font-size: 0.875rem; }
-    
-    /* Payslip preview modal */
-    .payslip-preview { background: white; border-radius: 8px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-    .payslip-header { border-bottom: 2px solid var(--primary); padding-bottom: 15px; margin-bottom: 20px; }
-    .payslip-footer { border-top: 1px solid #ddd; padding-top: 15px; margin-top: 20px; }
-    
-    /* Filter section */
-    
-    /* Date range picker customization */
-    .daterangepicker { font-family: 'Inter', sans-serif; }
-  </style>
+  
 </head>
 <body>
   <!-- Sidebar Overlay -->
@@ -57,75 +35,91 @@
 
     <main class="dashboard-content py-1">
       <div class="container-fluid">
-        <!-- Top: Summary + Action -->
-        <div class="row mb-3">
-          <div class="col-lg-9">
-            <div class="row g-3">
-              <div class="col-md-4">
-                <div class="card card-animated p-3">
-                  <div class="d-flex justify-content-between">
-                    <div>
-                      <small class="small-muted">Total Payrolls</small>
-                      <h4 id="totalPayrolls" class="mb-0">0</h4>
-                    </div>
-                    <div class="align-self-center">
-                      <i class="fa fa-file-invoice fa-2x text-primary"></i>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div class="col-md-4">
-                <div class="card card-animated p-3">
-                  <div class="d-flex justify-content-between">
-                    <div>
-                      <small class="small-muted">Processed Employees</small>
-                      <h4 id="processedEmployees" class="mb-0">0</h4>
-                    </div>
-                    <div class="align-self-center">
-                      <i class="fa fa-users fa-2x text-success"></i>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div class="col-md-4">
-                <div class="card card-animated p-3">
-                  <div class="d-flex justify-content-between">
-                    <div>
-                      <small class="small-muted">Pending Payments</small>
-                      <h4 id="pendingPayments" class="mb-0">0</h4>
-                    </div>
-                    <div class="align-self-center">
-                      <i class="fa fa-clock fa-2x text-warning"></i>
-                    </div>
-                  </div>
-                </div>
-              </div>
+      <!-- Top: Summary + Action -->
+<div class="row mb-3 mt-3" style="margin-top: 4px;">
+  <!-- Left Side: Stat Cards -->
+  <div class="col-lg-9">
+    <div class="row g-3">
+      <!-- Total Payrolls -->
+      <div class="col-md-4">
+        <div class="stat-card">
+          <div class="stat-header">
+            <p class="stat-title">Total Payrolls</p>
+            <div class="stat-icon">
+              <i class="fas fa-file-invoice"></i>
             </div>
           </div>
-
-          <div class="col-lg-3">
-            <div class="card p-3 h-100">
-              <div>
-                <small class="small-muted">Quick Actions</small>
-                <h6 class="mb-3">Generate payroll</h6>
-                <div class="mb-2">
-                  <label class="form-label">Payroll Month</label>
-                  <input id="actionPayrollMonth" type="month" class="form-control" />
-                </div>
-                <div class="d-grid">
-                  <button id="actionGenerateBtn" class="btn btn-outline-primary btn-processing">
-                    <span class="spinner-area d-none"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span></span>
-                    <i class="fa fa-cogs me-2"></i>
-                    Generate Payroll
-                  </button>
-                </div>
-              </div>
-            </div>
+          <div class="stat-value" id="totalPayrolls" style="font-size: 1.5rem;">0</div>
+          <div class="stat-trend">
+            <i class="fas fa-chart-line"></i>
+            <span>Payroll records</span>
           </div>
         </div>
+      </div>
+
+      <!-- Processed Employees -->
+      <div class="col-md-4">
+        <div class="stat-card">
+          <div class="stat-header">
+            <p class="stat-title">Processed Employees</p>
+            <div class="stat-icon">
+              <i class="fas fa-users"></i>
+            </div>
+          </div>
+          <div class="stat-value" id="processedEmployees" style="font-size: 1.5rem;">0</div>
+          <div class="stat-trend">
+            <i class="fas fa-user-check"></i>
+            <span>Employees processed</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pending Payments -->
+      <div class="col-md-4">
+        <div class="stat-card">
+          <div class="stat-header">
+            <p class="stat-title">Pending Payments</p>
+            <div class="stat-icon">
+              <i class="fas fa-clock"></i>
+            </div>
+          </div>
+          <div class="stat-value" id="pendingPayments" style="font-size: 1.5rem;">0</div>
+          <div class="stat-trend">
+            <i class="fas fa-hourglass-half"></i>
+            <span>Payments pending</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Side: Quick Actions -->
+  <div class="col-lg-3">
+    <div class="card p-2 h-100">
+      <div>
+        <small class="small-muted">Quick Actions</small>
+        <h6 class="mb-3">Generate payroll</h6>
+        <div class="mb-2">
+          <label class="form-label">Payroll Month</label>
+          <input id="actionPayrollMonth" type="month" class="form-control" />
+        </div>
+        <div class="d-grid">
+          <button id="actionGenerateBtn" class="btn btn-outline-primary btn-processing">
+            <span class="spinner-area d-none">
+              <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+            </span>
+            <i class="fa fa-cogs me-2"></i>
+            Generate Payroll
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
         
         <!-- Bank Instruction generator -->
-        <div class="card mt-3 p-3">
+        <div class="card mt-2 p-3">
           <div class="row g-2 align-items-end">
             <div class="col-md-3">
               <label class="form-label">Payroll Month</label>
@@ -143,7 +137,7 @@
             </div>
 
             <div class="col-md-3 d-grid">
-              <button id="downloadBankPdfBtn" class="btn btn-success">
+              <button id="downloadBankPdfBtn" class="btn btn-outline-success">
                 <i class="fa fa-download me-2"></i> Bank Instruction PDF
               </button>
             </div>
