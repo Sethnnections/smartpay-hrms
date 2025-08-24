@@ -16,7 +16,6 @@
     <!-- Custom CSS -->
     <link rel="stylesheet" href="/css/admin.css">
 
-    <!-- Page-specific CSS -->
     <link rel="stylesheet" href="/css/departments.css">
 
     <!-- SweetAlert2 -->
@@ -24,19 +23,7 @@
 
     <style>
     
-        /* Enhanced Employee Management Styles */
-        .employee-card {
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-            transition: all 0.3s ease;
-            border: 1px solid #e0e0e0;
-        }
-
-        .employee-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
-        }
-
+    
         .employee-avatar {
             width: 40px;
             height: 40px;
@@ -83,13 +70,7 @@
             margin-bottom: 20px;
         }
 
-        .stats-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 20px;
-        }
+      
 
         .filter-section {
             background: white;
@@ -372,13 +353,7 @@
     margin-bottom: 20px;
 }
 
-.stats-card {
-    background: linear-gradient(135deg, var(--sidebar-dark-blue) 0%, var(--sidebar-dark-blue-hover) 100%);
-    color: var(--bg-white);
-    border-radius: 10px;
-    padding: 20px;
-    margin-bottom: 20px;
-}
+
 
 .filter-section {
     background: var(--bg-white);
@@ -431,12 +406,12 @@
 .nav-tabs-custom .nav-link.active {
     color: var(--sidebar-dark-blue);
     background-color: var(--bg-white);
-    border-bottom: 2px solid var(--sidebar-dark-blue);
+    border-bottom: .3px solid var(--golden-yellow);
 }
 
 .nav-tabs-custom .nav-link:hover:not(.active) {
     color: var(--sidebar-dark-blue);
-    background-color: rgba(74, 108, 247, 0.05);
+    background-color: rgba(136, 158, 247, 0.05);
 }
 
 .modal-lg {
@@ -511,7 +486,7 @@
 </style>
 </head>
 
-<body>
+<body style="background-color: #495057;">
     <!-- Sidebar Overlay for Mobile -->
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
@@ -531,48 +506,60 @@
                              <!-- Statistics Section -->
         <div class="row mb-4">
             <div class="col-md-3">
-                <div class="stats-card">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h3 class="mb-0" id="total-employees">0</h3>
-                            <small>Total Employees</small>
-                        </div>
-                        <i class="fas fa-users fa-2x opacity-75"></i>
-                    </div>
+            <div class="stat-card">
+                <div class="stat-header">
+                <p class="stat-title">Avg. Team Size</p>
+                <div class="stat-icon">
+                    <i class="fas fa-user-friends"></i>
+                </div>
+                </div>
+                <div class="stat-value" id="avg-team-size">0</div>
+                <div class="stat-trend">
+                <span id="stat-total-employees">0 total employees</span>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="stats-card">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h3 class="mb-0" id="active-employees">0</h3>
-                            <small>Active Employees</small>
-                        </div>
-                        <i class="fas fa-user-check fa-2x opacity-75"></i>
-                    </div>
-                </div>
             </div>
             <div class="col-md-3">
-                <div class="stats-card">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h3 class="mb-0" id="departments-count">0</h3>
-                            <small>Departments</small>
-                        </div>
-                        <i class="fas fa-building fa-2x opacity-75"></i>
-                    </div>
+            <div class="stat-card">
+                <div class="stat-header">
+                <p class="stat-title">Active Employees</p>
+                <div class="stat-icon">
+                    <i class="fas fa-user-check"></i>
+                </div>
+                </div>
+                <div class="stat-value" id="active-employees">0</div>
+                <div class="stat-trend">
+                <span id="stat-active-trend"></span>
                 </div>
             </div>
+            </div>
             <div class="col-md-3">
-                <div class="stats-card">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h3 class="mb-0" id="avg-tenure">0</h3>
-                            <small>Avg Tenure (Years)</small>
-                        </div>
-                        <i class="fas fa-clock fa-2x opacity-75"></i>
-                    </div>
+            <div class="stat-card">
+                <div class="stat-header">
+                <p class="stat-title">Departments</p>
+                <div class="stat-icon">
+                    <i class="fas fa-building"></i>
                 </div>
+                </div>
+                <div class="stat-value" id="departments-count">0</div>
+                <div class="stat-trend">
+                <span id="stat-dept-trend"></span>
+                </div>
+            </div>
+            </div>
+            <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-header">
+                <p class="stat-title">Avg Tenure (Years)</p>
+                <div class="stat-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                </div>
+                <div class="stat-value" id="avg-tenure">0</div>
+                <div class="stat-trend">
+                <span id="stat-tenure-trend"></span>
+                </div>
+            </div>
             </div>
         </div>
 
@@ -580,7 +567,7 @@
                             <!-- Main Content -->
 
                             <!-- Tab Navigation -->
-                            <ul class="nav nav-tabs nav-tabs-custom mb-4" id="employeeTabs" role="tablist">
+                            <ul class="nav nav-tabs nav-tabs-custom mb-2" id="employeeTabs" role="tablist">
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link active" id="employees-tab" data-bs-toggle="tab"
                                         data-bs-target="#employees" type="button" role="tab">
@@ -949,7 +936,7 @@
                                                         id="cancel-add-employee">
                                                         Cancel
                                                     </button>
-                                                    <button type="submit" class="btn btn-primary px-4"
+                                                    <button type="submit" class="btn btn-outline-primary px-4"
                                                         id="submit-employee">
                                                         <span id="submit-employee-text">Add Employee</span>
                                                         <span class="spinner-border spinner-border-sm d-none"
@@ -977,7 +964,7 @@
                     <!-- Content will be loaded here -->
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>
@@ -994,31 +981,133 @@
                 <div class="modal-body">
                     <form id="edit-employee-form">
                         <input type="hidden" id="edit-employee-id">
-                        
-                        <div class="row">
+
+                        <!-- Basic Information -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="form-section-title">
+                                    <i class="fas fa-user-circle me-2"></i>Basic Information
+                                </h6>
+                            </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">First Name</label>
                                 <input type="text" class="form-control" id="edit-first-name" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Middle Name</label>
+                                <input type="text" class="form-control" id="edit-middle-name">
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Last Name</label>
                                 <input type="text" class="form-control" id="edit-last-name" required>
                             </div>
                             <div class="col-md-6 mb-3">
+                                <label class="form-label">Date of Birth</label>
+                                <input type="date" class="form-control" id="edit-date-of-birth" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Gender</label>
+                                <select class="form-select" id="edit-gender" required>
+                                    <option value="" selected disabled>Select gender</option>
+                                    <option value="male">Male</option>
+                                    <option value="female">Female</option>
+                                    <option value="other">Other</option>
+                                    <option value="prefer_not_to_say">Prefer not to say</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Nationality</label>
+                                <input type="text" class="form-control" id="edit-nationality" required>
+                            </div>
+                        </div>
+
+                        <!-- Address Information -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="form-section-title">
+                                    <i class="fas fa-home me-2"></i>Address Information
+                                </h6>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Street Address</label>
+                                <input type="text" class="form-control" id="edit-street-address" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">City</label>
+                                <input type="text" class="form-control" id="edit-city" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">State/Province</label>
+                                <input type="text" class="form-control" id="edit-state" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Zip/Postal Code</label>
+                                <input type="text" class="form-control" id="edit-zip-code" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Country</label>
+                                <input type="text" class="form-control" id="edit-country" required>
+                            </div>
+                        </div>
+
+                        <!-- Contact Information -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="form-section-title">
+                                    <i class="fas fa-phone-alt me-2"></i>Contact Information
+                                </h6>
+                            </div>
+                            <div class="col-md-6 mb-3">
                                 <label class="form-label">Email</label>
                                 <input type="email" class="form-control" id="edit-email" required>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label class="form-label">Phone</label>
+                                <label class="form-label">Phone Number</label>
                                 <input type="tel" class="form-control" id="edit-phone" required>
                             </div>
-                            <div class="col-md-6 mb-3">
+                        </div>
+
+                        <!-- Emergency Contact -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="form-section-title">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>Emergency Contact
+                                </h6>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Full Name</label>
+                                <input type="text" class="form-control" id="edit-emergency-contact-name" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Relationship</label>
+                                <input type="text" class="form-control" id="edit-emergency-contact-relationship" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Phone Number</label>
+                                <input type="tel" class="form-control" id="edit-emergency-contact-phone" required>
+                            </div>
+                        </div>
+
+                        <!-- Employment Information -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="form-section-title">
+                                    <i class="fas fa-briefcase me-2"></i>Employment Information
+                                </h6>
+                            </div>
+                            <div class="col-md-4 mb-3">
                                 <label class="form-label">Department</label>
                                 <select class="form-select" id="edit-department" required>
                                     <option value="">Select department</option>
                                 </select>
                             </div>
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Position</label>
+                                <select class="form-select" id="edit-position" required>
+                                    <option value="">Select position</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-3">
                                 <label class="form-label">Grade</label>
                                 <select class="form-select" id="edit-grade" required>
                                     <option value="">Select grade</option>
@@ -1032,6 +1121,28 @@
                                 </div>
                             </div>
                             <div class="col-md-6 mb-3">
+                                <label class="form-label">Employment Type</label>
+                                <select class="form-select" id="edit-employment-type" required>
+                                    <option value="" selected disabled>Select employment type</option>
+                                    <option value="full-time">Full-time</option>
+                                    <option value="part-time">Part-time</option>
+                                    <option value="contract">Contract</option>
+                                    <option value="temporary">Temporary</option>
+                                    <option value="intern">Intern</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Start Date</label>
+                                <input type="date" class="form-control" id="edit-start-date" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Probation Period</label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" id="edit-probation-period" min="1" value="3">
+                                    <span class="input-group-text">months</span>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
                                 <label class="form-label">Status</label>
                                 <select class="form-select" id="edit-status" required>
                                     <option value="active">Active</option>
@@ -1040,11 +1151,44 @@
                                 </select>
                             </div>
                         </div>
+
+                        <!-- Bank Information -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="form-section-title">
+                                    <i class="fas fa-university me-2"></i>Bank Information
+                                </h6>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Bank Name</label>
+                                <input type="text" class="form-control" id="edit-bank-name" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Account Name</label>
+                                <input type="text" class="form-control" id="edit-account-name" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Account Number</label>
+                                <input type="text" class="form-control" id="edit-account-number" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Routing Number</label>
+                                <input type="text" class="form-control" id="edit-routing-number">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Bank Code</label>
+                                <input type="text" class="form-control" id="edit-bank-code">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">IBAN</label>
+                                <input type="text" class="form-control" id="edit-iban">
+                            </div>
+                        </div>
                     </form>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="save-employee-changes">
+                    <button type="button" class="btn btn-outline-primary" id="save-employee-changes">
                         <span id="save-changes-text">Save Changes</span>
                         <span class="spinner-border spinner-border-sm d-none" id="save-changes-spinner"></span>
                     </button>
@@ -1052,942 +1196,980 @@
             </div>
         </div>
     </div>
-                <!-- Bootstrap JS -->
-                <script
-                    src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
-                <!-- Org Chart JS -->
-                <script src="https://cdnjs.cloudflare.com/ajax/libs/orgchart/3.8.1/js/jquery.orgchart.min.js"></script>
 
-                <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-                <!-- SweetAlert2 -->
-                <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-                <!-- Axios -->
-                <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-                <!-- Moment.js -->
-                <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+    <!-- Bootstrap JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+<!-- jQuery -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<!-- Axios -->
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<!-- Moment.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
 
-                <script>
-                    // Update your JavaScript to handle tab changes if needed
-                    $(document).ready(function () {
-                        // Initialize tabs
-                        const tabEl = document.querySelector('button[data-bs-toggle="tab"]');
-                        if (tabEl) {
-                            tabEl.addEventListener('shown.bs.tab', function (event) {
-                                const activeTab = event.target.getAttribute('data-bs-target');
-                                if (activeTab === '#employees') {
-                                    loadEmployees();
-                                }
-                            });
-                        }
+<script>
+    // Global variables
+    let currentPage = 1;
+    const itemsPerPage = 10;
+    let departments = [];
+    let positions = [];
+    let grades = [];
+    let users = [];
 
-                        // Your existing JavaScript code...
-                    });
-                </script>
-                <script>
-                    // Global variables
-                    let currentPage = 1;
-                    const itemsPerPage = 10;
-                    let totalEmployees = 0;
-                    let departments = [];
-                    let positions = [];
-                    let grades = [];
-                    let users = [];
-
-                    // Initialize the page
-                    $(document).ready(function () {
-                        // Check if user is logged in
-                        const authToken = localStorage.getItem('authToken');
-                        if (!authToken) {
-                            window.location.href = '/login.html';
-                            return;
-                        }
-
-                        // Set up Axios defaults
-                        axios.defaults.headers.common['Authorization'] = `Bearer ${authToken}`;
-
-                        // Load initial data
-                        loadEmployees();
-                        loadDepartments();
-                        loadPositions();
-                        loadGrades();
-                        loadUsers();
-
-                        // Set up event listeners
-                        $('#employees-link').click(function (e) {
-                            e.preventDefault();
-                            showEmployeesSection();
-                        });
-
-                        $('#add-employee-link').click(function (e) {
-                            e.preventDefault();
-                            showAddEmployeeSection();
-                        });
-
-                        $('#refresh-btn').click(function () {
-                            loadEmployees();
-                        });
-
-                        $('#cancel-add-employee').click(function () {
-                            showEmployeesSection();
-                        });
-
-                        $('#employee-search').on('input', function () {
-                            loadEmployees();
-                        });
-
-                        $('#department').change(function () {
-                            updatePositionsDropdown();
-                        });
-
-                        $('#position').change(function () {
-                            updateGradeDropdown();
-                            updateSalaryField();
-                        });
-
-                        $('#grade').change(function () {
-                            updateSalaryField();
-                        });
-
-                        $('#add-employee-form').submit(function (e) {
-                            e.preventDefault();
-                            addEmployee();
-                        });
-
-                        // Generate employee ID button
-                        $('#generate-id-btn').click(function () {
-                            $('#employee-id').val(generateEmployeeId());
-                        });
-                    });
-
-                    // Function to show employees section
-                    function showEmployeesSection() {
-                        $('#page-title').text('Employee Management');
-                        $('#employees-section').removeClass('d-none');
-                        $('#add-employee-section').addClass('d-none');
-                    }
-
-                    // Function to show add employee section
-                    function showAddEmployeeSection() {
-                        $('#page-title').text('Add New Employee');
-                        $('#employees-section').addClass('d-none');
-                        $('#add-employee-section').removeClass('d-none');
-                    }
-                    
-        // Load employees with filters
-        function loadEmployees(page = 1) {
-            currentPage = page;
-            const params = {
-                page: page,
-                limit: itemsPerPage,
-                search: $('#employee-search').val() || '',
-                departmentId: $('#filter-department').val() || '',
-                gradeId: $('#filter-grade').val() || '',
-                status: $('#filter-status').val() || 'active'
-            };
-
-            showLoading();
-
-            axios.get('/api/employees', { params })
-                .then(response => {
-                    const { data, stats, pagination } = response.data;
-                    renderEmployeesTable(data);
-                    renderPagination(pagination);
-                    updateStatistics(stats);
-                })
-                .catch(error => {
-                    console.error('Error loading employees:', error);
-                    showError('Failed to load employees');
-                });
+    // Initialize the page
+    $(document).ready(function () {
+        // Check if user is logged in
+        const authToken = localStorage.getItem('authToken');
+        if (!authToken) {
+            window.location.href = '/login.html';
+            return;
         }
 
-        // Render employees table
-        function renderEmployeesTable(employees) {
-            const tbody = $('#employees-table-body');
-            tbody.empty();
+        // Set up Axios defaults
+        axios.defaults.headers.common['Authorization'] = `Bearer ${authToken}`;
 
-            if (!employees || employees.length === 0) {
-                tbody.append(`
-                    <tr>
-                        <td colspan="7" class="text-center py-4">
-                            <i class="fas fa-users fa-3x text-muted mb-3"></i>
-                            <p class="mb-0">No employees found</p>
-                        </td>
-                    </tr>
-                `);
-                return;
-            }
+        // Load initial data
+        loadEmployees();
+        loadDepartments();
+        loadPositions();
+        loadGrades();
+        loadUsers();
 
-            employees.forEach(employee => {
-                const firstName = employee.personalInfo?.firstName || '';
-                const lastName = employee.personalInfo?.lastName || '';
-                const initials = (firstName.charAt(0) + lastName.charAt(0)).toUpperCase();
-                
-                // Safely access nested properties
-                const department = employee.employmentInfo?.departmentId?.name || 'N/A';
-                const grade = employee.employmentInfo?.gradeId?.name || 'N/A';
-                const position = employee.employmentInfo?.positionId?.name || 'N/A';
-                const status = employee.employmentInfo?.status || 'inactive';
-                const email = employee.personalInfo?.email || 'N/A';
-                const phone = employee.personalInfo?.phoneNumber || 'N/A';
+        // Set up event listeners
+        $('#apply-filters').click(() => loadEmployees(1));
+        $('#clear-filters').click(clearFilters);
+        $('#refresh-btn').click(() => loadEmployees(currentPage));
+        $('#save-employee-changes').click(saveEmployeeChanges);
+        $('#department').change(updatePositionsDropdown);
+        $('#position').change(() => {
+            updateGradeDropdown();
+            updateSalaryField();
+        });
+        $('#grade').change(updateSalaryField);
+        $('#add-employee-form').submit((e) => {
+            e.preventDefault();
+            addEmployee();
+        });
+        $('#generate-id-btn').click(() => {
+            $('#employee-id').val(generateEmployeeId());
+        });
+        $('#employee-search').on('input', () => loadEmployees(1));
+    });
 
-                tbody.append(`
-                    <tr>
-                        <td>
-                            <small class="text-muted">${employee.employeeId || 'N/A'}</small>
-                        </td>
-                        <td>
-                            <div class="d-flex align-items-center">
-                                <div class="employee-avatar me-2">${initials}</div>
-                                <div>
-                                    <div class="fw-semibold">${firstName} ${lastName}</div>
-                                    <small class="text-muted">${position}</small>
-                                </div>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="small">
-                                <div class="text-muted">${email}</div>
-                                <div>${phone}</div>
-                            </div>
-                        </td>
-                        <td>
-                            <span class="badge bg-light text-dark">${department}</span>
-                        </td>
-                        <td>
-                            <span class="badge bg-info text-white">${grade}</span>
-                        </td>
-                        <td>
-                            <span class="employee-status-badge ${status === 'active' ? 'status-active' : 'status-inactive'}">
-                                ${status.charAt(0).toUpperCase() + status.slice(1)}
-                            </span>
-                        </td>
-                        <td class="employee-actions">
-                            <button class="btn btn-sm btn-outline-primary" onclick="viewEmployee('${employee._id}')">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                            <button class="btn btn-sm btn-outline-success" onclick="editEmployee('${employee._id}')">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            ${status === 'active' ? `
-                                <button class="btn btn-sm btn-outline-danger" onclick="deactivateEmployee('${employee._id}')">
-                                    <i class="fas fa-user-times"></i>
-                                </button>
-                            ` : ''}
-                        </td>
-                    </tr>
-                `);
-            });
-        }
+    // Load employees with filters
+function loadEmployees(page = 1) {
+    currentPage = page;
+    const params = {
+        page: page,
+        limit: itemsPerPage,
+        search: $('#employee-search').val() || '',
+        departmentId: $('#filter-department').val() || '',
+        gradeId: $('#filter-grade').val() || '',
+        status: $('#filter-status').val() || 'active' // Default to active
+    };
 
-        // View employee details
-        function viewEmployee(employeeId) {
-            axios.get(`/api/employees/${employeeId}`)
-                .then(response => {
-                    const employee = response.data.data;
-                    displayEmployeeDetails(employee);
-                })
-                .catch(error => {
-                    console.error('Error fetching employee:', error);
-                    Swal.fire('Error', 'Failed to load employee details', 'error');
-                });
-        }
+    showLoading('#employees-table-body', 'Loading employees...');
 
-        // Display employee details in modal
-        function displayEmployeeDetails(employee) {
-            const modalBody = $('#employeeDetailsModalBody');
-            const firstName = employee.personalInfo?.firstName || '';
-            const lastName = employee.personalInfo?.lastName || '';
-            const initials = (firstName.charAt(0) + lastName.charAt(0)).toUpperCase();
+    axios.get('/api/employees', { params })
+        .then(response => {
+            console.log('API Response:', response.data); // Debug log
+            
+            // The response should have: { success: true, data: [], stats: {}, pagination: {} }
+            const employees = response.data.data || [];
+            const stats = response.data.stats || {};
+            const pagination = response.data.pagination || {};
+            
+            renderEmployeesTable(employees);
+            renderPagination(pagination);
+            updateStatistics(stats);
+        })
+        .catch(error => {
+            console.error('Error loading employees:', error);
+            showError('#employees-table-body', 'Failed to load employees');
+        });
+}
 
-            modalBody.html(`
-                <div class="row">
-                    <div class="col-md-4 text-center mb-4">
-                        <div class="employee-avatar mx-auto mb-3" style="width: 80px; height: 80px; font-size: 32px;">${initials}</div>
-                        <h5>${firstName} ${lastName}</h5>
-                        <div class="badge bg-primary">${employee.employmentInfo?.positionId?.name || 'N/A'}</div>
+// Render employees table
+function renderEmployeesTable(employees) {
+    const tbody = $('#employees-table-body');
+    tbody.empty();
+
+    if (!employees || employees.length === 0) {
+        tbody.append(`
+            <tr>
+                <td colspan="7" class="text-center py-4">
+                    <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                    <p class="mb-0">No employees found</p>
+                </td>
+            </tr>
+        `);
+        return;
+    }
+
+    employees.forEach(employee => {
+        // Safely access nested properties with fallbacks
+        const personalInfo = employee.personalInfo || {};
+        const employmentInfo = employee.employmentInfo || {};
+        
+        const firstName = personalInfo.firstName || '';
+        const lastName = personalInfo.lastName || '';
+        const initials = (firstName.charAt(0) + lastName.charAt(0)).toUpperCase();
+        
+        const department = employmentInfo.departmentId ? 
+            (typeof employmentInfo.departmentId === 'object' ? 
+             employmentInfo.departmentId.name : 'N/A') : 'N/A';
+        
+        const grade = employmentInfo.gradeId ? 
+            (typeof employmentInfo.gradeId === 'object' ? 
+             employmentInfo.gradeId.name : 'N/A') : 'N/A';
+        
+        const position = employmentInfo.positionId ? 
+            (typeof employmentInfo.positionId === 'object' ? 
+             employmentInfo.positionId.name : 'N/A') : 'N/A';
+        
+        const status = employmentInfo.status || 'inactive';
+        const email = personalInfo.email || 'N/A';
+        const phone = personalInfo.phoneNumber || 'N/A';
+
+        tbody.append(`
+            <tr>
+                <td>
+                    <small class="text-muted">${employee.employeeId || 'N/A'}</small>
+                </td>
+                <td>
+                    <div class="d-flex align-items-center">
+                        <div class="employee-avatar me-2">${initials}</div>
+                        <div>
+                            <div class="fw-semibold">${firstName} ${lastName}</div>
+                            <small class="text-muted">${position}</small>
+                        </div>
                     </div>
-                    <div class="col-md-8">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <small class="text-muted">Employee ID</small>
-                                    <div class="fw-semibold">${employee.employeeId || 'N/A'}</div>
-                                </div>
-                                <div class="mb-3">
-                                    <small class="text-muted">Department</small>
-                                    <div class="fw-semibold">${employee.employmentInfo?.departmentId?.name || 'N/A'}</div>
-                                </div>
-                                <div class="mb-3">
-                                    <small class="text-muted">Grade</small>
-                                    <div class="fw-semibold">${employee.employmentInfo?.gradeId?.name || 'N/A'}</div>
-                                </div>
+                </td>
+                <td>
+                    <div class="small">
+                        <div class="text-muted">${email}</div>
+                        <div>${phone}</div>
+                    </div>
+                </td>
+                <td>
+                    <span class="badge bg-light text-dark">${department}</span>
+                </td>
+                <td>
+                    <span class="badge bg-info text-white">${grade}</span>
+                </td>
+                <td>
+                    <span class="employee-status-badge ${status === 'active' ? 'status-active' : 'status-inactive'}">
+                        ${status.charAt(0).toUpperCase() + status.slice(1)}
+                    </span>
+                </td>
+                <td class="employee-actions">
+                    <button class="btn btn-sm btn-outline-primary" onclick="viewEmployee('${employee._id}')">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-success" onclick="editEmployee('${employee._id}')">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    ${status === 'active' ? `
+                        <button class="btn btn-sm btn-outline-danger" onclick="deactivateEmployee('${employee._id}')">
+                            <i class="fas fa-user-times"></i>
+                        </button>
+                    ` : `
+                        <button class="btn btn-sm btn-outline-success" onclick="reactivateEmployee('${employee._id}')">
+                            <i class="fas fa-user-check"></i>
+                        </button>
+                    `}
+                </td>
+            </tr>
+        `);
+    });
+}
+    // View employee details
+    function viewEmployee(employeeId) {
+        axios.get(`/api/employees/${employeeId}`)
+            .then(response => {
+                const employee = response.data.data;
+                displayEmployeeDetails(employee);
+            })
+            .catch(error => {
+                console.error('Error fetching employee:', error);
+                showSwalError('Failed to load employee details');
+            });
+    }
+
+    // Display employee details in modal
+    function displayEmployeeDetails(employee) {
+        const modalBody = $('#employeeDetailsModalBody');
+        const firstName = employee.personalInfo?.firstName || '';
+        const lastName = employee.personalInfo?.lastName || '';
+        const initials = (firstName.charAt(0) + lastName.charAt(0)).toUpperCase();
+
+        modalBody.html(`
+            <div class="row">
+                <div class="col-md-4 text-center mb-4">
+                    <div class="employee-avatar mx-auto mb-3" style="width: 80px; height: 80px; font-size: 32px;">${initials}</div>
+                    <h5>${firstName} ${lastName}</h5>
+                    <div class="badge bg-primary">${employee.employmentInfo?.positionId?.name || 'N/A'}</div>
+                </div>
+                <div class="col-md-8">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <small class="text-muted">Employee ID</small>
+                                <div class="fw-semibold">${employee.employeeId || 'N/A'}</div>
                             </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <small class="text-muted">Email</small>
-                                    <div class="fw-semibold">${employee.personalInfo?.email || 'N/A'}</div>
-                                </div>
-                                <div class="mb-3">
-                                    <small class="text-muted">Phone</small>
-                                    <div class="fw-semibold">${employee.personalInfo?.phoneNumber || 'N/A'}</div>
-                                </div>
-                                <div class="mb-3">
-                                    <small class="text-muted">Status</small>
-                                    <div>
-                                        <span class="badge ${employee.employmentInfo?.status === 'active' ? 'bg-success' : 'bg-secondary'}">
-                                            ${employee.employmentInfo?.status || 'N/A'}
-                                        </span>
-                                    </div>
+                            <div class="mb-3">
+                                <small class="text-muted">Department</small>
+                                <div class="fw-semibold">${employee.employmentInfo?.departmentId?.name || 'N/A'}</div>
+                            </div>
+                            <div class="mb-3">
+                                <small class="text-muted">Grade</small>
+                                <div class="fw-semibold">${employee.employmentInfo?.gradeId?.name || 'N/A'}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <small class="text-muted">Email</small>
+                                <div class="fw-semibold">${employee.personalInfo?.email || 'N/A'}</div>
+                            </div>
+                            <div class="mb-3">
+                                <small class="text-muted">Phone</small>
+                                <div class="fw-semibold">${employee.personalInfo?.phoneNumber || 'N/A'}</div>
+                            </div>
+                            <div class="mb-3">
+                                <small class="text-muted">Status</small>
+                                <div>
+                                    <span class="badge ${employee.employmentInfo?.status === 'active' ? 'bg-success' : 'bg-secondary'}">
+                                        ${employee.employmentInfo?.status || 'N/A'}
+                                    </span>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            `);
+            </div>
+        `);
 
-            $('#employeeDetailsModal').modal('show');
-        }
+        $('#employeeDetailsModal').modal('show');
+    }
 
-        // Edit employee
-        function editEmployee(employeeId) {
-            axios.get(`/api/employees/${employeeId}`)
-                .then(response => {
-                    const employee = response.data.data;
-                    populateEditForm(employee);
-                })
-                .catch(error => {
-                    console.error('Error fetching employee:', error);
-                    Swal.fire('Error', 'Failed to load employee details', 'error');
-                });
-        }
+    // Edit employee
+    // Edit employee
+function editEmployee(employeeId) {
+    axios.get(`/api/employees/${employeeId}`)
+        .then(response => {
+            const employee = response.data.data;
+            // Store original data for comparison
+            window.originalData = JSON.parse(JSON.stringify(employee));
+            populateEditForm(employee);
+        })
+        .catch(error => {
+            console.error('Error fetching employee:', error);
+            showSwalError('Failed to load employee details');
+        });
+}
+    // Populate edit form
+    function populateEditForm(employee) {
+        $('#edit-employee-id').val(employee._id);
+        $('#edit-first-name').val(employee.personalInfo?.firstName || '');
+        $('#edit-last-name').val(employee.personalInfo?.lastName || '');
+        $('#edit-email').val(employee.personalInfo?.email || '');
+        $('#edit-phone').val(employee.personalInfo?.phoneNumber || '');
+        
+        // Set department, position, and grade
+        $('#edit-department').val(employee.employmentInfo?.departmentId?._id || '');
+        $('#edit-position').val(employee.employmentInfo?.positionId?._id || '');
+        $('#edit-grade').val(employee.employmentInfo?.gradeId?._id || '');
+        
+        $('#edit-salary').val(employee.employmentInfo?.currentSalary || '');
+        $('#edit-status').val(employee.employmentInfo?.status || 'active');
 
-        // Populate edit form
-        function populateEditForm(employee) {
-            $('#edit-employee-id').val(employee._id);
-            $('#edit-first-name').val(employee.personalInfo?.firstName || '');
-            $('#edit-last-name').val(employee.personalInfo?.lastName || '');
-            $('#edit-email').val(employee.personalInfo?.email || '');
-            $('#edit-phone').val(employee.personalInfo?.phoneNumber || '');
-            $('#edit-department').val(employee.employmentInfo?.departmentId?._id || '');
-            $('#edit-grade').val(employee.employmentInfo?.gradeId?._id || '');
-            $('#edit-salary').val(employee.employmentInfo?.currentSalary || '');
-            $('#edit-status').val(employee.employmentInfo?.status || 'active');
+        // Additional fields
+        $('#edit-middle-name').val(employee.personalInfo?.middleName || '');
+        $('#edit-date-of-birth').val(employee.personalInfo?.dateOfBirth ? employee.personalInfo.dateOfBirth.substring(0, 10) : '');
+        $('#edit-gender').val(employee.personalInfo?.gender || '');
+        $('#edit-nationality').val(employee.personalInfo?.nationality || '');
+        $('#edit-street-address').val(employee.personalInfo?.address?.street || '');
+        $('#edit-city').val(employee.personalInfo?.address?.city || '');
+        $('#edit-state').val(employee.personalInfo?.address?.state || '');
+        $('#edit-zip-code').val(employee.personalInfo?.address?.zipCode || '');
+        $('#edit-country').val(employee.personalInfo?.address?.country || '');
+        $('#edit-employment-type').val(employee.employmentInfo?.employmentType || '');
+        $('#edit-start-date').val(employee.employmentInfo?.startDate ? employee.employmentInfo.startDate.substring(0, 10) : '');
+        
+        // Bank info
+        $('#edit-bank-name').val(employee.bankInfo?.bankName || '');
+        $('#edit-account-name').val(employee.bankInfo?.accountName || '');
+        $('#edit-account-number').val(employee.bankInfo?.accountNumber || '');
+        $('#edit-routing-number').val(employee.bankInfo?.routingNumber || '');
+        $('#edit-bank-code').val(employee.bankInfo?.bankCode || '');
+        $('#edit-iban').val(employee.bankInfo?.iban || '');
+        
+        // Emergency contact
+        $('#edit-emergency-contact-name').val(employee.emergencyContact?.name || '');
+        $('#edit-emergency-contact-relationship').val(employee.emergencyContact?.relationship || '');
+        $('#edit-ememergency-contact-phone').val(employee.emergencyContact?.phoneNumber || '');
 
-            // Populate department and grade dropdowns
-            populateEditDropdowns();
-            $('#editEmployeeModal').modal('show');
-        }
+        // Populate dropdowns
+        populateEditDropdowns();
+        $('#editEmployeeModal').modal('show');
+    }
 
-        // Populate edit form dropdowns
-        function populateEditDropdowns() {
-            // Populate departments
-            const deptSelect = $('#edit-department');
-            deptSelect.empty().append('<option value="">Select department</option>');
-            departments.forEach(dept => {
-                deptSelect.append(`<option value="${dept._id}">${dept.name}</option>`);
-            });
+    // Populate edit dropdowns
+    function populateEditDropdowns() {
+        // Populate departments
+        const deptSelect = $('#edit-department');
+        deptSelect.empty().append('<option value="">Select department</option>');
+        departments.forEach(dept => {
+            deptSelect.append(`<option value="${dept._id}">${dept.name}</option>`);
+        });
 
-            // Populate grades
-            const gradeSelect = $('#edit-grade');
-            gradeSelect.empty().append('<option value="">Select grade</option>');
-            grades.forEach(grade => {
-                gradeSelect.append(`<option value="${grade._id}">${grade.name}</option>`);
-            });
-        }
+        // Populate positions
+        const posSelect = $('#edit-position');
+        posSelect.empty().append('<option value="">Select position</option>');
+        positions.forEach(pos => {
+            posSelect.append(`<option value="${pos._id}">${pos.name}</option>`);
+        });
 
-        // Save employee changes
-        function saveEmployeeChanges() {
-            const employeeId = $('#edit-employee-id').val();
-            const saveBtn = $('#save-employee-changes');
-            const saveText = $('#save-changes-text');
-            const spinner = $('#save-changes-spinner');
+        // Populate grades
+        const gradeSelect = $('#edit-grade');
+        gradeSelect.empty().append('<option value="">Select grade</option>');
+        grades.forEach(grade => {
+            gradeSelect.append(`<option value="${grade._id}">${grade.name}</option>`);
+        });
+    }
 
-            // Show loading
-            saveBtn.prop('disabled', true);
-            saveText.addClass('d-none');
-            spinner.removeClass('d-none');
+    // Save employee changes
+    // Save employee changes
+function saveEmployeeChanges() {
+    const employeeId = $('#edit-employee-id').val();
+    const saveBtn = $('#save-employee-changes');
+    const saveText = $('#save-changes-text');
+    const spinner = $('#save-changes-spinner');
 
-            const updateData = {
-                personalInfo: {
-                    firstName: $('#edit-first-name').val(),
-                    lastName: $('#edit-last-name').val(),
-                    email: $('#edit-email').val(),
-                    phoneNumber: $('#edit-phone').val()
-                },
-                employmentInfo: {
-                    departmentId: $('#edit-department').val(),
-                    gradeId: $('#edit-grade').val(),
-                    currentSalary: parseFloat($('#edit-salary').val()),
-                    status: $('#edit-status').val()
+    // Show loading
+    saveBtn.prop('disabled', true);
+    saveText.addClass('d-none');
+    spinner.removeClass('d-none');
+
+    // Only include fields that have been changed
+    const updateData = {};
+    
+    // Personal Info - only include changed fields
+    const personalInfo = {};
+    if ($('#edit-first-name').val() !== originalData.personalInfo.firstName) {
+        personalInfo.firstName = $('#edit-first-name').val();
+    }
+    if ($('#edit-middle-name').val() !== originalData.personalInfo.middleName) {
+        personalInfo.middleName = $('#edit-middle-name').val();
+    }
+    if ($('#edit-last-name').val() !== originalData.personalInfo.lastName) {
+        personalInfo.lastName = $('#edit-last-name').val();
+    }
+    // Add other personal info fields similarly...
+    
+    if (Object.keys(personalInfo).length > 0) {
+        updateData.personalInfo = personalInfo;
+    }
+
+    // Employment Info - only include changed fields
+    const employmentInfo = {};
+    if ($('#edit-position').val() && $('#edit-position').val() !== originalData.employmentInfo.positionId) {
+        employmentInfo.positionId = $('#edit-position').val();
+    }
+    if ($('#edit-department').val() && $('#edit-department').val() !== originalData.employmentInfo.departmentId) {
+        employmentInfo.departmentId = $('#edit-department').val();
+    }
+    if ($('#edit-grade').val() && $('#edit-grade').val() !== originalData.employmentInfo.gradeId) {
+        employmentInfo.gradeId = $('#edit-grade').val();
+    }
+    if ($('#edit-salary').val() && $('#edit-salary').val() !== originalData.employmentInfo.currentSalary) {
+        employmentInfo.currentSalary = parseFloat($('#edit-salary').val());
+    }
+    // Add other employment info fields similarly...
+    
+    if (Object.keys(employmentInfo).length > 0) {
+        updateData.employmentInfo = employmentInfo;
+    }
+
+    // Bank Info - only include changed fields
+    const bankInfo = {};
+    if ($('#edit-bank-name').val() !== originalData.bankInfo.bankName) {
+        bankInfo.bankName = $('#edit-bank-name').val();
+    }
+    // Add other bank info fields similarly...
+    
+    if (Object.keys(bankInfo).length > 0) {
+        updateData.bankInfo = bankInfo;
+    }
+
+    // Emergency Contact - only include changed fields
+    const emergencyContact = {};
+    if ($('#edit-emergency-contact-name').val() !== originalData.emergencyContact.name) {
+        emergencyContact.name = $('#edit-emergency-contact-name').val();
+    }
+    if ($('#edit-emergency-contact-phone').val() !== originalData.emergencyContact.phoneNumber) {
+        emergencyContact.phoneNumber = $('#edit-emergency-contact-phone').val();
+    }
+    // Add other emergency contact fields similarly...
+    
+    if (Object.keys(emergencyContact).length > 0) {
+        updateData.emergencyContact = emergencyContact;
+    }
+
+    // Update employee details
+    axios.put(`/api/employees/${employeeId}`, updateData)
+        .then(response => {
+            $('#editEmployeeModal').modal('hide');
+            showSwalSuccess('Employee updated successfully!');
+            loadEmployees(currentPage);
+        })
+        .catch(error => {
+            console.error('Error updating employee:', error);
+            const message = error.response?.data?.message || 'Failed to update employee';
+            showSwalError(message);
+        })
+        .finally(() => {
+            // Reset button
+            saveBtn.prop('disabled', false);
+            saveText.removeClass('d-none');
+            spinner.addClass('d-none');
+        });
+}
+    // Deactivate employee
+    function deactivateEmployee(employeeId) {
+        Swal.fire({
+            title: 'Deactivate Employee?',
+            text: 'This will change the employee status to inactive.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Yes, deactivate',
+            cancelButtonText: 'Cancel',
+            input: 'textarea',
+            inputPlaceholder: 'Please provide a reason for deactivation...',
+            inputValidator: (value) => {
+                if (!value) {
+                    return 'You need to provide a reason for deactivation!';
                 }
-            };
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const reason = result.value;
+                
+                axios.put(`/api/employees/${employeeId}/deactivate`, { reason })
+                    .then(response => {
+                        showSwalSuccess('Employee has been deactivated.');
+                        loadEmployees(currentPage);
+                    })
+                    .catch(error => {
+                        console.error('Error deactivating employee:', error);
+                        const message = error.response?.data?.message || 'Failed to deactivate employee';
+                        showSwalError(message);
+                    });
+            }
+        });
+    }
 
-            // Update employee details
-            axios.put(`/api/employees/${employeeId}`, updateData)
+    // Reactivate employee
+    function reactivateEmployee(employeeId) {
+        Swal.fire({
+            title: 'Reactivate Employee?',
+            text: 'This will change the employee status to active.',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#28a745',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Yes, reactivate',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                axios.put(`/api/employees/${employeeId}`, {
+                    employmentInfo: {
+                        status: 'active'
+                    }
+                })
                 .then(response => {
-                    $('#editEmployeeModal').modal('hide');
-                    Swal.fire('Success', 'Employee updated successfully!', 'success');
+                    showSwalSuccess('Employee has been reactivated.');
                     loadEmployees(currentPage);
                 })
                 .catch(error => {
-                    console.error('Error updating employee:', error);
-                    const message = error.response?.data?.message || 'Failed to update employee';
-                    Swal.fire('Error', message, 'error');
-                })
-                .finally(() => {
-                    // Reset button
-                    saveBtn.prop('disabled', false);
-                    saveText.removeClass('d-none');
-                    spinner.addClass('d-none');
+                    console.error('Error reactivating employee:', error);
+                    const message = error.response?.data?.message || 'Failed to reactivate employee';
+                    showSwalError(message);
                 });
-        }
-
-        // Deactivate employee
-        function deactivateEmployee(employeeId) {
-            Swal.fire({
-                title: 'Deactivate Employee?',
-                text: 'This will change the employee status to inactive.',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#dc3545',
-                cancelButtonColor: '#6c757d',
-                confirmButtonText: 'Yes, deactivate',
-                cancelButtonText: 'Cancel',
-                input: 'textarea',
-                inputPlaceholder: 'Please provide a reason for deactivation...',
-                inputValidator: (value) => {
-                    if (!value) {
-                        return 'You need to provide a reason for deactivation!';
-                    }
-                }
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    const reason = result.value;
-                    
-                    axios.put(`/api/employees/${employeeId}/deactivate`, { reason })
-                        .then(response => {
-                            Swal.fire('Deactivated!', 'Employee has been deactivated.', 'success');
-                            loadEmployees(currentPage);
-                        })
-                        .catch(error => {
-                            console.error('Error deactivating employee:', error);
-                            const message = error.response?.data?.message || 'Failed to deactivate employee';
-                            Swal.fire('Error', message, 'error');
-                        });
-                }
-            });
-        }
-
-        // Load departments
-        function loadDepartments() {
-            axios.get('/api/departments')
-                .then(response => {
-                    departments = response.data.data || response.data;
-                    populateDepartmentFilter();
-                    renderDepartmentsDropdown(); // Add this line to update the Add Employee dropdown
-                })
-                .catch(error => {
-                    console.error('Error loading departments:', error);
-                });
-        }
-
-        // Load grades
-        function loadGrades() {
-            axios.get('/api/grades')
-                .then(response => {
-                    grades = response.data.data || response.data;
-                    populateGradeFilter();
-                })
-                .catch(error => {
-                    console.error('Error loading grades:', error);
-                });
-        }
-
-        // Load users
-        function loadUsers() {
-            axios.get('/api/auth/users')
-                .then(response => {
-                    users = response.data.users || response.data;
-                })
-                .catch(error => {
-                    console.error('Error loading users:', error);
-                });
-        }
-
-        // Populate department filter
-        function populateDepartmentFilter() {
-            const select = $('#filter-department');
-            select.empty().append('<option value="">All Departments</option>');
-            departments.forEach(dept => {
-                select.append(`<option value="${dept._id}">${dept.name}</option>`);
-            });
-        }
-
-        // Populate grade filter
-        function populateGradeFilter() {
-            const select = $('#filter-grade');
-            select.empty().append('<option value="">All Grades</option>');
-            grades.forEach(grade => {
-                select.append(`<option value="${grade._id}">${grade.name} (Level ${grade.level})</option>`);
-            });
-        }
-
-        // Clear filters
-        function clearFilters() {
-            $('#employee-search').val('');
-            $('#filter-department').val('');
-            $('#filter-grade').val('');
-            $('#filter-status').val('');
-            loadEmployees();
-        }
-
-        // Update statistics
-        function updateStatistics(stats) {
-            if (stats) {
-                $('#total-employees').text(stats.totalEmployees || 0);
-                $('#active-employees').text(stats.activeEmployees || 0);
-                $('#departments-count').text(stats.departmentsWithEmployees || 0);
-                $('#avg-tenure').text(stats.averageTenure || 0);
             }
+        });
+    }
+
+    // Load departments
+    function loadDepartments() {
+        axios.get('/api/departments')
+            .then(response => {
+                departments = response.data.data || response.data;
+                populateDepartmentFilter();
+                renderDepartmentsDropdown();
+            })
+            .catch(error => {
+                console.error('Error loading departments:', error);
+            });
+    }
+
+    // Load positions
+    function loadPositions() {
+        axios.get('/api/positions')
+            .then(response => {
+                positions = response.data;
+                renderPositionsDropdown();
+            })
+            .catch(error => {
+                console.error('Error loading positions:', error);
+                showSwalError('Failed to load positions. Please try again.');
+            });
+    }
+
+    // Load grades
+    function loadGrades() {
+        axios.get('/api/grades')
+            .then(response => {
+                grades = response.data;
+                populateGradeFilter();
+                renderGradesDropdown();
+            })
+            .catch(error => {
+                console.error('Error loading grades:', error);
+                showSwalError('Failed to load grades. Please try again.');
+            });
+    }
+
+    // Load users
+    function loadUsers() {
+        axios.get('/api/auth/users')
+            .then(response => {
+                users = response.data.users || response.data;
+                renderUsersDropdown();
+            })
+            .catch(error => {
+                console.error('Error loading users:', error);
+                showSwalError('Failed to load users. Please try again.');
+            });
+    }
+
+    // Populate department filter
+    function populateDepartmentFilter() {
+        const select = $('#filter-department');
+        select.empty().append('<option value="">All Departments</option>');
+        departments.forEach(dept => {
+            select.append(`<option value="${dept._id}">${dept.name}</option>`);
+        });
+    }
+
+    // Populate grade filter
+    function populateGradeFilter() {
+        const select = $('#filter-grade');
+        select.empty().append('<option value="">All Grades</option>');
+        grades.forEach(grade => {
+            select.append(`<option value="${grade._id}">${grade.name} (Level ${grade.level})</option>`);
+        });
+    }
+
+    // Clear filters
+    function clearFilters() {
+        $('#employee-search').val('');
+        $('#filter-department').val('');
+        $('#filter-grade').val('');
+        $('#filter-status').val('');
+        loadEmployees(1);
+    }
+
+    // Update statistics
+    function updateStatistics(stats) {
+        if (stats) {
+            $('#total-employees').text(stats.totalEmployees || 0);
+            $('#active-employees').text(stats.activeEmployees || 0);
+            $('#departments-count').text(stats.departmentsWithEmployees || 0);
+            $('#avg-tenure').text(stats.averageTenure || 0);
+        }
+    }
+
+    // Render pagination
+    function renderPagination(pagination) {
+        const paginationEl = $('#employees-pagination');
+        paginationEl.empty();
+
+        if (!pagination || pagination.totalPages <= 1) return;
+
+        const { page, totalPages } = pagination;
+
+        // Previous button
+        paginationEl.append(`
+            <li class="page-item ${page === 1 ? 'disabled' : ''}">
+                <a class="page-link" href="#" onclick="loadEmployees(${page - 1}); return false;">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+            </li>
+        `);
+
+        // Page numbers
+        const maxVisible = 5;
+        let start = Math.max(1, page - Math.floor(maxVisible / 2));
+        let end = Math.min(totalPages, start + maxVisible - 1);
+
+        if (end - start + 1 < maxVisible) {
+            start = Math.max(1, end - maxVisible + 1);
         }
 
-        // Render pagination
-        function renderPagination(pagination) {
-            const paginationEl = $('#employees-pagination');
-            paginationEl.empty();
-
-            if (!pagination || pagination.totalPages <= 1) return;
-
-            const { page, totalPages } = pagination;
-
-            // Previous button
+        for (let i = start; i <= end; i++) {
             paginationEl.append(`
-                <li class="page-item ${page === 1 ? 'disabled' : ''}">
-                    <a class="page-link" href="#" onclick="loadEmployees(${page - 1}); return false;">
-                        <i class="fas fa-chevron-left"></i>
-                    </a>
-                </li>
-            `);
-
-            // Page numbers
-            const maxVisible = 5;
-            let start = Math.max(1, page - Math.floor(maxVisible / 2));
-            let end = Math.min(totalPages, start + maxVisible - 1);
-
-            if (end - start + 1 < maxVisible) {
-                start = Math.max(1, end - maxVisible + 1);
-            }
-
-            for (let i = start; i <= end; i++) {
-                paginationEl.append(`
-                    <li class="page-item ${i === page ? 'active' : ''}">
-                        <a class="page-link" href="#" onclick="loadEmployees(${i}); return false;">${i}</a>
-                    </li>
-                `);
-            }
-
-            // Next button
-            paginationEl.append(`
-                <li class="page-item ${page === totalPages ? 'disabled' : ''}">
-                    <a class="page-link" href="#" onclick="loadEmployees(${page + 1}); return false;">
-                        <i class="fas fa-chevron-right"></i>
-                    </a>
+                <li class="page-item ${i === page ? 'active' : ''}">
+                    <a class="page-link" href="#" onclick="loadEmployees(${i}); return false;">${i}</a>
                 </li>
             `);
         }
 
-        
+        // Next button
+        paginationEl.append(`
+            <li class="page-item ${page === totalPages ? 'disabled' : ''}">
+                <a class="page-link" href="#" onclick="loadEmployees(${page + 1}); return false;">
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+            </li>
+        `);
+    }
 
-                    // Function to render departments dropdown
-                    function renderDepartmentsDropdown() {
-                        const dropdown = $('#department');
-                        dropdown.empty();
-                        dropdown.append('<option value="" selected disabled>Select department</option>');
+    // Render departments dropdown
+    function renderDepartmentsDropdown() {
+        const dropdown = $('#department');
+        dropdown.empty();
+        dropdown.append('<option value="" selected disabled>Select department</option>');
 
-                        departments.forEach(dept => {
-                            dropdown.append(`<option value="${dept._id}">${dept.name}</option>`);
-                        });
-                    }
+        departments.forEach(dept => {
+            dropdown.append(`<option value="${dept._id}">${dept.name}</option>`);
+        });
+    }
 
-                    // Function to load positions
-                    function loadPositions() {
-                        axios.get('/api/positions')
-                            .then(response => {
-                                positions = response.data;
-                                renderPositionsDropdown();
-                            })
-                            .catch(error => {
-                                console.error('Error loading positions:', error);
-                                showSwalError('Failed to load positions. Please try again.');
-                            });
-                    }
+    // Render positions dropdown
+    function renderPositionsDropdown() {
+        const dropdown = $('#position');
+        dropdown.empty();
+        dropdown.append('<option value="" selected disabled>Select position</option>');
 
-                    // Function to render positions dropdown
-                    function renderPositionsDropdown() {
-                        const dropdown = $('#position');
-                        dropdown.empty();
-                        dropdown.append('<option value="" selected disabled>Select position</option>');
+        positions.forEach(pos => {
+            dropdown.append(`<option value="${pos._id}" data-department="${pos.departmentId}">${pos.name}</option>`);
+        });
+    }
 
-                        positions.forEach(pos => {
-                            dropdown.append(`<option value="${pos._id}" data-department="${pos.departmentId}">${pos.name}</option>`);
-                        });
-                    }
+    // Update positions dropdown based on selected department
+    function updatePositionsDropdown() {
+        const departmentId = $('#department').val();
+        const dropdown = $('#position');
 
-                    // Function to update positions dropdown based on selected department
-                    function updatePositionsDropdown() {
-                        const departmentId = $('#department').val();
-                        const dropdown = $('#position');
+        dropdown.empty();
+        dropdown.append('<option value="" selected disabled>Select position</option>');
 
-                        dropdown.empty();
-                        dropdown.append('<option value="" selected disabled>Select position</option>');
+        if (!departmentId) {
+            return;
+        }
 
-                        if (!departmentId) {
-                            return;
-                        }
+        const filteredPositions = positions.filter(pos => pos.departmentId === departmentId);
 
-                        const filteredPositions = positions.filter(pos => pos.departmentId === departmentId);
+        if (filteredPositions.length === 0) {
+            dropdown.append('<option value="" disabled>No positions available for this department</option>');
+            return;
+        }
 
-                        if (filteredPositions.length === 0) {
-                            dropdown.append('<option value="" disabled>No positions available for this department</option>');
-                            return;
-                        }
+        filteredPositions.forEach(pos => {
+            dropdown.append(`<option value="${pos._id}">${pos.name}</option>`);
+        });
+    }
 
-                        filteredPositions.forEach(pos => {
-                            dropdown.append(`<option value="${pos._id}">${pos.name}</option>`);
-                        });
-                    }
+    // Render grades dropdown
+    function renderGradesDropdown() {
+        const dropdown = $('#grade');
+        dropdown.empty();
+        dropdown.append('<option value="" selected disabled>Select grade</option>');
 
-                    // Function to load grades
-                    function loadGrades() {
-                        axios.get('/api/grades')
-                            .then(response => {
-                                grades = response.data;
-                                renderGradesDropdown();
-                            })
-                            .catch(error => {
-                                console.error('Error loading grades:', error);
-                                showSwalError('Failed to load grades. Please try again.');
-                            });
-                    }
+        grades.forEach(grade => {
+            dropdown.append(`<option value="${grade._id}">${grade.name} (MWK${grade.salaryRange.minimum} - MWK${grade.salaryRange.maximum})</option>`);
+        });
+    }
 
-                    // Function to render grades dropdown
-                    function renderGradesDropdown() {
-                        const dropdown = $('#grade');
-                        dropdown.empty();
-                        dropdown.append('<option value="" selected disabled>Select grade</option>');
+    // Update grade dropdown based on selected position
+    function updateGradeDropdown() {
+        const positionId = $('#position').val();
+        const dropdown = $('#grade');
 
-                        grades.forEach(grade => {
-                            dropdown.append(`<option value="${grade._id}">${grade.name} (MWK${grade.salaryRange.minimum} - MWK${grade.salaryRange.maximum})</option>`);
-                        });
-                    }
+        if (!positionId) {
+            dropdown.val('');
+            return;
+        }
 
-                    // Function to update grade dropdown based on selected position
-                    function updateGradeDropdown() {
-                        const positionId = $('#position').val();
-                        const dropdown = $('#grade');
+        const selectedPosition = positions.find(pos => pos._id === positionId);
+        if (selectedPosition && selectedPosition.gradeId) {
+            dropdown.val(selectedPosition.gradeId);
+        }
+    }
 
-                        if (!positionId) {
-                            dropdown.val('');
-                            return;
-                        }
+    // Update salary field based on selected grade
+    function updateSalaryField() {
+        const gradeId = $('#grade').val();
 
-                        const selectedPosition = positions.find(pos => pos._id === positionId);
-                        if (selectedPosition && selectedPosition.gradeId) {
-                            dropdown.val(selectedPosition.gradeId);
-                        }
-                    }
+        if (!gradeId) {
+            $('#salary').val('');
+            return;
+        }
 
-                    // Function to update salary field based on selected grade
-                    function updateSalaryField() {
-                        const gradeId = $('#grade').val();
+        const selectedGrade = grades.find(grade => grade._id === gradeId);
+        if (selectedGrade) {
+            // Set salary to the midpoint of the grade range
+            const midpoint = (selectedGrade.salaryRange.minimum + selectedGrade.salaryRange.maximum) / 2;
+            $('#salary').val(midpoint.toFixed(2));
+        }
+    }
 
-                        if (!gradeId) {
-                            $('#salary').val('');
-                            return;
-                        }
+    // Render users dropdown
+    function renderUsersDropdown() {
+        const dropdown = $('#user-select');
+        dropdown.empty();
+        dropdown.append('<option value="" selected disabled>Select a user</option>');
 
-                        const selectedGrade = grades.find(grade => grade._id === gradeId);
-                        if (selectedGrade) {
-                            // Set salary to the midpoint of the grade range
-                            const midpoint = (selectedGrade.salaryRange.minimum + selectedGrade.salaryRange.maximum) / 2;
-                            $('#salary').val(midpoint.toFixed(2));
-                        }
-                    }
+        users.forEach(user => {
+            dropdown.append(`<option value="${user._id}">${user.email} (${user.role})</option>`);
+        });
+    }
 
-                    // Function to load users
-                    function loadUsers() {
-                        axios.get('/api/auth/users')
-                            .then(response => {
-                                users = response.data.users;
-                                renderUsersDropdown();
-                            })
-                            .catch(error => {
-                                console.error('Error loading users:', error);
-                                showSwalError('Failed to load users. Please try again.');
-                            });
-                    }
+    // Add a new employee
+    function addEmployee() {
+        const submitBtn = $('#submit-employee');
+        const submitText = $('#submit-employee-text');
+        const spinner = $('#submit-employee-spinner');
 
-                    // Function to render users dropdown
-                    function renderUsersDropdown() {
-                        const dropdown = $('#user-select');
-                        dropdown.empty();
-                        dropdown.append('<option value="" selected disabled>Select a user</option>');
+        // Show loading state
+        submitBtn.prop('disabled', true);
+        submitText.addClass('d-none');
+        spinner.removeClass('d-none');
 
-                        users.forEach(user => {
-                            dropdown.append(`<option value="${user._id}">${user.email} (${user.role})</option>`);
-                        });
-                    }
+        // Get form data
+        const userId = $('#user-select').val();
+        const employeeId = $('#employee-id').val() || generateEmployeeId();
+        const firstName = $('#first-name').val();
+        const middleName = $('#middle-name').val();
+        const lastName = $('#last-name').val();
+        const dateOfBirth = $('#date-of-birth').val();
+        const gender = $('#gender').val();
+        const nationality = $('#nationality').val();
+        const email = $('#email').val();
+        const phoneNumber = $('#phone-number').val();
+        const departmentId = $('#department').val();
+        const positionId = $('#position').val();
+        const gradeId = $('#grade').val();
+        const salary = parseFloat($('#salary').val());
+        const employmentType = $('#employment-type').val();
+        const startDate = $('#start-date').val();
+        const probationPeriod = parseInt($('#probation-period').val());
 
-                    // Function to add a new employee
-                    function addEmployee() {
-                        const submitBtn = $('#submit-employee');
-                        const submitText = $('#submit-employee-text');
-                        const spinner = $('#submit-employee-spinner');
+        // Address fields
+        const street = $('#street-address').val();
+        const city = $('#city').val();
+        const state = $('#state').val();
+        const zipCode = $('#zip-code').val();
+        const country = $('#country').val();
 
-                        // Show loading state
-                        submitBtn.prop('disabled', true);
-                        submitText.addClass('d-none');
-                        spinner.removeClass('d-none');
+        // Emergency contact fields
+        const emergencyContactName = $('#emergency-contact-name').val();
+        const emergencyContactRelationship = $('#emergency-contact-relationship').val();
+        const emergencyContactPhone = $('#emergency-contact-phone').val();
 
-                        // Get form data
-                        const userId = $('#user-select').val();
-                        const employeeId = $('#employee-id').val() || generateEmployeeId();
-                        const firstName = $('#first-name').val();
-                        const middleName = $('#middle-name').val();
-                        const lastName = $('#last-name').val();
-                        const dateOfBirth = $('#date-of-birth').val();
-                        const gender = $('#gender').val();
-                        const nationality = $('#nationality').val();
-                        const email = $('#email').val();
-                        const phoneNumber = $('#phone-number').val();
-                        const departmentId = $('#department').val();
-                        const positionId = $('#position').val();
-                        const gradeId = $('#grade').val();
-                        const salary = parseFloat($('#salary').val());
-                        const employmentType = $('#employment-type').val();
-                        const startDate = $('#start-date').val();
-                        const probationPeriod = parseInt($('#probation-period').val());
+        //Bank information fields
+        const bankName = $('#bank-name').val();
+        const accountName = $('#account-name').val();
+        const accountNumber = $('#account-number').val();
+        const routingNumber = $('#routing-number').val();
+        const bankCode = $('#bank-code').val();
+        const iban = $('#iban').val();
 
-                        // Address fields
-                        const street = $('#street-address').val();
-                        const city = $('#city').val();
-                        const state = $('#state').val();
-                        const zipCode = $('#zip-code').val();
-                        const country = $('#country').val();
+        // Validation
+        if (employeeId && !/^[A-Z0-9-]+$/.test(employeeId)) {
+            showValidationError('Employee ID must contain only uppercase letters, numbers, and hyphens');
+            return;
+        }
 
-                        // Emergency contact fields
-                        const emergencyContactName = $('#emergency-contact-name').val();
-                        const emergencyContactRelationship = $('#emergency-contact-relationship').val();
-                        const emergencyContactPhone = $('#emergency-contact-phone').val();
+        if (!dateOfBirth || new Date().getFullYear() - new Date(dateOfBirth).getFullYear() < 16) {
+            showValidationError('Employee must be at least 16 years old');
+            return;
+        }
 
-                        //Bank information fields
-                        const bankName = $('#bank-name').val();
-                        const accountName = $('#account-name').val();
-                        const accountNumber = $('#account-number').val();
-                        const routingNumber = $('#routing-number').val();
-                        const bankCode = $('#bank-code').val();
-                        const iban = $('#iban').val();
+        if (!/^\d+$/.test(accountNumber)) {
+            showValidationError('Account number must contain only numbers');
+            return;
+        }
 
-                        if (employeeId && !/^[A-Z0-9-]+$/.test(employeeId)) {
-                            showValidationError('Employee ID must contain only uppercase letters, numbers, and hyphens');
-                            return;
-                        }
+        if (iban && !/^[A-Z0-9]+$/.test(iban)) {
+            showValidationError('IBAN must contain only uppercase letters and numbers');
+            return;
+        }
 
-                        // Validate required fields
-                        if (!dateOfBirth || new Date().getFullYear() - new Date(dateOfBirth).getFullYear() < 16) {
-                            showValidationError('Employee must be at least 16 years old');
-                            return;
-                        }
+        // Prepare employee data
+        const employeeData = {
+            userId: userId,
+            employeeId: employeeId,
+            personalInfo: {
+                firstName: firstName,
+                middleName: middleName,
+                lastName: lastName,
+                dateOfBirth: dateOfBirth,
+                gender: gender,
+                nationality: nationality,
+                idNumber: 'TEAMPAY_ID_' + Math.random().toString(36).substr(2, 9),
+                phoneNumber: phoneNumber,
+                email: email,
+                address: {
+                    street: street,
+                    city: city,
+                    state: state,
+                    zipCode: zipCode,
+                    country: country || 'United States'
+                }
+            },
+            employmentInfo: {
+                positionId: positionId,
+                departmentId: departmentId,
+                gradeId: gradeId,
+                currentSalary: salary,
+                employmentType: employmentType,
+                startDate: startDate,
+                isOnProbation: true,
+                probationEndDate: new Date(new Date(startDate).setMonth(new Date(startDate).getMonth() + probationPeriod)).toISOString(),
+                status: 'active'
+            },
+            bankInfo: {
+                bankName: bankName,
+                accountName: accountName,
+                accountNumber: accountNumber,
+                routingNumber: routingNumber || undefined,
+                bankCode: bankCode || undefined,
+                iban: iban ? iban.toUpperCase() : undefined
+            },
+            emergencyContact: {
+                name: emergencyContactName,
+                relationship: emergencyContactRelationship,
+                phoneNumber: emergencyContactPhone
+            }
+        };
 
-                        // Validate account number (numeric only)
-                        if (!/^\d+$/.test(accountNumber)) {
-                            showValidationError('Account number must contain only numbers');
-                            return;
-                        }
+        // Send request to create employee
+        axios.post('/api/employees', employeeData)
+            .then(response => {
+                $('#add-employee-form')[0].reset();
+                showSwalSuccess('Employee created successfully!', () => {
+                    loadEmployees();
+                });
+            })
+            .catch(error => {
+                console.error('Error creating employee:', error);
+                const message = error.response?.data?.message || 'Failed to create employee. Please try again.';
+                showSwalError(message);
+            })
+            .finally(() => {
+                // Reset button state
+                submitBtn.prop('disabled', false);
+                submitText.removeClass('d-none');
+                spinner.addClass('d-none');
+            });
+    }
 
-                        // Validate IBAN format if provided
-                        if (iban && !/^[A-Z0-9]+$/.test(iban)) {
-                            showValidationError('IBAN must contain only uppercase letters and numbers');
-                            return;
-                        }
+    // Generate employee ID
+    function generateEmployeeId() {
+        let maxId = 0;
+        $('#employees-table-body tr').each(function () {
+            const idCell = $(this).find('td').eq(0).text();
+            const match = idCell.match(/^TEAMPAY(\d+)$/);
+            if (match) {
+                const num = parseInt(match[1], 10);
+                if (num > maxId) maxId = num;
+            }
+        });
+        const nextId = maxId + 1;
+        return `TEAMPAY${nextId.toString().padStart(4, '0')}`;
+    }
 
-                        // Prepare employee data with all required fields
-                        const employeeData = {
-                            userId: userId,
-                            employeeId: employeeId,
-                            personalInfo: {
-                                firstName: firstName,
-                                middleName: middleName,
-                                lastName: lastName,
-                                dateOfBirth: dateOfBirth,
-                                gender: gender,
-                                nationality: nationality,
-                                idNumber: 'TEAMPAY_ID_' + Math.random().toString(36).substr(2, 9), // Temporary until you add ID field
-                                phoneNumber: phoneNumber,
-                                email: email,
-                                address: {
-                                    street: street,
-                                    city: city,
-                                    state: state,
-                                    zipCode: zipCode,
-                                    country: country || 'United States'
-                                }
-                            },
-                            employmentInfo: {
-                                positionId: positionId,
-                                departmentId: departmentId,
-                                gradeId: gradeId,
-                                currentSalary: salary,
-                                employmentType: employmentType,
-                                startDate: startDate,
-                                isOnProbation: true,
-                                probationEndDate: new Date(new Date(startDate).setMonth(new Date(startDate).getMonth() + probationPeriod)).toISOString(),
-                                status: 'active'
-                            },
-                            bankInfo: {
-                                bankName: bankName,
-                                accountName: accountName,
-                                accountNumber: accountNumber,
-                                routingNumber: routingNumber || undefined,
-                                bankCode: bankCode || undefined,
-                                iban: iban ? iban.toUpperCase() : undefined
-                            },
-                            emergencyContact: {
-                                name: emergencyContactName,
-                                relationship: emergencyContactRelationship,
-                                phoneNumber: emergencyContactPhone
-                            }
-                        };
+    // Helper function to show validation error
+    function showValidationError(message) {
+        const submitBtn = $('#submit-employee');
+        const submitText = $('#submit-employee-text');
+        const spinner = $('#submit-employee-spinner');
 
-                        // Send request to create employee
-                        axios.post('/api/employees', employeeData)
-                            .then(response => {
-                                // Reset form
-                                $('#add-employee-form')[0].reset();
+        // Reset button state
+        submitBtn.prop('disabled', false);
+        submitText.removeClass('d-none');
+        spinner.addClass('d-none');
 
-                                // Show success message
-                                Swal.fire({
-                                    icon: 'success',
-                                    title: 'Success',
-                                    text: 'Employee created successfully!',
-                                    confirmButtonText: 'OK',
-                                    customClass: {
-                                        confirmButton: 'btn btn-primary'
-                                    },
-                                    buttonsStyling: false
-                                }).then(() => {
-                                    // Return to employees list
-                                    showEmployeesSection();
-                                    // Refresh employees list
-                                    loadEmployees();
-                                });
-                            })
-                            .catch(error => {
-                                console.error('Error creating employee:', error);
-                                let errorMessage = 'Failed to create employee. Please try again.';
+        showSwalError(message);
+    }
 
-                                if (error.response && error.response.data && error.response.data.message) {
-                                    errorMessage = error.response.data.message;
-                                }
+    // Helper function to show loading state
+    function showLoading(selector, message) {
+        $(selector).html(`
+            <tr>
+                <td colspan="7" class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="mt-2 mb-0">${message}</p>
+                </td>
+            </tr>
+        `);
+    }
 
-                                Swal.fire({
-                                    icon: 'error',
-                                    title: 'Error',
-                                    text: errorMessage,
-                                    confirmButtonText: 'OK',
-                                    customClass: {
-                                        confirmButton: 'btn btn-primary'
-                                    },
-                                    buttonsStyling: false
-                                });
-                            })
-                            .finally(() => {
-                                // Reset button state
-                                submitBtn.prop('disabled', false);
-                                submitText.removeClass('d-none');
-                                spinner.addClass('d-none');
-                            });
-                    }
+    // Helper function to show error state
+    function showError(selector, message) {
+        $(selector).html(`
+            <tr>
+                <td colspan="7" class="text-center py-4 text-danger">
+                    <i class="fas fa-exclamation-circle fa-2x"></i>
+                    <p class="mt-2">${message}</p>
+                    <button class="btn btn-sm btn-primary mt-2" onclick="loadEmployees(${currentPage})">
+                        <i class="fas fa-refresh"></i> Try Again
+                    </button>
+                </td>
+            </tr>
+        `);
+    }
 
-                    function generateEmployeeId() {
-                        // Get the last employee ID from the loaded employees
-                        // Format: TEAMPAY0001, TEAMPAY0002, etc.
-                        let maxId = 0;
-                        $('#employees-table-body tr').each(function () {
-                            const idCell = $(this).find('td').eq(0).text();
-                            const match = idCell.match(/^TEAMPAY(\d+)$/);
-                            if (match) {
-                                const num = parseInt(match[1], 10);
-                                if (num > maxId) maxId = num;
-                            }
-                        });
-                        const nextId = maxId + 1;
-                        return `TEAMPAY${nextId.toString().padStart(4, '0')}`;
-                    }
+    // Helper function to show SweetAlert success
+    function showSwalSuccess(message, callback = null) {
+        Swal.fire({
+            icon: 'success',
+            title: 'Success',
+            text: message,
+            confirmButtonText: 'OK',
+            customClass: {
+                confirmButton: 'btn btn-primary'
+            },
+            buttonsStyling: false
+        }).then(() => {
+            if (callback && typeof callback === 'function') {
+                callback();
+            }
+        });
+    }
 
-                    // Helper function to show validation error
-                    function showValidationError(message) {
-                        const submitBtn = $('#submit-employee');
-                        const submitText = $('#submit-employee-text');
-                        const spinner = $('#submit-employee-spinner');
-
-                        // Reset button state
-                        submitBtn.prop('disabled', false);
-                        submitText.removeClass('d-none');
-                        spinner.addClass('d-none');
-
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Validation Error',
-                            text: message,
-                            confirmButtonText: 'OK',
-                            customClass: {
-                                confirmButton: 'btn btn-primary'
-                            },
-                            buttonsStyling: false
-                        });
-                    }
-                    // Helper function to show loading state
-                    function showLoading(selector, message) {
-                        $(selector).html(`
-                            <tr>
-                                <td colspan="7" class="text-center py-4">
-                                    <div class="loading-spinner text-primary"></div>
-                                    <p class="mt-2">${message}</p>
-                                </td>
-                            </tr>
-                        `);
-                    }
-
-                    // Helper function to show error state
-                    function showError(selector, message) {
-                        $(selector).html(`
-                            <tr>
-                                <td colspan="7" class="text-center py-4 text-danger">
-                                    <i class="fas fa-exclamation-circle fa-2x"></i>
-                                    <p class="mt-2">${message}</p>
-                                </td>
-                            </tr>
-                        `);
-                    }
-
-                    // Helper function to show SweetAlert error
-                    function showSwalError(message) {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Error',
-                            text: message,
-                            confirmButtonText: 'OK',
-                            customClass: {
-                                confirmButton: 'btn btn-primary'
-                            },
-                            buttonsStyling: false
-                        });
-                    }
-                </script>
-
-                <!-- Custom JS -->
-                <script src="/js/admin.js"></script>
+    // Helper function to show SweetAlert error
+    function showSwalError(message) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: message,
+            confirmButtonText: 'OK',
+            customClass: {
+                confirmButton: 'btn btn-primary'
+            },
+            buttonsStyling: false
+        });
+    }
+</script>
+    <!-- Custom JS -->
+    <script src="/js/admin.js"></script>
+    
 
 </body>
 

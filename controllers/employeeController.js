@@ -969,9 +969,9 @@ exports.deactivateEmployee = async (req, res) => {
 };
 
 
-// Add these methods to your existing employeeController.js
 
 // Update employee details
+// Update employee details - handle partial updates
 exports.updateEmployee = async (req, res) => {
   try {
     const { id } = req.params;
@@ -985,7 +985,7 @@ exports.updateEmployee = async (req, res) => {
       });
     }
 
-    // Validate grade and salary if being updated
+    // Only validate fields that are actually being updated
     if (employmentInfo && employmentInfo.gradeId && employmentInfo.currentSalary) {
       const grade = await Grade.findById(employmentInfo.gradeId);
       if (!grade) {
@@ -1015,21 +1015,75 @@ exports.updateEmployee = async (req, res) => {
       }
     }
 
-    // Update fields
+    if (employmentInfo && employmentInfo.positionId) {
+      const position = await Position.findById(employmentInfo.positionId);
+      if (!position) {
+        return res.status(400).json({
+          success: false,
+          message: 'Position not found'
+        });
+      }
+    }
+
+    // Update fields - only update what's provided and valid
     if (personalInfo) {
-      Object.assign(employee.personalInfo, personalInfo);
+      // Handle nested address updates
+      if (personalInfo.address) {
+        Object.assign(employee.personalInfo.address, personalInfo.address);
+        delete personalInfo.address;
+      }
+      
+      // Update other personal info fields
+      Object.keys(personalInfo).forEach(key => {
+        if (personalInfo[key] !== undefined && personalInfo[key] !== '') {
+          employee.personalInfo[key] = personalInfo[key];
+        }
+      });
     }
     
     if (employmentInfo) {
-      Object.assign(employee.employmentInfo, employmentInfo);
+      // Only update employment fields that are provided and valid
+      Object.keys(employmentInfo).forEach(key => {
+        if (employmentInfo[key] !== undefined && employmentInfo[key] !== '') {
+          // For ObjectId fields, ensure they're valid before updating
+          if (['positionId', 'departmentId', 'gradeId', 'managerId'].includes(key)) {
+            if (mongoose.Types.ObjectId.isValid(employmentInfo[key])) {
+              employee.employmentInfo[key] = employmentInfo[key];
+            }
+          } else {
+            employee.employmentInfo[key] = employmentInfo[key];
+          }
+        }
+      });
     }
     
     if (bankInfo) {
-      Object.assign(employee.bankInfo, bankInfo);
+      // Only update bank info fields that are provided
+      Object.keys(bankInfo).forEach(key => {
+        if (bankInfo[key] !== undefined && bankInfo[key] !== '') {
+          employee.bankInfo[key] = bankInfo[key];
+        }
+      });
     }
     
     if (emergencyContact) {
-      Object.assign(employee.emergencyContact, emergencyContact);
+      // Only update emergency contact fields that are provided
+      Object.keys(emergencyContact).forEach(key => {
+        if (emergencyContact[key] !== undefined && emergencyContact[key] !== '') {
+          employee.emergencyContact[key] = emergencyContact[key];
+        }
+      });
+    }
+
+    // Validate the document before saving
+    try {
+      await employee.validate();
+    } catch (validationError) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: validationError.errors
+      });
     }
 
     await employee.save();
@@ -1056,8 +1110,8 @@ exports.updateEmployee = async (req, res) => {
     });
   }
 };
-
 // Update the existing getAllEmployees method to properly handle the populate fields
+// Update the getAllEmployees method in employeeController.js
 exports.getAllEmployees = async (req, res) => {
   try {
     // Extract query parameters
@@ -1130,7 +1184,7 @@ exports.getAllEmployees = async (req, res) => {
     const sort = {};
     sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
 
-    // Execute query with pagination
+    // Execute query with pagination - REMOVE .lean()
     const employees = await Employee.find(query)
       .populate({
         path: 'employmentInfo.positionId',
@@ -1154,8 +1208,12 @@ exports.getAllEmployees = async (req, res) => {
       })
       .sort(sort)
       .limit(Number(limit))
-      .skip((Number(page) - 1) * Number(limit))
-      .lean(); // Use lean() for better performance
+      .skip((Number(page) - 1) * Number(limit));
+
+    console.log('Employees fetched:', employees.length);
+    if (employees.length > 0) {
+      console.log('First employee:', employees[0]);
+    }
 
     // Count total documents for pagination info
     const total = await Employee.countDocuments(query);
@@ -1234,7 +1292,6 @@ exports.getAllEmployees = async (req, res) => {
     });
   }
 };
-
 // Update getEmployeeDetails to properly populate references
 exports.getEmployeeDetails = async (req, res) => {
   try {

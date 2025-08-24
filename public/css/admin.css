@@ -19,7 +19,7 @@
 
 body {
     font-family: 'Inter', sans-serif;
-    background-color: var(--bg-white);
+    background-color: rgb(29, 29, 29);
     color: var(--text-primary);
     overflow-x: hidden;
 }

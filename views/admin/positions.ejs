@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TPS - Positions Management</title>
+    <title>TPS - Positions</title>
     
     <!-- Bootstrap CSS -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
@@ -11,93 +11,13 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- SweetAlert2 -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/11.4.8/sweetalert2.min.css" rel="stylesheet">
-    <!-- DataTables CSS -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.21/css/dataTables.bootstrap5.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/datatables-buttons/2.4.2/css/buttons.bootstrap5.min.css" rel="stylesheet">
-    <!-- Select2 for better dropdowns -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2-bootstrap-5-theme/1.3.0/select2-bootstrap-5-theme.min.css" rel="stylesheet">
     
     <!-- Custom CSS -->
     <link rel="stylesheet" href="/css/admin.css">
-    
     <!-- Page-specific CSS -->
-    
-    <style>
-        /* Fixed Loading Overlay */
-    .loading-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-    z-index: 9999;
-    display: none;
-}
-
-.loading-overlay .spinner-border {
-    width: 3rem;
-    height: 3rem;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    margin-top: -1.5rem; /* Half of the height */
-    margin-left: -1.5rem; /* Half of the width */
-}
-    
-        /* Filter card improvements */
-        .filters-card {
-            margin-bottom: 1.5rem;
-        }
-        
-        .filters-row {
-            align-items: end;
-        }
-        
-        .filter-buttons {
-            display: flex;
-            gap: 0.5rem;
-            margin-top: 0.5rem;
-        }
-        
-        /* DataTables custom styling */
-        .dataTables_wrapper .dataTables_length,
-        .dataTables_wrapper .dataTables_filter,
-        .dataTables_wrapper .dataTables_info,
-        .dataTables_wrapper .dataTables_paginate {
-            margin-bottom: 1rem;
-        }
-        
-        .dt-buttons {
-            margin-bottom: 1rem;
-        }
-        
-        .dt-button {
-            margin-right: 0.5rem;
-        }
-        
-        /* Responsive table improvements */
-        .table-responsive {
-            border-radius: 0.375rem;
-        }
-        
-        /* Select2 dropdown improvements */
-        .select2-container--bootstrap-5 .select2-selection {
-            min-height: calc(2.25rem + 2px);
-        }
-    </style>
+    <link rel="stylesheet" href="/css/departments.css">
 </head>
 <body>
-    <!-- Loading Overlay -->
-    <div class="loading-overlay" id="loadingOverlay">
-        <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Loading...</span>
-        </div>
-    </div>
-
     <!-- Sidebar Overlay for Mobile -->
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
@@ -114,23 +34,32 @@
 
         <!-- Page Content -->
         <main class="dashboard-content">
-            <div class="container-fluid px-1">
-                <!-- Alerts Container -->
-                <div id="alertsContainer"></div>
-                
-                <!-- Page Header -->
-                <div class="page-header">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <div>
-                            <p class="text-muted">Manage and track all positions within your organization</p>
-                        </div>
-                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addPositionModal" id="addPositionBtn">
-                            <i class="fas fa-plus me-2"></i>Add Position
-                        </button>
-                    </div>
-                </div>
+            <div class="container-fluid px-2">
+                     <!-- Alerts Container -->
+        <div id="alertsContainer"></div>
+        
+        <!-- Page Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <p class="text-muted">Manage and track all positions within your organization</p>
+            </div>
+            <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addPositionModal">
+                <i class="fas fa-plus me-2"></i>Add Position
+            </button>
+        </div>
 
-                <!-- Filters -->
+        <div class="row">
+            <!-- Stats Cards -->
+            <div class="col-12">
+                <div class="row stats-row" id="statsContainer">
+                    <!-- Stats will be loaded here -->
+                </div>
+            </div>
+        </div>
+
+        <div class="row" style="margin-top: 15px; margin-bottom: 15px;">
+            <!-- Filters -->
+            <div class="col-12">
                 <div class="card filters-card">
                     <div class="card-header">
                         <h5 class="card-title mb-0">
@@ -145,13 +74,13 @@
                             </div>
                             <div class="col-lg-2 col-md-6">
                                 <label for="filterDepartment" class="form-label">Department</label>
-                                <select class="form-select select2" id="filterDepartment">
+                                <select class="form-select" id="filterDepartment">
                                     <option value="">All Departments</option>
                                 </select>
                             </div>
                             <div class="col-lg-2 col-md-6">
                                 <label for="filterGrade" class="form-label">Grade</label>
-                                <select class="form-select select2" id="filterGrade">
+                                <select class="form-select" id="filterGrade">
                                     <option value="">All Grades</option>
                                 </select>
                             </div>
@@ -161,10 +90,9 @@
                                     <label class="form-check-label" for="filterVacancies">Has Vacancies</label>
                                 </div>
                             </div>
-                          
-                            <div class="col-lg-1 col-md-12">
+                            <div class="col-lg-3 col-md-12">
                                 <div class="filter-buttons">
-                                    <button class="btn btn-primary btn-sm" id="applyFilters">
+                                    <button class="btn btn-outline-primary btn-sm" id="applyFilters">
                                         <i class="fas fa-search me-1"></i>Apply
                                     </button>
                                     <button class="btn btn-outline-secondary btn-sm" id="resetFilters">
@@ -175,8 +103,12 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
 
-                <!-- Positions Table -->
+        <div class="row">
+            <!-- Positions Table -->
+            <div class="col-12">
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="card-title mb-0">
@@ -211,10 +143,13 @@
                     </div>
                 </div>
             </div>
-        </main>
-    </div>
+        </div>
 
-    <!-- Add Position Modal -->
+            </div>
+        </main>
+
+
+  <!-- Add Position Modal -->
     <div class="modal fade" id="addPositionModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
@@ -237,19 +172,19 @@
                             </div>
                             <div class="col-md-6">
                                 <label for="departmentId" class="form-label">Department</label>
-                                <select class="form-select select2" id="departmentId" required>
+                                <select class="form-select" id="departmentId" required>
                                     <option value="">Select Department</option>
                                 </select>
                             </div>
                             <div class="col-md-6">
                                 <label for="gradeId" class="form-label">Grade</label>
-                                <select class="form-select select2" id="gradeId" required>
+                                <select class="form-select" id="gradeId" required>
                                     <option value="">Select Grade</option>
                                 </select>
                             </div>
                             <div class="col-md-6">
                                 <label for="reportingTo" class="form-label">Reports To</label>
-                                <select class="form-select select2" id="reportingTo">
+                                <select class="form-select" id="reportingTo">
                                     <option value="">Select Position (Optional)</option>
                                 </select>
                             </div>
@@ -331,7 +266,7 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary">
+                        <button type="submit" class="btn btn-outline-primary">
                             <i class="fas fa-save me-2"></i>Create Position
                         </button>
                     </div>
@@ -364,19 +299,19 @@
                             </div>
                             <div class="col-md-6">
                                 <label for="editDepartmentId" class="form-label">Department</label>
-                                <select class="form-select select2" id="editDepartmentId" required>
+                                <select class="form-select" id="editDepartmentId" required>
                                     <option value="">Select Department</option>
                                 </select>
                             </div>
                             <div class="col-md-6">
                                 <label for="editGradeId" class="form-label">Grade</label>
-                                <select class="form-select select2" id="editGradeId" required>
+                                <select class="form-select" id="editGradeId" required>
                                     <option value="">Select Grade</option>
                                 </select>
                             </div>
                             <div class="col-md-6">
                                 <label for="editReportingTo" class="form-label">Reports To</label>
-                                <select class="form-select select2" id="editReportingTo">
+                                <select class="form-select" id="editReportingTo">
                                     <option value="">Select Position (Optional)</option>
                                 </select>
                             </div>
@@ -458,7 +393,7 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary">
+                        <button type="submit" class="btn btn-outline-primary">
                             <i class="fas fa-save me-2"></i>Update Position
                         </button>
                     </div>
@@ -466,233 +401,658 @@
             </div>
         </div>
     </div>
-
-    <!-- Position Details Modal -->
-    <div class="modal fade" id="positionDetailsModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-xl">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">
-                        <i class="fas fa-eye me-2"></i>Position Details
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <ul class="nav nav-tabs" id="positionTabs" role="tablist">
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab">Overview</button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="details-tab" data-bs-toggle="tab" data-bs-target="#position-details" type="button" role="tab">Details</button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="hierarchy-tab" data-bs-toggle="tab" data-bs-target="#position-hierarchy" type="button" role="tab">Hierarchy</button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="statistics-tab" data-bs-toggle="tab" data-bs-target="#position-statistics" type="button" role="tab">Statistics</button>
-                        </li>
-                    </ul>
-                    
-                    <div class="tab-content p-3 border border-top-0 rounded-bottom" id="positionTabContent">
-                        <!-- Overview Tab -->
-                        <div class="tab-pane fade show active" id="overview" role="tabpanel">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="card mb-4">
-                                        <div class="card-header">
-                                            <h6 class="card-title mb-0">Basic Information</h6>
-                                        </div>
-                                        <div class="card-body">
-                                            <div class="mb-3">
-                                                <strong>Name:</strong> <span id="positionName"></span>
-                                            </div>
-                                            <div class="mb-3">
-                                                <strong>Code:</strong> <span id="positionCode"></span>
-                                            </div>
-                                            <div class="mb-3">
-                                                <strong>Department:</strong> <span id="positionDepartment"></span>
-                                            </div>
-                                            <div class="mb-3">
-                                                <strong>Grade:</strong> <span id="positionGrade"></span>
-                                            </div>
-                                            <div>
-                                                <strong>Status:</strong> <span id="positionStatus"></span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="card mb-4">
-                                        <div class="card-header">
-                                            <h6 class="card-title mb-0">Capacity</h6>
-                                        </div>
-                                        <div class="card-body">
-                                            <div class="row">
-                                                <div class="col-md-4">
-                                                    <div class="mb-3">
-                                                        <strong>Total:</strong> <span id="positionCapacityTotal"></span>
-                                                    </div>
-                                                </div>
-                                                <div class="col-md-4">
-                                                    <div class="mb-3">
-                                                        <strong>Filled:</strong> <span id="positionCapacityFilled"></span>
-                                                    </div>
-                                                </div>
-                                                <div class="col-md-4">
-                                                    <div class="mb-3">
-                                                        <strong>Vacant:</strong> <span id="positionCapacityVacant"></span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="row">
-                                                <div class="col-md-6">
-                                                    <div class="mb-3">
-                                                        <strong>Vacancy Rate:</strong> <span id="positionVacancyRate"></span>
-                                                    </div>
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <div class="mb-3">
-                                                        <strong>Occupancy Rate:</strong> <span id="positionOccupancyRate"></span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="col-md-6">
-                                    <div class="card mb-4">
-                                        <div class="card-header">
-                                            <h6 class="card-title mb-0">Compensation</h6>
-                                        </div>
-                                        <div class="card-body" id="positionSalary">
-                                            <!-- Salary info will be loaded here -->
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="card">
-                                        <div class="card-header">
-                                            <h6 class="card-title mb-0">Requirements</h6>
-                                        </div>
-                                        <div class="card-body">
-                                            <div class="mb-3">
-                                                <h6>Education</h6>
-                                                <div id="positionEducation"></div>
-                                            </div>
-                                            <div>
-                                                <h6>Experience</h6>
-                                                <div id="positionExperience"></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="card">
-                                <div class="card-header">
-                                    <h6 class="card-title mb-0">Description</h6>
-                                </div>
-                                <div class="card-body">
-                                    <div id="positionDescription"></div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Details Tab -->
-                        <div class="tab-pane fade" id="position-details" role="tabpanel">
-                            <p>Detailed position information will be loaded here</p>
-                        </div>
-                        
-                        <!-- Hierarchy Tab -->
-                        <div class="tab-pane fade" id="position-hierarchy" role="tabpanel">
-                            <div id="positionHierarchy">
-                                <!-- Hierarchy will be loaded here -->
-                            </div>
-                        </div>
-                        
-                        <!-- Statistics Tab -->
-                        <div class="tab-pane fade" id="position-statistics" role="tabpanel">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="card mb-4">
-                                        <div class="card-header">
-                                            <h6 class="card-title mb-0">Key Metrics</h6>
-                                        </div>
-                                        <div class="card-body">
-                                            <div class="mb-3">
-                                                <strong>Total Capacity:</strong> <span id="statCapacityTotal"></span>
-                                            </div>
-                                            <div class="mb-3">
-                                                <strong>Filled Positions:</strong> <span id="statCapacityFilled"></span>
-                                            </div>
-                                            <div class="mb-3">
-                                                <strong>Vacant Positions:</strong> <span id="statCapacityVacant"></span>
-                                            </div>
-                                            <div class="mb-3">
-                                                <strong>Occupancy Rate:</strong> <span id="statOccupancyRate"></span>
-                                            </div>
-                                            <div class="mb-3">
-                                                <strong>Vacancy Rate:</strong> <span id="statVacancyRate"></span>
-                                            </div>
-                                            <div class="mb-3">
-                                                <strong>Active Employees:</strong> <span id="statActiveEmployees"></span>
-                                            </div>
-                                            <div class="mb-3">
-                                                <strong>Total Employees (All Time):</strong> <span id="statTotalEmployees"></span>
-                                            </div>
-                                            <div>
-                                                <strong>Average Tenure (Months):</strong> <span id="statAvgTenure"></span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="card">
-                                        <div class="card-header">
-                                            <h6 class="card-title mb-0">Capacity Visualization</h6>
-                                        </div>
-                                        <div class="card-body">
-                                            <canvas id="statsChart"></canvas>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Bootstrap Bundle with Popper -->
+    <!-- Bootstrap JS -->
+        <!-- Bootstrap Bundle with Popper -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
     <!-- jQuery -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-    <!-- Select2 -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
     <!-- SweetAlert2 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/11.4.8/sweetalert2.min.js"></script>
-    <!-- Chart.js -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
     <!-- DataTables JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.21/js/jquery.dataTables.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.21/js/dataTables.bootstrap5.min.js"></script>
-    <!-- DataTables Buttons -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables-buttons/2.4.2/js/dataTables.buttons.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables-buttons/2.4.2/js/buttons.bootstrap5.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables-buttons/2.4.2/js/buttons.html5.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables-buttons/2.4.2/js/buttons.print.min.js"></script>
-    <!-- JSZip for Excel export -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <!-- PDFMake for PDF export -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+
+    <script>
+        // Global variables
+        let positionsTable;
+        let departments = [];
+        let grades = [];
+        let positions = [];
+
+        // API endpoints
+        const API_BASE = '/api';
+        const POSITIONS_API = `${API_BASE}/positions`;
+        const DEPARTMENTS_API = `${API_BASE}/departments`;
+        const GRADES_API = `${API_BASE}/grades`;
+
+        // Initialize the application
+        $(document).ready(function() {
+            initializeApp();
+        });
+
+        async function initializeApp() {
+            try {
+                showLoading();
+                await Promise.all([
+                    loadDepartments(),
+                    loadGrades(),
+                    loadPositions()
+                ]);
+                initializeTable();
+                initializeEventHandlers();
+                loadStats();
+                hideLoading();
+            } catch (error) {
+                console.error('Error initializing app:', error);
+                showAlert('Error loading data. Please refresh the page.', 'error');
+                hideLoading();
+            }
+        }
+
+        // Loading functions
+        function showLoading() {
+            $('#loadingOverlay').show();
+        }
+
+        function hideLoading() {
+            $('#loadingOverlay').hide();
+        }
+
+        // API functions
+        async function apiRequest(url, options = {}) {
+            try {
+                const response = await fetch(url, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    },
+                    ...options
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+                    throw new Error(errorData.error || `HTTP ${response.status}`);
+                }
+
+                return await response.json();
+            } catch (error) {
+                console.error('API request failed:', error);
+                throw error;
+            }
+        }
+
+        // Data loading functions
+        async function loadDepartments() {
+            try {
+                departments = await apiRequest(DEPARTMENTS_API);
+                populateDepartmentSelects();
+            } catch (error) {
+                console.error('Error loading departments:', error);
+                departments = [];
+            }
+        }
+
+        async function loadGrades() {
+            try {
+                grades = await apiRequest(GRADES_API);
+                populateGradeSelects();
+            } catch (error) {
+                console.error('Error loading grades:', error);
+                grades = [];
+            }
+        }
+
+        async function loadPositions() {
+            try {
+                positions = await apiRequest(POSITIONS_API);
+                populateReportingToSelects();
+                updatePositionsCount();
+            } catch (error) {
+                console.error('Error loading positions:', error);
+                positions = [];
+            }
+        }
+
+        // Populate select options
+        function populateDepartmentSelects() {
+            const selects = ['#departmentId', '#editDepartmentId', '#filterDepartment'];
+            selects.forEach(selector => {
+                const $select = $(selector);
+                const currentValue = $select.val();
+                
+                // Clear existing options except the first one
+                $select.find('option:not(:first)').remove();
+                
+                departments.forEach(dept => {
+                    $select.append(`<option value="${dept._id}">${dept.name}</option>`);
+                });
+                
+                // Restore selection if it was set
+                if (currentValue) $select.val(currentValue);
+            });
+        }
+
+        function populateGradeSelects() {
+            const selects = ['#gradeId', '#editGradeId', '#filterGrade'];
+            selects.forEach(selector => {
+                const $select = $(selector);
+                const currentValue = $select.val();
+                
+                // Clear existing options except the first one
+                $select.find('option:not(:first)').remove();
+                
+                grades.forEach(grade => {
+                    $select.append(`<option value="${grade._id}">${grade.name} (Level ${grade.level})</option>`);
+                });
+                
+                // Restore selection if it was set
+                if (currentValue) $select.val(currentValue);
+            });
+        }
+
+        function populateReportingToSelects() {
+            const selects = ['#reportingTo', '#editReportingTo'];
+            selects.forEach(selector => {
+                const $select = $(selector);
+                const currentValue = $select.val();
+                
+                // Clear existing options except the first one
+                $select.find('option:not(:first)').remove();
+                
+                positions.forEach(position => {
+                    $select.append(`<option value="${position._id}">${position.name} (${position.code})</option>`);
+                });
+                
+                // Restore selection if it was set
+                if (currentValue) $select.val(currentValue);
+            });
+        }
+
+        // Table functions
+        function initializeTable() {
+            if (positionsTable) {
+                positionsTable.destroy();
+            }
+
+            positionsTable = $('#positionsTable').DataTable({
+                data: positions,
+                columns: [
+                    { data: 'code' },
+                    { data: 'name' },
+                    { 
+                        data: 'department.name',
+                        defaultContent: 'N/A'
+                    },
+                    { 
+                        data: 'grade.name',
+                        defaultContent: 'N/A'
+                    },
+                    { data: 'capacity.total' },
+                    { data: 'capacity.filled' },
+                    { data: 'capacity.vacant' },
+                    {
+                        data: 'status',
+                        render: function(data) {
+                            const statusMap = {
+                                'active': 'success',
+                                'frozen': 'warning',
+                                'under_review': 'info',
+                                'discontinued': 'danger'
+                            };
+                            const badgeClass = statusMap[data] || 'secondary';
+                            return `<span class="badge bg-${badgeClass}">${data}</span>`;
+                        }
+                    },
+                    {
+                        data: null,
+                        render: function(data, type, row) {
+                            return `
+                                <div class="btn-group btn-group-sm">
+                                    <button class="btn btn-outline-primary btn-sm" onclick="editPosition('${row._id}')" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-outline-info btn-sm" onclick="viewPosition('${row._id}')" title="View">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn btn-outline-danger btn-sm" onclick="deletePosition('${row._id}')" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            `;
+                        }
+                    }
+                ],
+                order: [[1, 'asc']],
+                pageLength: 25,
+                responsive: true,
+                language: {
+                    emptyTable: "No positions found"
+                }
+            });
+        }
+
+        function refreshTable() {
+            if (positionsTable) {
+                positionsTable.clear().rows.add(positions).draw();
+                updatePositionsCount();
+            }
+        }
+
+        function updatePositionsCount() {
+            $('#positionsCount').text(positions.length);
+        }
+
+        // Stats functions
+        async function loadStats() {
+            try {
+                const stats = calculateStats();
+                renderStatsCards(stats);
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        function calculateStats() {
+            const totalPositions = positions.length;
+            const activePositions = positions.filter(p => p.status === 'active').length;
+            const totalCapacity = positions.reduce((sum, p) => sum + p.capacity.total, 0);
+            const filledCapacity = positions.reduce((sum, p) => sum + p.capacity.filled, 0);
+            const vacantCapacity = positions.reduce((sum, p) => sum + p.capacity.vacant, 0);
+            const avgTeamSize = totalPositions > 0 ? Math.round(totalCapacity / totalPositions) : 0;
+            const occupancyRate = totalCapacity > 0 ? Math.round((filledCapacity / totalCapacity) * 100) : 0;
+
+            return {
+                totalPositions,
+                activePositions,
+                totalCapacity,
+                filledCapacity,
+                vacantCapacity,
+                avgTeamSize,
+                occupancyRate,
+                totalEmployees: filledCapacity
+            };
+        }
+
+        function renderStatsCards(stats) {
+            const statsHtml = `
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <p class="stat-title">Total Positions</p>
+                            <div class="stat-icon">
+                                <i class="fas fa-briefcase"></i>
+                            </div>
+                        </div>
+                        <div class="stat-value">${stats.totalPositions}</div>
+                        <div class="stat-trend">
+                            <span>${stats.activePositions} active positions</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <p class="stat-title">Total Capacity</p>
+                            <div class="stat-icon">
+                                <i class="fas fa-users"></i>
+                            </div>
+                        </div>
+                        <div class="stat-value">${stats.totalCapacity}</div>
+                        <div class="stat-trend">
+                            <span>${stats.filledCapacity} filled, ${stats.vacantCapacity} vacant</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <p class="stat-title">Occupancy Rate</p>
+                            <div class="stat-icon">
+                                <i class="fas fa-chart-pie"></i>
+                            </div>
+                        </div>
+                        <div class="stat-value">${stats.occupancyRate}%</div>
+                        <div class="stat-trend">
+                            <span>${stats.filledCapacity} of ${stats.totalCapacity} positions filled</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <p class="stat-title">Avg. Team Size</p>
+                            <div class="stat-icon">
+                                <i class="fas fa-user-friends"></i>
+                            </div>
+                        </div>
+                        <div class="stat-value">${stats.avgTeamSize}</div>
+                        <div class="stat-trend">
+                            <span>${stats.totalEmployees} total employees</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            $('#statsContainer').html(statsHtml);
+        }
+
+        // Event handlers
+        function initializeEventHandlers() {
+            // Add position form
+            $('#addPositionForm').on('submit', handleAddPosition);
+            
+            // Edit position form
+            $('#editPositionForm').on('submit', handleEditPosition);
+            
+            // Filter handlers
+            $('#applyFilters').on('click', applyFilters);
+            $('#resetFilters').on('click', resetFilters);
+            
+            // Search handler
+            $('#searchInput').on('keyup', debounce(applyFilters, 300));
+            
+            // Modal event handlers
+            $('#addPositionModal').on('hidden.bs.modal', function() {
+                $('#addPositionForm')[0].reset();
+                clearFormErrors();
+            });
+            
+            $('#editPositionModal').on('hidden.bs.modal', function() {
+                $('#editPositionForm')[0].reset();
+                clearFormErrors();
+            });
+        }
+
+        // Form handlers
+        async function handleAddPosition(e) {
+            e.preventDefault();
+            
+            try {
+                showLoading();
+                
+                const formData = getFormData('add');
+                const newPosition = await apiRequest(POSITIONS_API, {
+                    method: 'POST',
+                    body: JSON.stringify(formData)
+                });
+                
+                // Add to local array and refresh table
+                positions.push(newPosition);
+                refreshTable();
+                populateReportingToSelects();
+                loadStats();
+                
+                // Close modal and show success
+                $('#addPositionModal').modal('hide');
+                showAlert('Position created successfully!', 'success');
+                
+            } catch (error) {
+                console.error('Error creating position:', error);
+                showAlert(`Error creating position: ${error.message}`, 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function handleEditPosition(e) {
+            e.preventDefault();
+            
+            try {
+                showLoading();
+                
+                const positionId = $('#editPositionId').val();
+                const formData = getFormData('edit');
+                
+                const updatedPosition = await apiRequest(`${POSITIONS_API}/${positionId}`, {
+                    method: 'PUT',
+                    body: JSON.stringify(formData)
+                });
+                
+                // Update local array and refresh table
+                const index = positions.findIndex(p => p._id === positionId);
+                if (index !== -1) {
+                    positions[index] = updatedPosition;
+                    refreshTable();
+                    populateReportingToSelects();
+                    loadStats();
+                }
+                
+                // Close modal and show success
+                $('#editPositionModal').modal('hide');
+                showAlert('Position updated successfully!', 'success');
+                
+            } catch (error) {
+                console.error('Error updating position:', error);
+                showAlert(`Error updating position: ${error.message}`, 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function getFormData(mode) {
+            const prefix = mode === 'edit' ? 'edit' : '';
+            const getId = (id) => mode === 'edit' ? `edit${id.charAt(0).toUpperCase() + id.slice(1)}` : id;
+            
+            const responsibilities = $(`#${getId('responsibilities')}`).val()
+                .split('\n')
+                .map(r => r.trim())
+                .filter(r => r.length > 0);
+            
+            return {
+                name: $(`#${getId('name')}`).val().trim(),
+                code: $(`#${getId('code')}`).val().trim().toUpperCase(),
+                departmentId: $(`#${getId('departmentId')}`).val(),
+                gradeId: $(`#${getId('gradeId')}`).val(),
+                reportingTo: $(`#${getId('reportingTo')}`).val() || null,
+                jobType: $(`#${getId('jobType')}`).val(),
+                capacity: {
+                    total: parseInt($(`#${getId('capacityTotal')}`).val()) || 1
+                },
+                description: $(`#${getId('description')}`).val().trim(),
+                responsibilities: responsibilities,
+                requirements: {
+                    education: {
+                        minimum: $(`#${getId('educationMinimum')}`).val(),
+                        preferred: $(`#${getId('educationPreferred')}`).val() || null,
+                        field: $(`#${getId('educationField')}`).val().trim()
+                    },
+                    experience: {
+                        minimum: parseInt($(`#${getId('experienceMinimum')}`).val()) || 0,
+                        preferred: parseInt($(`#${getId('experiencePreferred')}`).val()) || null,
+                        type: $(`#${getId('experienceType')}`).val()
+                    }
+                }
+            };
+        }
+
+        // Position operations
+        async function editPosition(id) {
+            try {
+                const position = positions.find(p => p._id === id);
+                if (!position) {
+                    showAlert('Position not found', 'error');
+                    return;
+                }
+                
+                // Populate edit form
+                $('#editPositionId').val(position._id);
+                $('#editName').val(position.name);
+                $('#editCode').val(position.code);
+                $('#editDepartmentId').val(position.departmentId);
+                $('#editGradeId').val(position.gradeId);
+                $('#editReportingTo').val(position.reportingTo || '');
+                $('#editJobType').val(position.jobType);
+                $('#editCapacityTotal').val(position.capacity.total);
+                $('#editDescription').val(position.description);
+                $('#editResponsibilities').val(position.responsibilities.join('\n'));
+                $('#editEducationMinimum').val(position.requirements.education.minimum);
+                $('#editEducationPreferred').val(position.requirements.education.preferred || '');
+                $('#editEducationField').val(position.requirements.education.field || '');
+                $('#editExperienceMinimum').val(position.requirements.experience.minimum);
+                $('#editExperiencePreferred').val(position.requirements.experience.preferred || '');
+                $('#editExperienceType').val(position.requirements.experience.type);
+                
+                $('#editPositionModal').modal('show');
+                
+            } catch (error) {
+                console.error('Error loading position for edit:', error);
+                showAlert('Error loading position data', 'error');
+            }
+        }
+
+        async function viewPosition(id) {
+            try {
+                const position = positions.find(p => p._id === id);
+                if (!position) {
+                    showAlert('Position not found', 'error');
+                    return;
+                }
+                
+                // You can implement a view modal here
+                showAlert('View functionality will be implemented', 'info');
+                
+            } catch (error) {
+                console.error('Error viewing position:', error);
+                showAlert('Error loading position details', 'error');
+            }
+        }
+
+        async function deletePosition(id) {
+            try {
+                const result = await Swal.fire({
+                    title: 'Are you sure?',
+                    text: 'This action cannot be undone!',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: 'Yes, delete it!'
+                });
+
+                if (result.isConfirmed) {
+                    showLoading();
+                    
+                    await apiRequest(`${POSITIONS_API}/${id}`, {
+                        method: 'DELETE'
+                    });
+                    
+                    // Remove from local array and refresh table
+                    positions = positions.filter(p => p._id !== id);
+                    refreshTable();
+                    populateReportingToSelects();
+                    loadStats();
+                    
+                    showAlert('Position deleted successfully!', 'success');
+                }
+                
+            } catch (error) {
+                console.error('Error deleting position:', error);
+                showAlert(`Error deleting position: ${error.message}`, 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Filter functions
+        function applyFilters() {
+            const search = $('#searchInput').val().toLowerCase();
+            const departmentFilter = $('#filterDepartment').val();
+            const gradeFilter = $('#filterGrade').val();
+            const vacanciesOnly = $('#filterVacancies').is(':checked');
+            
+            let filteredPositions = positions;
+            
+            // Apply search filter
+            if (search) {
+                filteredPositions = filteredPositions.filter(position => 
+                    position.name.toLowerCase().includes(search) ||
+                    position.code.toLowerCase().includes(search)
+                );
+            }
+            
+            // Apply department filter
+            if (departmentFilter) {
+                filteredPositions = filteredPositions.filter(position => 
+                    position.departmentId === departmentFilter
+                );
+            }
+            
+            // Apply grade filter
+            if (gradeFilter) {
+                filteredPositions = filteredPositions.filter(position => 
+                    position.gradeId === gradeFilter
+                );
+            }
+            
+            // Apply vacancies filter
+            if (vacanciesOnly) {
+                filteredPositions = filteredPositions.filter(position => 
+                    position.capacity.vacant > 0
+                );
+            }
+            
+            // Update table
+            if (positionsTable) {
+                positionsTable.clear().rows.add(filteredPositions).draw();
+            }
+        }
+
+        function resetFilters() {
+            $('#searchInput').val('');
+            $('#filterDepartment').val('');
+            $('#filterGrade').val('');
+            $('#filterVacancies').prop('checked', false);
+            
+            // Reset table to show all positions
+            if (positionsTable) {
+                positionsTable.clear().rows.add(positions).draw();
+            }
+        }
+
+        // Utility functions
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        function showAlert(message, type) {
+            const alertClass = type === 'error' ? 'danger' : type;
+            const alertHtml = `
+                <div class="alert alert-${alertClass} alert-dismissible fade show" role="alert">
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-triangle' : 'info-circle'} me-2"></i>
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            `;
+            
+            $('#alertsContainer').html(alertHtml);
+            
+            // Auto dismiss after 5 seconds
+            setTimeout(() => {
+                $('.alert').fadeOut();
+            }, 5000);
+        }
+
+        function clearFormErrors() {
+            $('.is-invalid').removeClass('is-invalid');
+            $('.invalid-feedback').remove();
+        }
+
+        // Global functions for button clicks
+        window.editPosition = editPosition;
+        window.viewPosition = viewPosition;
+        window.deletePosition = deletePosition;
+    </script>
+
     
     <!-- Custom JS -->
-    <script src="/js/positions.js"></script>
     <script src="/js/admin.js"></script>
-
+    
 </body>
 </html>
