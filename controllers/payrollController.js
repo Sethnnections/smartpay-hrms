@@ -1296,4 +1296,904 @@ payrollController.generateBankInstructionPDF = async function (res, options = {}
 };
 
 
+
+// Add these functions to payrollController.js
+
+// 1. Create payroll from previous month
+payrollController.createFromPreviousMonth = async (month, processedBy) => {
+  try {
+    if (!month || !moment(month, 'YYYY-MM', true).isValid()) {
+      throw new Error('Invalid month format. Use YYYY-MM');
+    }
+
+    const payrollRecords = await Payroll.createFromPreviousMonth(month, processedBy);
+
+    return {
+      success: true,
+      message: `Created payroll for ${payrollRecords.length} employees from previous month`,
+      month: month,
+      processedCount: payrollRecords.length,
+      payrollIds: payrollRecords.map(p => p._id)
+    };
+  } catch (error) {
+    throw error;
+  }
+};
+
+// 2. Get payroll by period with filtering
+payrollController.getPayrollByPeriod = async function(filters = {}) {
+  try {
+    const { period, page = 1, limit = 20, department, status } = filters;
+    const skip = (page - 1) * limit;
+    
+    let query = { isActive: true };
+    
+    // Period filtering
+    if (period && period !== 'all') {
+      if (period.includes('-')) {
+        // Month format (YYYY-MM)
+        query.payrollMonth = period;
+      } else if (period.includes('_to_')) {
+        // Date range format (YYYY-MM-DD_to_YYYY-MM-DD)
+        const [startDate, endDate] = period.split('_to_');
+        query['payPeriod.startDate'] = { $gte: new Date(startDate) };
+        query['payPeriod.endDate'] = { $lte: new Date(endDate) };
+      }
+    }
+    
+    // Department filtering
+    if (department && department !== 'all') {
+      const employeesInDept = await Employee.find({
+        'employmentInfo.departmentId': department,
+        'employmentInfo.status': 'active'
+      });
+      query.employeeId = { $in: employeesInDept.map(e => e._id) };
+    }
+    
+    // Status filtering
+    if (status && status !== 'all') {
+      if (status === 'approved') {
+        query['approvals.hr.status'] = 'approved';
+        query['approvals.finance.status'] = 'approved';
+      } else {
+        query['payment.status'] = status;
+      }
+    }
+    
+    const [payrolls, total] = await Promise.all([
+      Payroll.find(query)
+        .populate({
+          path: 'employeeId',
+          select: 'employeeId personalInfo.firstName personalInfo.lastName employmentInfo.departmentId',
+          populate: {
+            path: 'employmentInfo.departmentId',
+            select: 'name code'
+          }
+        })
+        .populate('processedBy', 'email')
+        .sort({ 'employeeId.personalInfo.lastName': 1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      Payroll.countDocuments(query)
+    ]);
+    
+    return {
+      payrolls,
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(total / limit),
+        totalRecords: total,
+        hasNext: page < Math.ceil(total / limit),
+        hasPrev: page > 1
+      }
+    };
+  } catch (error) {
+    console.error('getPayrollByPeriod error:', error);
+    throw error;
+  }
+};
+
+// 3. Update payroll with detailed editing
+payrollController.updatePayrollDetails = async (payrollId, updateData, userId) => {
+  try {
+    const payroll = await Payroll.findById(payrollId);
+
+    if (!payroll) {
+      const error = new Error('Payroll record not found');
+      error.statusCode = 404;
+      throw error;
+    }
+
+    // Prevent updates to paid payrolls
+    if (payroll.payment.status === 'paid') {
+      const error = new Error('Cannot update paid payroll records');
+      error.statusCode = 400;
+      throw error;
+    }
+
+    // Update allowed fields with detailed tracking
+    const allowedUpdates = {
+      // Pay period
+      'payPeriod.daysWorked': true,
+      'payPeriod.workingDays': true,
+      
+      // Salary
+      'salary.base': true,
+      
+      // Allowances
+      'allowances.transport': true,
+      'allowances.housing': true,
+      'allowances.medical': true,
+      'allowances.meals': true,
+      'allowances.communication': true,
+      'allowances.other': true,
+      
+      // Overtime
+      'overtime.hours': true,
+      'overtime.rate': true,
+      
+      // Bonuses
+      'bonuses.performance': true,
+      'bonuses.annual': true,
+      'bonuses.other': true,
+      
+      // Deductions
+      'deductions.tax.rate': true,
+      'deductions.pension.rate': true,
+      'deductions.other': true,
+      
+      // Notes
+      'notes': true
+    };
+
+    const changes = [];
+    
+    Object.keys(updateData).forEach(key => {
+      if (allowedUpdates[key]) {
+        const oldValue = key.includes('.') 
+          ? key.split('.').reduce((obj, i) => obj && obj[i], payroll)
+          : payroll[key];
+        
+        const newValue = updateData[key];
+        
+        if (oldValue !== newValue) {
+          changes.push({
+            field: key,
+            oldValue,
+            newValue
+          });
+          
+          if (key.includes('.')) {
+            const [parent, child] = key.split('.');
+            if (payroll[parent]) {
+              payroll[parent][child] = newValue;
+            }
+          } else {
+            payroll[key] = newValue;
+          }
+        }
+      }
+    });
+
+    // Add adjustment for tracking changes
+    if (changes.length > 0) {
+      payroll.adjustments.push({
+        type: 'adjustment',
+        category: 'edit',
+        amount: 0, // Non-monetary adjustment
+        reason: `Manual edits: ${changes.map(c => c.field).join(', ')}`,
+        appliedBy: userId,
+        appliedAt: new Date(),
+        changes: changes
+      });
+    }
+
+    const updatedPayroll = await payroll.save();
+    return updatedPayroll;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// 4. Generate consolidated payroll PDF (all employees in one document)
+payrollController.generateConsolidatedPayrollPDF = async function(res, options = {}, requestedBy = {}) {
+  try {
+    const { month, startDate, endDate } = options;
+    if (!month && !(startDate && endDate)) {
+      throw new Error('Provide either month (YYYY-MM) or startDate and endDate (YYYY-MM-DD).');
+    }
+
+    // Build query
+    const query = { isActive: true };
+    if (month) {
+      query.payrollMonth = month;
+    } else {
+      const sd = new Date(startDate);
+      const ed = new Date(endDate);
+      query['payPeriod.startDate'] = { $gte: sd };
+      query['payPeriod.endDate'] = { $lte: ed };
+    }
+
+    // Pull payrolls with detailed employee information
+    const payrolls = await Payroll.find(query)
+      .populate({
+        path: 'employeeId',
+        populate: [
+          { path: 'employmentInfo.departmentId', select: 'name code' },
+          { path: 'employmentInfo.positionId', select: 'name' }
+        ]
+      })
+      .sort({ 'employeeId.personalInfo.lastName': 1 })
+      .lean();
+
+    if (!payrolls || payrolls.length === 0) {
+      res.status(404).json({ error: 'No payroll records found for the selected period.' });
+      return;
+    }
+
+    // Set PDF headers
+    const fileLabel = month ? month : `${startDate}_to_${endDate}`;
+    const filename = `consolidated_payroll_${fileLabel}.pdf`;
+    
+    res.setHeader('Content-disposition', `attachment; filename=${filename}`);
+    res.setHeader('Content-type', 'application/pdf');
+
+    // Create PDF document
+    const doc = new PDFDocument({ size: 'A4', margin: 40 });
+    doc.pipe(res);
+
+    // Add company header (similar to individual payslip)
+    if (fs.existsSync(COMPANY_LOGO)) {
+      try {
+        doc.image(COMPANY_LOGO, 40, 40, { width: 60 });
+      } catch (err) {
+        console.error('Logo loading error:', err);
+      }
+    }
+
+    // Company info
+    doc.fontSize(20)
+      .fillColor(COLORS.primary)
+      .font('Helvetica-Bold')
+      .text(COMPANY_NAME, 120, 45)
+      .fontSize(10)
+      .fillColor(COLORS.text)
+      .font('Helvetica')
+      .text(COMPANY_ADDRESS, 120, 70)
+      .fontSize(14)
+      .fillColor(COLORS.accent)
+      .text('CONSOLIDATED PAYROLL REPORT', 120, 90);
+
+    // Document info
+    doc.fontSize(10)
+      .fillColor(COLORS.text)
+      .text(`Period: ${fileLabel}`, 400, 45, { align: 'right', width: 150 })
+      .text(`Generated: ${moment().format('DD MMM YYYY')}`, 400, 60, { align: 'right', width: 150 })
+      .text(`Total Employees: ${payrolls.length}`, 400, 75, { align: 'right', width: 150 });
+
+    let currentY = 140;
+    
+    // Table headers
+    doc.rect(40, currentY, 515, 20)
+      .fillAndStroke(COLORS.primary, COLORS.primary);
+    
+    doc.fontSize(10)
+      .fillColor('#ffffff')
+      .font('Helvetica-Bold');
+    
+    let xPos = 45;
+    doc.text('Employee', xPos, currentY + 5); xPos += 150;
+    doc.text('Basic', xPos, currentY + 5); xPos += 70;
+    doc.text('Overtime', xPos, currentY + 5); xPos += 70;
+    doc.text('Allowances', xPos, currentY + 5); xPos += 70;
+    doc.text('Deductions', xPos, currentY + 5); xPos += 70;
+    doc.text('Net Pay', xPos, currentY + 5);
+    
+    currentY += 25;
+    
+    // Table rows
+    doc.fontSize(9)
+      .fillColor(COLORS.text)
+      .font('Helvetica');
+    
+    let totalBasic = 0;
+    let totalOvertime = 0;
+    let totalAllowances = 0;
+    let totalDeductions = 0;
+    let totalNetPay = 0;
+    
+    for (let i = 0; i < payrolls.length; i++) {
+      const p = payrolls[i];
+      const emp = p.employeeId || {};
+      const personal = emp.personalInfo || {};
+      
+      // Check if we need a new page
+      if (currentY > 700) {
+        doc.addPage();
+        currentY = 50;
+        
+        // Redraw table headers on new page
+        doc.rect(40, currentY, 515, 20)
+          .fillAndStroke(COLORS.primary, COLORS.primary);
+        
+        doc.fontSize(10)
+          .fillColor('#ffffff')
+          .font('Helvetica-Bold');
+        
+        xPos = 45;
+        doc.text('Employee', xPos, currentY + 5); xPos += 150;
+        doc.text('Basic', xPos, currentY + 5); xPos += 70;
+        doc.text('Overtime', xPos, currentY + 5); xPos += 70;
+        doc.text('Allowances', xPos, currentY + 5); xPos += 70;
+        doc.text('Deductions', xPos, currentY + 5); xPos += 70;
+        doc.text('Net Pay', xPos, currentY + 5);
+        
+        currentY += 25;
+      }
+      
+      const fullname = `${personal.firstName || ''} ${personal.lastName || ''}`.trim();
+      const basic = p.salary?.prorated || 0;
+      const overtime = p.overtime?.amount || 0;
+      const allowances = p.allowances?.total || 0;
+      const deductions = p.deductions?.total || 0;
+      const netPay = p.netPay || 0;
+      
+      // Add to totals
+      totalBasic += basic;
+      totalOvertime += overtime;
+      totalAllowances += allowances;
+      totalDeductions += deductions;
+      totalNetPay += netPay;
+      
+      // Alternate row colors
+      if (i % 2 === 0) {
+        doc.rect(40, currentY, 515, 15)
+          .fillAndStroke(COLORS.lightGray, COLORS.border);
+      }
+      
+      xPos = 45;
+      doc.text(fullname.substring(0, 20), xPos, currentY + 5, { width: 150 }); xPos += 150;
+      doc.text(`${p.currency} ${basic.toLocaleString()}`, xPos, currentY + 5, { width: 70, align: 'right' }); xPos += 70;
+      doc.text(`${p.currency} ${overtime.toLocaleString()}`, xPos, currentY + 5, { width: 70, align: 'right' }); xPos += 70;
+      doc.text(`${p.currency} ${allowances.toLocaleString()}`, xPos, currentY + 5, { width: 70, align: 'right' }); xPos += 70;
+      doc.text(`${p.currency} ${deductions.toLocaleString()}`, xPos, currentY + 5, { width: 70, align: 'right' }); xPos += 70;
+      doc.text(`${p.currency} ${netPay.toLocaleString()}`, xPos, currentY + 5, { width: 70, align: 'right' });
+      
+      currentY += 15;
+    }
+    
+    // Add totals row
+    currentY += 10;
+    doc.rect(40, currentY, 515, 20)
+      .fillAndStroke(COLORS.secondary, COLORS.secondary);
+    
+    doc.fontSize(10)
+      .fillColor('#ffffff')
+      .font('Helvetica-Bold');
+    
+    xPos = 45;
+    doc.text('TOTALS', xPos, currentY + 5, { width: 150 }); xPos += 150;
+    doc.text(`${payrolls[0]?.currency || 'MWK'} ${totalBasic.toLocaleString()}`, xPos, currentY + 5, { width: 70, align: 'right' }); xPos += 70;
+    doc.text(`${payrolls[0]?.currency || 'MWK'} ${totalOvertime.toLocaleString()}`, xPos, currentY + 5, { width: 70, align: 'right' }); xPos += 70;
+    doc.text(`${payrolls[0]?.currency || 'MWK'} ${totalAllowances.toLocaleString()}`, xPos, currentY + 5, { width: 70, align: 'right' }); xPos += 70;
+    doc.text(`${payrolls[0]?.currency || 'MWK'} ${totalDeductions.toLocaleString()}`, xPos, currentY + 5, { width: 70, align: 'right' }); xPos += 70;
+    doc.text(`${payrolls[0]?.currency || 'MWK'} ${totalNetPay.toLocaleString()}`, xPos, currentY + 5, { width: 70, align: 'right' });
+    
+    // Add footer
+    const footerY = doc.page.height - 50;
+    doc.rect(0, footerY, doc.page.width, 50)
+      .fillAndStroke(COLORS.primary, COLORS.primary);
+    
+    doc.fontSize(8)
+      .fillColor('#ffffff')
+      .text(`Generated by: ${requestedBy.name || requestedBy.email || 'System'}`, 50, footerY + 10)
+      .text(`Generated on: ${moment().format('DD MMM YYYY, h:mm A')}`, 50, footerY + 25)
+      .text('CONFIDENTIAL', doc.page.width - 100, footerY + 10, { align: 'right' })
+      .text(`Page ${doc.page.number}`, doc.page.width - 100, footerY + 25, { align: 'right' });
+    
+    doc.end();
+  } catch (err) {
+    console.error('generateConsolidatedPayrollPDF error:', err);
+    if (!res.headersSent) {
+      res.status(500).json({ error: err.message || 'Failed to generate PDF' });
+    }
+  }
+};
+
+// 5. Generate specific reports (PAYE, Pension, Overtime, Loans, etc.)
+payrollController.generateReport = async function(res, reportType, options = {}, requestedBy = {}) {
+  try {
+    const { month, startDate, endDate } = options;
+    if (!month && !(startDate && endDate)) {
+      throw new Error('Provide either month (YYYY-MM) or startDate and endDate (YYYY-MM-DD).');
+    }
+
+    // Build query
+    const query = { isActive: true };
+    if (month) {
+      query.payrollMonth = month;
+    } else {
+      const sd = new Date(startDate);
+      const ed = new Date(endDate);
+      query['payPeriod.startDate'] = { $gte: sd };
+      query['payPeriod.endDate'] = { $lte: ed };
+    }
+
+    // Pull payrolls
+    const payrolls = await Payroll.find(query)
+      .populate({
+        path: 'employeeId',
+        populate: [
+          { path: 'employmentInfo.departmentId', select: 'name code' }
+        ]
+      })
+      .sort({ 'employeeId.personalInfo.lastName': 1 })
+      .lean();
+
+    if (!payrolls || payrolls.length === 0) {
+      res.status(404).json({ error: 'No payroll records found for the selected period.' });
+      return;
+    }
+
+    // Set PDF headers
+    const fileLabel = month ? month : `${startDate}_to_${endDate}`;
+    const filename = `${reportType}_report_${fileLabel}.pdf`;
+    
+    res.setHeader('Content-disposition', `attachment; filename=${filename}`);
+    res.setHeader('Content-type', 'application/pdf');
+
+    // Create PDF document
+    const doc = new PDFDocument({ size: 'A4', margin: 40 });
+    doc.pipe(res);
+
+    // Add company header
+    if (fs.existsSync(COMPANY_LOGO)) {
+      try {
+        doc.image(COMPANY_LOGO, 40, 40, { width: 60 });
+      } catch (err) {
+        console.error('Logo loading error:', err);
+      }
+    }
+
+    // Company info
+    const reportTitles = {
+      'paye': 'PAYE REPORT',
+      'pension': 'PENSION REPORT',
+      'overtime': 'OVERTIME REPORT',
+      'loan': 'LOAN DEDUCTION REPORT',
+      'advance': 'ADVANCE REPORT',
+      'housing': 'HOUSING ALLOWANCE REPORT'
+    };
+
+    doc.fontSize(20)
+      .fillColor(COLORS.primary)
+      .font('Helvetica-Bold')
+      .text(COMPANY_NAME, 120, 45)
+      .fontSize(10)
+      .fillColor(COLORS.text)
+      .font('Helvetica')
+      .text(COMPANY_ADDRESS, 120, 70)
+      .fontSize(14)
+      .fillColor(COLORS.accent)
+      .text(reportTitles[reportType] || 'REPORT', 120, 90);
+
+    // Document info
+    doc.fontSize(10)
+      .fillColor(COLORS.text)
+      .text(`Period: ${fileLabel}`, 400, 45, { align: 'right', width: 150 })
+      .text(`Generated: ${moment().format('DD MMM YYYY')}`, 400, 60, { align: 'right', width: 150 })
+      .text(`Total Employees: ${payrolls.length}`, 400, 75, { align: 'right', width: 150 });
+
+    let currentY = 140;
+    
+    // Table headers
+    doc.rect(40, currentY, 515, 20)
+      .fillAndStroke(COLORS.primary, COLORS.primary);
+    
+    doc.fontSize(10)
+      .fillColor('#ffffff')
+      .font('Helvetica-Bold');
+    
+    let xPos = 45;
+    doc.text('Employee', xPos, currentY + 5, { width: 200 }); 
+    xPos += 200;
+    
+    // Report-specific columns
+    let reportData = [];
+    let totalAmount = 0;
+    
+    switch (reportType) {
+      case 'paye':
+        doc.text('Taxable Income', xPos, currentY + 5, { width: 100, align: 'right' });
+        xPos += 100;
+        doc.text('PAYE Amount', xPos, currentY + 5, { width: 100, align: 'right' });
+        xPos += 100;
+        doc.text('Tax Rate', xPos, currentY + 5, { width: 80, align: 'right' });
+        
+        // Prepare PAYE data
+        payrolls.forEach(p => {
+          const emp = p.employeeId || {};
+          const personal = emp.personalInfo || {};
+          const fullname = `${personal.firstName || ''} ${personal.lastName || ''}`.trim();
+          
+          reportData.push({
+            employee: fullname,
+            taxableIncome: p.grossPay || 0,
+            amount: p.deductions?.tax?.amount || 0,
+            rate: p.deductions?.tax?.rate || 0
+          });
+          
+          totalAmount += p.deductions?.tax?.amount || 0;
+        });
+        break;
+        
+      case 'pension':
+        doc.text('Pensionable Income', xPos, currentY + 5, { width: 100, align: 'right' });
+        xPos += 100;
+        doc.text('Pension Amount', xPos, currentY + 5, { width: 100, align: 'right' });
+        xPos += 100;
+        doc.text('Contribution Rate', xPos, currentY + 5, { width: 80, align: 'right' });
+        
+        // Prepare Pension data
+        payrolls.forEach(p => {
+          const emp = p.employeeId || {};
+          const personal = emp.personalInfo || {};
+          const fullname = `${personal.firstName || ''} ${personal.lastName || ''}`.trim();
+          
+          reportData.push({
+            employee: fullname,
+            pensionableIncome: p.grossPay || 0,
+            amount: p.deductions?.pension?.amount || 0,
+            rate: p.deductions?.pension?.rate || 0
+          });
+          
+          totalAmount += p.deductions?.pension?.amount || 0;
+        });
+        break;
+        
+      case 'overtime':
+        doc.text('Overtime Hours', xPos, currentY + 5, { width: 80, align: 'right' });
+        xPos += 80;
+        doc.text('Hourly Rate', xPos, currentY + 5, { width: 80, align: 'right' });
+        xPos += 80;
+        doc.text('Overtime Amount', xPos, currentY + 5, { width: 100, align: 'right' });
+        xPos += 100;
+        doc.text('Multiplier', xPos, currentY + 5, { width: 60, align: 'right' });
+        
+        // Prepare Overtime data
+        payrolls.forEach(p => {
+          const emp = p.employeeId || {};
+          const personal = emp.personalInfo || {};
+          const fullname = `${personal.firstName || ''} ${personal.lastName || ''}`.trim();
+          
+          reportData.push({
+            employee: fullname,
+            hours: p.overtime?.hours || 0,
+            rate: p.overtime?.rate || 0,
+            amount: p.overtime?.amount || 0,
+            multiplier: 1.5 // Standard multiplier
+          });
+          
+          totalAmount += p.overtime?.amount || 0;
+        });
+        break;
+        
+      case 'loan':
+        doc.text('Loan Description', xPos, currentY + 5, { width: 150, align: 'left' });
+        xPos += 150;
+        doc.text('Loan Amount', xPos, currentY + 5, { width: 100, align: 'right' });
+        xPos += 100;
+        doc.text('Balance', xPos, currentY + 5, { width: 100, align: 'right' });
+        
+        // Prepare Loan data
+        payrolls.forEach(p => {
+          const emp = p.employeeId || {};
+          const personal = emp.personalInfo || {};
+          const fullname = `${personal.firstName || ''} ${personal.lastName || ''}`.trim();
+          
+          if (p.deductions?.loans && p.deductions.loans.length > 0) {
+            p.deductions.loans.forEach(loan => {
+              reportData.push({
+                employee: fullname,
+                description: loan.name || 'Loan',
+                amount: loan.amount || 0,
+                balance: loan.balance || 0
+              });
+              
+              totalAmount += loan.amount || 0;
+            });
+          }
+        });
+        break;
+        
+      case 'housing':
+        doc.text('Housing Allowance', xPos, currentY + 5, { width: 120, align: 'right' });
+        
+        // Prepare Housing data
+        payrolls.forEach(p => {
+          const emp = p.employeeId || {};
+          const personal = emp.personalInfo || {};
+          const fullname = `${personal.firstName || ''} ${personal.lastName || ''}`.trim();
+          
+          reportData.push({
+            employee: fullname,
+            amount: p.allowances?.housing || 0
+          });
+          
+          totalAmount += p.allowances?.housing || 0;
+        });
+        break;
+        
+      default:
+        throw new Error('Unsupported report type');
+    }
+    
+    currentY += 25;
+    
+    // Table rows
+    doc.fontSize(9)
+      .fillColor(COLORS.text)
+      .font('Helvetica');
+    
+    for (let i = 0; i < reportData.length; i++) {
+      const data = reportData[i];
+      
+      // Check if we need a new page
+      if (currentY > 700) {
+        doc.addPage();
+        currentY = 50;
+        
+        // Redraw table headers on new page
+        doc.rect(40, currentY, 515, 20)
+          .fillAndStroke(COLORS.primary, COLORS.primary);
+        
+        doc.fontSize(10)
+          .fillColor('#ffffff')
+          .font('Helvetica-Bold');
+        
+        xPos = 45;
+        doc.text('Employee', xPos, currentY + 5, { width: 200 }); 
+        xPos += 200;
+        
+        // Redraw report-specific headers
+        switch (reportType) {
+          case 'paye':
+            doc.text('Taxable Income', xPos, currentY + 5, { width: 100, align: 'right' });
+            xPos += 100;
+            doc.text('PAYE Amount', xPos, currentY + 5, { width: 100, align: 'right' });
+            xPos += 100;
+            doc.text('Tax Rate', xPos, currentY + 5, { width: 80, align: 'right' });
+            break;
+            
+          case 'pension':
+            doc.text('Pensionable Income', xPos, currentY + 5, { width: 100, align: 'right' });
+            xPos += 100;
+            doc.text('Pension Amount', xPos, currentY + 5, { width: 100, align: 'right' });
+            xPos += 100;
+            doc.text('Contribution Rate', xPos, currentY + 5, { width: 80, align: 'right' });
+            break;
+            
+          case 'overtime':
+            doc.text('Overtime Hours', xPos, currentY + 5, { width: 80, align: 'right' });
+            xPos += 80;
+            doc.text('Hourly Rate', xPos, currentY + 5, { width: 80, align: 'right' });
+            xPos += 80;
+            doc.text('Overtime Amount', xPos, currentY + 5, { width: 100, align: 'right' });
+            xPos += 100;
+            doc.text('Multiplier', xPos, currentY + 5, { width: 60, align: 'right' });
+            break;
+            
+          case 'loan':
+            doc.text('Loan Description', xPos, currentY + 5, { width: 150, align: 'left' });
+            xPos += 150;
+            doc.text('Loan Amount', xPos, currentY + 5, { width: 100, align: 'right' });
+            xPos += 100;
+            doc.text('Balance', xPos, currentY + 5, { width: 100, align: 'right' });
+            break;
+            
+          case 'housing':
+            doc.text('Housing Allowance', xPos, currentY + 5, { width: 120, align: 'right' });
+            break;
+        }
+        
+        currentY += 25;
+      }
+      
+      // Alternate row colors
+      if (i % 2 === 0) {
+        doc.rect(40, currentY, 515, 15)
+          .fillAndStroke(COLORS.lightGray, COLORS.border);
+      }
+      
+      xPos = 45;
+      doc.text(data.employee.substring(0, 25), xPos, currentY + 5, { width: 200 }); 
+      xPos += 200;
+      
+      // Report-specific data
+      switch (reportType) {
+        case 'paye':
+          doc.text(`${payrolls[0]?.currency || 'MWK'} ${data.taxableIncome.toLocaleString()}`, xPos, currentY + 5, { width: 100, align: 'right' });
+          xPos += 100;
+          doc.text(`${payrolls[0]?.currency || 'MWK'} ${data.amount.toLocaleString()}`, xPos, currentY + 5, { width: 100, align: 'right' });
+          xPos += 100;
+          doc.text(`${data.rate.toFixed(2)}%`, xPos, currentY + 5, { width: 80, align: 'right' });
+          break;
+          
+        case 'pension':
+          doc.text(`${payrolls[0]?.currency || 'MWK'} ${data.pensionableIncome.toLocaleString()}`, xPos, currentY + 5, { width: 100, align: 'right' });
+          xPos += 100;
+          doc.text(`${payrolls[0]?.currency || 'MWK'} ${data.amount.toLocaleString()}`, xPos, currentY + 5, { width: 100, align: 'right' });
+          xPos += 100;
+          doc.text(`${data.rate.toFixed(2)}%`, xPos, currentY + 5, { width: 80, align: 'right' });
+          break;
+          
+        case 'overtime':
+          doc.text(data.hours.toFixed(2), xPos, currentY + 5, { width: 80, align: 'right' });
+          xPos += 80;
+          doc.text(`${payrolls[0]?.currency || 'MWK'} ${data.rate.toLocaleString()}`, xPos, currentY + 5, { width: 80, align: 'right' });
+          xPos += 80;
+          doc.text(`${payrolls[0]?.currency || 'MWK'} ${data.amount.toLocaleString()}`, xPos, currentY + 5, { width: 100, align: 'right' });
+          xPos += 100;
+          doc.text(data.multiplier.toFixed(1), xPos, currentY + 5, { width: 60, align: 'right' });
+          break;
+          
+        case 'loan':
+          doc.text(data.description.substring(0, 20), xPos, currentY + 5, { width: 150, align: 'left' });
+          xPos += 150;
+          doc.text(`${payrolls[0]?.currency || 'MWK'} ${data.amount.toLocaleString()}`, xPos, currentY + 5, { width: 100, align: 'right' });
+          xPos += 100;
+          doc.text(`${payrolls[0]?.currency || 'MWK'} ${data.balance.toLocaleString()}`, xPos, currentY + 5, { width: 100, align: 'right' });
+          break;
+          
+        case 'housing':
+          doc.text(`${payrolls[0]?.currency || 'MWK'} ${data.amount.toLocaleString()}`, xPos, currentY + 5, { width: 120, align: 'right' });
+          break;
+      }
+      
+      currentY += 15;
+    }
+    
+    // Add totals row if applicable
+    if (reportType !== 'loan') { // Loans have multiple entries per employee
+      currentY += 10;
+      doc.rect(40, currentY, 515, 20)
+        .fillAndStroke(COLORS.secondary, COLORS.secondary);
+      
+      doc.fontSize(10)
+        .fillColor('#ffffff')
+        .font('Helvetica-Bold');
+      
+      xPos = 45;
+      doc.text('TOTAL', xPos, currentY + 5, { width: 200 }); 
+      xPos += 200;
+      
+      switch (reportType) {
+        case 'paye':
+        case 'pension':
+        case 'housing':
+          // Skip intermediate columns
+          xPos += reportType === 'paye' || reportType === 'pension' ? 100 : 0;
+          doc.text(`${payrolls[0]?.currency || 'MWK'} ${totalAmount.toLocaleString()}`, xPos, currentY + 5, { width: 100, align: 'right' });
+          break;
+          
+        case 'overtime':
+          // Skip intermediate columns
+          xPos += 160;
+          doc.text(`${payrolls[0]?.currency || 'MWK'} ${totalAmount.toLocaleString()}`, xPos, currentY + 5, { width: 100, align: 'right' });
+          break;
+      }
+    }
+    
+    // Add footer
+    const footerY = doc.page.height - 50;
+    doc.rect(0, footerY, doc.page.width, 50)
+      .fillAndStroke(COLORS.primary, COLORS.primary);
+    
+    doc.fontSize(8)
+      .fillColor('#ffffff')
+      .text(`Generated by: ${requestedBy.name || requestedBy.email || 'System'}`, 50, footerY + 10)
+      .text(`Generated on: ${moment().format('DD MMM YYYY, h:mm A')}`, 50, footerY + 25)
+      .text('CONFIDENTIAL', doc.page.width - 100, footerY + 10, { align: 'right' })
+      .text(`Page ${doc.page.number}`, doc.page.width - 100, footerY + 25, { align: 'right' });
+    
+    doc.end();
+  } catch (err) {
+    console.error('generateReport error:', err);
+    if (!res.headersSent) {
+      res.status(500).json({ error: err.message || 'Failed to generate PDF' });
+    }
+  }
+};
+
+// 6. Finalize payroll processing
+payrollController.finalizePayroll = async (payrollId, userId) => {
+  try {
+    const payroll = await Payroll.findById(payrollId);
+
+    if (!payroll) {
+      const error = new Error('Payroll record not found');
+      error.statusCode = 404;
+      throw error;
+    }
+
+    // Ensure payroll is approved before finalization
+    if (payroll.approvalStatus !== 'approved') {
+      const error = new Error('Payroll must be approved before finalization');
+      error.statusCode = 400;
+      throw error;
+    }
+
+    // Mark as ready for payment
+    payroll.payment.status = 'approved';
+    payroll.payment.approvedBy = userId;
+    payroll.payment.approvedAt = new Date();
+    
+    // Generate payslip
+    await payroll.generatePayslip();
+
+    await payroll.save();
+    return payroll;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// 7. Finalize all payrolls for a month
+payrollController.finalizeAllPayrolls = async (month, userId) => {
+  try {
+    const payrolls = await Payroll.find({
+      payrollMonth: month,
+      isActive: true,
+      'approvals.hr.status': 'approved',
+      'approvals.finance.status': 'approved',
+      'payment.status': 'pending'
+    });
+
+    if (payrolls.length === 0) {
+      const error = new Error('No approved payrolls found for finalization');
+      error.statusCode = 404;
+      throw error;
+    }
+
+    const results = [];
+    
+    for (const payroll of payrolls) {
+      try {
+        payroll.payment.status = 'approved';
+        payroll.payment.approvedBy = userId;
+        payroll.payment.approvedAt = new Date();
+        
+        await payroll.generatePayslip();
+        await payroll.save();
+        
+        results.push({
+          payrollId: payroll._id,
+          employeeId: payroll.employeeId,
+          success: true
+        });
+      } catch (error) {
+        results.push({
+          payrollId: payroll._id,
+          employeeId: payroll.employeeId,
+          success: false,
+          error: error.message
+        });
+      }
+    }
+
+    return {
+      month,
+      totalRecords: payrolls.length,
+      successCount: results.filter(r => r.success).length,
+      failureCount: results.filter(r => !r.success).length,
+      results
+    };
+  } catch (error) {
+    throw error;
+  }
+};
+
+
+
 module.exports = payrollController;
