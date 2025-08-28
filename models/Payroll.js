@@ -163,14 +163,27 @@ const payrollSchema = new mongoose.Schema({
   exchangeRate: { type: Number, default: 1, min: [0, 'Exchange rate cannot be negative'] },
   
   // Adjustments for corrections
-  adjustments: [{
-    type: { type: String, enum: ['addition', 'deduction'], required: true },
-    category: { type: String, enum: ['salary', 'allowance', 'bonus', 'tax', 'other'], required: true },
-    amount: { type: Number, required: true },
-    reason: { type: String, required: true, trim: true },
-    appliedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    appliedAt: { type: Date, default: Date.now }
-  }],
+adjustments: [{
+  type: { 
+    type: String, 
+    enum: ['addition', 'deduction', 'adjustment'], // Added 'adjustment'
+    required: true 
+  },
+  category: { 
+    type: String, 
+    enum: ['salary', 'allowance', 'bonus', 'tax', 'other', 'edit'], // Added 'edit'
+    required: true 
+  },
+  amount: { type: Number, required: true },
+  reason: { type: String, required: true, trim: true },
+  appliedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  appliedAt: { type: Date, default: Date.now },
+  changes: [{
+    field: String,
+    oldValue: mongoose.Schema.Types.Mixed,
+    newValue: mongoose.Schema.Types.Mixed
+  }]
+}],
   
   notes: { type: String, trim: true, maxlength: [500, 'Notes cannot exceed 500 characters'] },
   isActive: { type: Boolean, default: true }
@@ -527,6 +540,116 @@ payrollSchema.statics.getSummary = async function(month) {
       }
     }
   ]);
+};
+
+payrollSchema.statics.createFromPreviousMonth = async function(month, processedBy) {
+  try {
+    const [year, monthNum] = month.split('-');
+    const prevMonth = moment(`${year}-${monthNum}-01`).subtract(1, 'month').format('YYYY-MM');
+    
+    // Get previous month's payrolls
+    const prevPayrolls = await this.find({ 
+      payrollMonth: prevMonth,
+      isActive: true 
+    }).populate('employeeId');
+    
+    if (prevPayrolls.length === 0) {
+      throw new Error(`No payroll records found for previous month (${prevMonth})`);
+    }
+    
+    const payrollRecords = [];
+    const startDate = moment(`${year}-${monthNum}-01`);
+    const endDate = startDate.clone().endOf('month');
+    const workingDays = this.calculateWorkingDays(startDate.toDate(), endDate.toDate());
+    
+    for (const prevPayroll of prevPayrolls) {
+      // Skip if already processed for this month
+      const existing = await this.findOne({ 
+        employeeId: prevPayroll.employeeId._id, 
+        payrollMonth: month 
+      });
+      if (existing) continue;
+      
+      // Create new payroll based on previous month
+      const payrollData = {
+        employeeId: prevPayroll.employeeId._id,
+        payrollMonth: month,
+        payPeriod: {
+          startDate: startDate.toDate(),
+          endDate: endDate.toDate(),
+          workingDays: workingDays,
+          daysWorked: workingDays // Default to full attendance
+        },
+        salary: {
+          base: prevPayroll.salary.base,
+          prorated: prevPayroll.salary.base // Will be recalculated in pre-save
+        },
+        allowances: { ...prevPayroll.allowances },
+        overtime: {
+          hours: 0, // Reset overtime
+          rate: prevPayroll.overtime.rate,
+          amount: 0
+        },
+        bonuses: {
+          performance: 0, // Reset bonuses
+          annual: 0,
+          other: 0,
+          total: 0
+        },
+        deductions: {
+          tax: {
+            rate: prevPayroll.deductions.tax.rate,
+            amount: 0 // Will be recalculated
+          },
+          pension: {
+            rate: prevPayroll.deductions.pension.rate,
+            amount: 0 // Will be recalculated
+          },
+          loans: [...prevPayroll.deductions.loans], // Carry over loans
+          other: [], // Reset other deductions
+          total: 0 // Will be recalculated
+        },
+        processedBy: processedBy,
+        currency: prevPayroll.currency,
+        // Reset payment and approvals
+        payment: {
+          status: 'pending',
+          method: 'bank_transfer',
+          reference: '',
+          paidAt: null
+        },
+        approvals: {
+          hr: { status: 'pending', by: null, at: null, notes: '' },
+          finance: { status: 'pending', by: null, at: null, notes: '' }
+        },
+        payslip: {
+          generated: false,
+          path: '',
+          generatedAt: null
+        },
+        adjustments: [],
+        notes: `Created from ${prevMonth} payroll data`
+      };
+      
+      payrollRecords.push(new this(payrollData));
+    }
+    
+    // Save records
+    const savedRecords = [];
+    for (const record of payrollRecords) {
+      try {
+        const saved = await record.save();
+        savedRecords.push(saved);
+      } catch (error) {
+        console.error(`Failed to save payroll for employee ${record.employeeId}:`, error);
+      }
+    }
+    
+    return savedRecords;
+  } catch (error) {
+    console.error('Error creating payroll from previous month:', error);
+    throw error;
+  }
 };
 
 payrollSchema.plugin(mongoosePaginate);

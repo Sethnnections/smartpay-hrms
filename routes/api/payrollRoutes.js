@@ -204,7 +204,7 @@ router.get('/:id/payslip', flexibleAuth, async (req, res) => {
 });
 
 // Generate individual payslip (HR/Admin only, or employee for own payslip)
-router.post('/:id/payslip', async (req, res) => {
+router.post('/:id/payslip',flexibleAuth, async (req, res) => {
   try {
     const payroll = await payrollController.getPayrollDetails(req.params.id);
     
@@ -226,7 +226,7 @@ router.post('/:id/payslip', async (req, res) => {
 });
 
 // Generate all payslips for a month
-router.post('/payslips/generate-all', requireHROrAdmin, async (req, res) => {
+router.post('/payslips/generate-all', flexibleAuth, async (req, res) => {
   try {
     const { month } = req.body;
     
@@ -435,7 +435,7 @@ router.put('/:id/details', requireHROrAdmin, async (req, res) => {
 });
 
 // Generate consolidated payroll PDF
-router.post('/consolidated-payroll', authenticateToken, async (req, res) => {
+router.post('/consolidated-payroll', flexibleAuth, async (req, res) => {
   try {
     // Security: only finance or admin can generate the report
     if (!req.user || !['admin', 'finance', 'hr'].includes(req.user.role)) {
@@ -456,7 +456,7 @@ router.post('/consolidated-payroll', authenticateToken, async (req, res) => {
 });
 
 // Generate specific reports (PAYE, Pension, Overtime, Loans, Housing, etc.)
-router.post('/report/:type', authenticateToken, async (req, res) => {
+router.post('/report/:type', flexibleAuth, async (req, res) => {
   try {
     // Security: only finance or admin can generate reports
     if (!req.user || !['admin', 'finance', 'hr'].includes(req.user.role)) {

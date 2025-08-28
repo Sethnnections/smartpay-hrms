@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TPS - Payrolls</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- DataTables CSS -->
+    <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+    
+    <style>
+        .payroll-status {
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        .status-pending { background-color: #fff3cd; color: #856404; }
+        .status-approved { background-color: #d1e7dd; color: #0f5132; }
+        .status-paid { background-color: #d1ecf1; color: #0c5460; }
+        .status-rejected { background-color: #f8d7da; color: #721c24; }
+        
+        .action-buttons .btn {
+            margin-right: 0.25rem;
+        }
+        
+        .workflow-step {
+            border-left: 4px solid #0d6efd;
+            padding-left: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .step-number {
+            background: #0d6efd;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Main Content -->
+    <div class="main-content" id="mainContent">
+        <!-- Page Content -->
+        <main class="dashboard-content">
+            <div class="container-fluid px-4">
+                <!-- Alert Container -->
+                <div id="alertContainer" class="mt-3"></div>
+
+                <!-- Workflow Steps -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="workflow-step">
+                            <h5><span class="step-number">1</span>Create New Payroll Month</h5>
+                            <div class="row g-3 align-items-end">
+                                <div class="col-md-3">
+                                    <label class="form-label">Select Month</label>
+                                    <input type="month" class="form-control" id="newMonth" 
+                                           min="2024-01" value="<%= new Date().toISOString().slice(0,7) %>">
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="usePreviousData" checked>
+                                        <label class="form-check-label" for="usePreviousData">
+                                            Use previous month's data as template
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <button class="btn btn-primary" onclick="createPayrollMonth()">
+                                        <i class="fas fa-plus me-1"></i> Create Payroll Month
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="workflow-step">
+                            <h5><span class="step-number">2</span>Review & Edit Payrolls</h5>
+                            <div class="row g-3 align-items-end">
+                                <div class="col-md-3">
+                                    <label class="form-label">Select Period</label>
+                                    <select class="form-select" id="periodSelect">
+                                        <option value="">Loading periods...</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <button class="btn btn-outline-primary" onclick="loadPayrolls()">
+                                        <i class="fas fa-sync me-1"></i> Load
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="workflow-step">
+                            <h5><span class="step-number">3</span>Generate Reports & Process</h5>
+                            <div class="d-flex flex-wrap gap-2">
+                                <button class="btn btn-outline-primary" onclick="generateReport('payroll')">
+                                    <i class="fas fa-file-invoice me-1"></i> Payroll Report
+                                </button>
+                                <button class="btn btn-outline-info" onclick="generateReport('paye')">
+                                    <i class="fas fa-receipt me-1"></i> PAYE Report
+                                </button>
+                                <button class="btn btn-outline-warning" onclick="generateReport('pension')">
+                                    <i class="fas fa-piggy-bank me-1"></i> Pension Report
+                                </button>
+                                <button class="btn btn-outline-success" onclick="generateReport('overtime')">
+                                    <i class="fas fa-clock me-1"></i> Overtime Report
+                                </button>
+                                <button class="btn btn-outline-danger" onclick="generateReport('loan')">
+                                    <i class="fas fa-hand-holding-usd me-1"></i> Loan Report
+                                </button>
+                                <button class="btn btn-outline-secondary" onclick="generateReport('housing')">
+                                    <i class="fas fa-home me-1"></i> Housing Report
+                                </button>
+                                <button class="btn btn-success" onclick="processAllPayrolls()">
+                                    <i class="fas fa-cogs me-1"></i> Process All
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payroll Table -->
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-list me-2"></i>Payroll Records
+                            <span class="badge bg-primary ms-2" id="totalRecords">0 records</span>
+                        </h5>
+                        <div class="d-flex gap-2">
+                            <select class="form-select form-select-sm" id="statusFilter" onchange="filterTable()">
+                                <option value="all">All Status</option>
+                                <option value="pending">Pending</option>
+                                <option value="approved">Approved</option>
+                                <option value="paid">Paid</option>
+                            </select>
+                            <button class="btn btn-sm btn-outline-secondary" onclick="exportToExcel()">
+                                <i class="fas fa-download me-1"></i> Export
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="payrollTable">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Employee</th>
+                                        <th>ID</th>
+                                        <th>Department</th>
+                                        <th>Basic Pay</th>
+                                        <th>Allowances</th>
+                                        <th>Overtime</th>
+                                        <th>Deductions</th>
+                                        <th>Net Pay</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Data will be loaded dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Edit Payroll Modal -->
+        <div class="modal fade" id="editPayrollModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Edit Payroll Details</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="payrollForm">
+                            <input type="hidden" id="payrollId">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Days Worked</label>
+                                        <input type="number" class="form-control" id="daysWorked" min="0">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Working Days</label>
+                                        <input type="number" class="form-control" id="workingDays" min="0">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <h6 class="mt-4 mb-3">Allowances</h6>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label class="form-label">Transport</label>
+                                        <input type="number" class="form-control" id="transportAllowance" min="0" step="0.01">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label class="form-label">Housing</label>
+                                        <input type="number" class="form-control" id="housingAllowance" min="0" step="0.01">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label class="form-label">Medical</label>
+                                        <input type="number" class="form-control" id="medicalAllowance" min="0" step="0.01">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label class="form-label">Overtime Hours</label>
+                                        <input type="number" class="form-control" id="overtimeHours" min="0" step="0.1">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label class="form-label">Overtime Rate</label>
+                                        <input type="number" class="form-control" id="overtimeRate" min="0" step="0.01">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label class="form-label">Performance Bonus</label>
+                                        <input type="number" class="form-control" id="performanceBonus" min="0" step="0.01">
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" onclick="savePayrollChanges()">Save Changes</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <!-- Axios -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.2/axios.min.js"></script>
+    
+    <script>
+        // Global variables
+        let currentPayrolls = [];
+        let authToken = localStorage.getItem('authToken');
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAvailablePeriods();
+        });
+
+        // Create payroll month
+        async function createPayrollMonth() {
+            try {
+                const month = document.getElementById('newMonth').value;
+                const usePrevious = document.getElementById('usePreviousData').checked;
+                
+                if (!month) {
+                    showAlert('Please select a month', 'warning');
+                    return;
+                }
+                
+                let response;
+                if (usePrevious) {
+                    response = await axios.post('/api/payroll/create-from-previous', {
+                        month: month
+                    }, {
+                        headers: { Authorization: `Bearer ${authToken}` }
+                    });
+                } else {
+                    response = await axios.post('/api/payroll/process', {
+                        month: month
+                    }, {
+                        headers: { Authorization: `Bearer ${authToken}` }
+                    });
+                }
+                
+                showAlert(response.data.message, 'success');
+                loadAvailablePeriods();
+            } catch (error) {
+                showAlert(error.response?.data?.error || 'Error creating payroll', 'danger');
+            }
+        }
+
+        // Load available payroll periods
+        async function loadAvailablePeriods() {
+            try {
+                const response = await axios.get('/api/payroll/periods/available', {
+                    headers: { Authorization: `Bearer ${authToken}` }
+                });
+                
+                const periodSelect = document.getElementById('periodSelect');
+                periodSelect.innerHTML = '<option value="">Select Period</option>';
+                
+                response.data.forEach(period => {
+                    const option = document.createElement('option');
+                    option.value = period._id;
+                    option.textContent = `${period._id} (${period.count} records)`;
+                    periodSelect.appendChild(option);
+                });
+            } catch (error) {
+                showAlert('Error loading periods', 'danger');
+            }
+        }
+
+        // Load payrolls
+        async function loadPayrolls() {
+            try {
+                const period = document.getElementById('periodSelect').value;
+                if (!period) {
+                    showAlert('Please select a period first', 'warning');
+                    return;
+                }
+                
+                const response = await axios.get(`/api/payroll/period/${period}`, {
+                    headers: { Authorization: `Bearer ${authToken}` }
+                });
+                
+                currentPayrolls = response.data.payrolls;
+                renderPayrollTable(currentPayrolls);
+                document.getElementById('totalRecords').textContent = `${response.data.pagination.totalRecords} records`;
+                
+            } catch (error) {
+                showAlert('Error loading payrolls', 'danger');
+            }
+        }
+
+        // Render payroll table
+
+        // Additional fixes for the HTML file
+
+// Fix the processAllPayrolls function (finalize-all expects month parameter)
+async function processAllPayrolls() {
+    try {
+        const period = document.getElementById('periodSelect').value;
+        if (!period) {
+            showAlert('Please select a period first', 'warning');
+            return;
+        }
+        
+        const response = await axios.patch(`/api/payroll/finalize-all/${period}`, {}, {
+            headers: { Authorization: `Bearer ${authToken}` }
+        });
+        
+        showAlert(`Processed ${response.data.successCount} payrolls successfully`, 'success');
+        loadPayrolls();
+    } catch (error) {
+        showAlert(error.response?.data?.error || 'Error processing payrolls', 'danger');
+    }
+}
+
+// Fix the finalizePayroll function
+async function finalizePayroll(payrollId) {
+    try {
+        const response = await axios.patch(`/api/payroll/${payrollId}/finalize`, {}, {
+            headers: { Authorization: `Bearer ${authToken}` }
+        });
+        
+        showAlert('Payroll finalized successfully', 'success');
+        loadPayrolls();
+    } catch (error) {
+        showAlert(error.response?.data?.error || 'Error finalizing payroll', 'danger');
+    }
+}
+
+// Add missing finalizePayroll function in the renderPayrollTable function
+// Replace the button click with this function call:
+function renderPayrollTable(payrolls) {
+    const tbody = document.querySelector('#payrollTable tbody');
+    tbody.innerHTML = '';
+    
+    payrolls.forEach(payroll => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${payroll.employeeId?.personalInfo?.firstName} ${payroll.employeeId?.personalInfo?.lastName}</td>
+            <td>${payroll.employeeId?.employeeId}</td>
+            <td>${payroll.employeeId?.employmentInfo?.departmentId?.name || 'N/A'}</td>
+            <td>${payroll.currency} ${payroll.salary?.prorated?.toLocaleString()}</td>
+            <td>${payroll.currency} ${payroll.allowances?.total?.toLocaleString()}</td>
+            <td>${payroll.currency} ${payroll.overtime?.amount?.toLocaleString()}</td>
+            <td>${payroll.currency} ${payroll.deductions?.total?.toLocaleString()}</td>
+            <td><strong>${payroll.currency} ${payroll.netPay?.toLocaleString()}</strong></td>
+            <td><span class="payroll-status status-${payroll.payment?.status}">${payroll.payment?.status}</span></td>
+            <td class="action-buttons">
+                ${payroll.payment?.status !== 'paid' ? `
+                    <button class="btn btn-sm btn-outline-primary" onclick="editPayroll('${payroll._id}')" title="Edit">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                ` : ''}
+                <button class="btn btn-sm btn-outline-info" onclick="viewPayslip('${payroll._id}')" title="View Payslip">
+                    <i class="fas fa-eye"></i>
+                </button>
+                ${payroll.approvalStatus === 'approved' && payroll.payment?.status !== 'paid' ? `
+                    <button class="btn btn-sm btn-outline-success" onclick="finalizePayroll('${payroll._id}')" title="Finalize">
+                        <i class="fas fa-check-circle"></i>
+                    </button>
+                ` : ''}
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+      // Edit payroll
+        async function editPayroll(payrollId) {
+            try {
+                const response = await axios.get(`/api/payroll/${payrollId}/editable`, {
+                    headers: { Authorization: `Bearer ${authToken}` }
+                });
+                
+                const payroll = response.data;
+                document.getElementById('payrollId').value = payroll._id;
+                document.getElementById('daysWorked').value = payroll.payPeriod.daysWorked;
+                document.getElementById('workingDays').value = payroll.payPeriod.workingDays;
+                document.getElementById('transportAllowance').value = payroll.allowances.transport;
+                document.getElementById('housingAllowance').value = payroll.allowances.housing;
+                document.getElementById('medicalAllowance').value = payroll.allowances.medical;
+                document.getElementById('overtimeHours').value = payroll.overtime.hours;
+                document.getElementById('overtimeRate').value = payroll.overtime.rate;
+                document.getElementById('performanceBonus').value = payroll.bonuses.performance;
+                
+                const modal = new bootstrap.Modal(document.getElementById('editPayrollModal'));
+                modal.show();
+            } catch (error) {
+                showAlert('Error loading payroll details', 'danger');
+            }
+        }
+
+        // Save payroll changes
+        async function savePayrollChanges() {
+            try {
+                const payrollId = document.getElementById('payrollId').value;
+                const updateData = {
+                    'payPeriod.daysWorked': parseFloat(document.getElementById('daysWorked').value),
+                    'payPeriod.workingDays': parseFloat(document.getElementById('workingDays').value),
+                    'allowances.transport': parseFloat(document.getElementById('transportAllowance').value),
+                    'allowances.housing': parseFloat(document.getElementById('housingAllowance').value),
+                    'allowances.medical': parseFloat(document.getElementById('medicalAllowance').value),
+                    'overtime.hours': parseFloat(document.getElementById('overtimeHours').value),
+                    'overtime.rate': parseFloat(document.getElementById('overtimeRate').value),
+                    'bonuses.performance': parseFloat(document.getElementById('performanceBonus').value)
+                };
+                
+                await axios.put(`/api/payroll/${payrollId}/details`, updateData, {
+                    headers: { Authorization: `Bearer ${authToken}` }
+                });
+                
+                showAlert('Payroll updated successfully', 'success');
+                bootstrap.Modal.getInstance(document.getElementById('editPayrollModal')).hide();
+                loadPayrolls();
+            } catch (error) {
+                showAlert(error.response?.data?.error || 'Error updating payroll', 'danger');
+            }
+        }
+
+        // View payslip
+        function viewPayslip(payrollId) {
+            const token = encodeURIComponent(authToken);
+            window.open(`/api/payroll/${payrollId}/payslip?download=true&token=${token}`, '_blank');
+        }
+
+        // Generate report
+        // Fixed generateReport function for the HTML file
+async function generateReport(type) {
+    const period = document.getElementById('periodSelect').value;
+    if (!period) {
+        showAlert('Please select a period first', 'warning');
+        return;
+    }
+    
+    try {
+        const response = await axios.post(`/api/payroll/consolidated-payroll`, {
+            month: period
+        }, {
+            headers: { 
+                Authorization: `Bearer ${authToken}`,
+                'Content-Type': 'application/json'
+            },
+            responseType: 'blob' // Important for PDF downloads
+        });
+        
+        // Create blob URL and download
+        const blob = new Blob([response.data], { type: 'application/pdf' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${type}_report_${period}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        
+    } catch (error) {
+        showAlert(error.response?.data?.error || `Error generating ${type} report`, 'danger');
+    }
+}
+        // Process all payrolls
+
+
+
+        async function processAllPayrolls() {
+    try {
+        const period = document.getElementById('periodSelect').value;
+        if (!period) {
+            showAlert('Please select a period first', 'warning');
+            return;
+        }
+        
+        const response = await axios.patch(`/api/payroll/finalize-all/${period}`, {}, {
+            headers: { Authorization: `Bearer ${authToken}` }
+        });
+        
+        showAlert(`Processed ${response.data.successCount} payrolls successfully`, 'success');
+        loadPayrolls();
+    } catch (error) {
+        showAlert(error.response?.data?.error || 'Error processing payrolls', 'danger');
+    }
+}
+ 
+        // Export to Excel
+        function exportToExcel() {
+    const period = document.getElementById('periodSelect').value;
+    if (!period) {
+        showAlert('Please select a period first', 'warning');
+        return;
+    }
+    
+    // Simple CSV export using current data
+    if (currentPayrolls.length === 0) {
+        showAlert('No data to export', 'warning');
+        return;
+    }
+    
+    // Create CSV content
+    const headers = ['Employee Name', 'Employee ID', 'Department', 'Basic Pay', 'Allowances', 'Overtime', 'Deductions', 'Net Pay', 'Status'];
+    const csvContent = [
+        headers.join(','),
+        ...currentPayrolls.map(payroll => [
+            `"${payroll.employeeId?.personalInfo?.firstName} ${payroll.employeeId?.personalInfo?.lastName}"`,
+            payroll.employeeId?.employeeId || '',
+            `"${payroll.employeeId?.employmentInfo?.departmentId?.name || 'N/A'}"`,
+            payroll.salary?.prorated || 0,
+            payroll.allowances?.total || 0,
+            payroll.overtime?.amount || 0,
+            payroll.deductions?.total || 0,
+            payroll.netPay || 0,
+            payroll.payment?.status || 'pending'
+        ].join(','))
+    ].join('\n');
+    
+    // Download CSV
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `payroll_${period}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+}
+ 
+  
+    
+        // Filter table
+        function filterTable() {
+            const status = document.getElementById('statusFilter').value;
+            const filtered = status === 'all' 
+                ? currentPayrolls 
+                : currentPayrolls.filter(p => p.payment?.status === status);
+            renderPayrollTable(filtered);
+        }
+
+        // Show alert message
+        function showAlert(message, type) {
+            const alertContainer = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type} alert-dismissible fade show`;
+            alert.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            alertContainer.appendChild(alert);
+            
+            setTimeout(() => {
+                if (alert.parentNode) {
+                    alert.parentNode.removeChild(alert);
+                }
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

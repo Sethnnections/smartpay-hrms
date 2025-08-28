@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TPS - Positions</title>
+    <title>TPS - Payrolls</title>
     
     <!-- Bootstrap CSS -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
@@ -23,13 +23,13 @@
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
     <!-- Sidebar -->
-    <%- include('./partials/sidebar', { currentPage: 'positions' }) %>
+    <%- include('./partials/sidebar', { currentPage: 'payrolls' }) %>
 
     <!-- Main Content -->
     <div class="main-content" id="mainContent">
         <!-- Header -->
         <%- include('./partials/header', { 
-            title: 'Positions Management', 
+            title: 'Payrolls Management', 
             user: typeof user !== 'undefined' ? user : { name: 'User', email: '', avatar: 'U' } 
         }) %>
 
