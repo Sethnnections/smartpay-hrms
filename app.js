@@ -100,6 +100,8 @@ app.use('/api/employees', require('./routes/api/employeeRoutes'));
 app.use('/api/payroll', require('./routes/api/payrollRoutes'));
 app.use('/api/dashboard', require('./routes/api/dashboardRoutes'));
 app.use('/api/reports', require('./routes/api/reportsRoutes'));
+app.use('/api/tax-brackets', require('./routes/api/taxBrackets'));
+app.use('/api/company-settings', require('./routes/api/companySettings'));
 
 // Health check endpoint
 app.get('/health', (req, res) => {

@@ -851,7 +851,7 @@
 
             try {
                 const response = await axios.get(
-                    `http://localhost:3000/api/payroll/consolidated-payslips/${month}`,
+                    `/payroll/consolidated-payslips/${month}`,
                     {
                         headers: { Authorization: `Bearer ${token}` },
                         responseType: 'blob'

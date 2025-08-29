@@ -138,6 +138,19 @@ router.get('/admin/settings', (req, res) => {
     });
 });
 
+router.get('/admin/company-settings', (req, res) => {
+    res.render('admin/company-settings', {
+        title: 'Company Settings',
+        currentPage: 'company-settings',
+        layout:false,
+         user: {
+            name: 'Administrator',
+            email: 'admin@teampay.com',
+            avatar: 'AD'
+        }
+    });
+});
+
 router.get('/admin/users', (req, res) => {
     res.render('admin/users', {
         title: 'User Management',

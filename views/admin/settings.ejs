@@ -9,6 +9,8 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome Icons -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- SweetAlert2 -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/11.7.12/sweetalert2.min.css" rel="stylesheet">
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
@@ -16,21 +18,77 @@
     <link rel="stylesheet" href="/css/admin.css">
     
     <!-- Page-specific CSS -->
+    <link rel="stylesheet" href="/css/departments.css">
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        .settings-card { border: 1px solid #e9ecef; border-radius: 1rem; box-shadow: 0 2px 8px rgba(0,0,0,.04); }
-        .settings-card .card-header { background: #fff; border-bottom: 1px solid #eef0f2; }
-        .form-section-title { font-size: .9rem; font-weight: 600; color: #6c757d; text-transform: uppercase; letter-spacing: .06em; }
-        .tax-bracket-row input { max-width: 160px; }
-        .color-swatch { width: 36px; height: 36px; border-radius: .75rem; border: 1px solid #dee2e6; cursor: pointer; }
-        .logo-preview { width: 120px; height: 120px; object-fit: contain; border: 1px dashed #dee2e6; border-radius: .75rem; background: #fafafa; }
-        .kbd { background:#f8f9fa;border:1px solid #dee2e6;border-bottom-width:2px;border-radius:.5rem;padding:.25rem .5rem;font-weight:600; }
-        .pill { display:inline-block; padding:.25rem .5rem; border-radius:999px; font-size:.75rem; background:#f1f3f5; }
-        .btn-soft { background:#f6f7f9; border:1px solid #e9ecef; }
-        .table-brackets td, .table-brackets th { vertical-align: middle; }
+        .tax-bracket-card {
+            transition: all 0.3s ease;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1.5rem;
+        }
+        .tax-bracket-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+        }
+        .tax-bracket-header {
+            background-color: #f8f9fa;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .tax-bracket-body {
+            padding: 1.5rem;
+        }
+        .tax-rate-badge {
+            font-size: 0.9rem;
+            padding: 0.35rem 0.65rem;
+            border-radius: 50px;
+            background-color: #007bff;
+            color: white;
+        }
+        .bracket-range {
+            font-weight: 500;
+            color: #495057;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+        .test-tax-box {
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .country-flag {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 0.5rem;
+        }
+        .settings-tabs .nav-link {
+            color: #495057;
+            font-weight: 500;
+            padding: 0.75rem 1.25rem;
+            border-radius: 0.375rem;
+            margin-right: 0.5rem;
+        }
+        .settings-tabs .nav-link.active {
+            background-color: #007bff;
+            color: white;
+        }
+        .currency-badge {
+            background-color: #e9ecef;
+            color: #495057;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
     </style>
 </head>
-<body data-theme="light">
+<body>
     <!-- Sidebar Overlay for Mobile -->
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
@@ -41,644 +99,691 @@
     <div class="main-content" id="mainContent">
         <!-- Header -->
         <%- include('./partials/header', { 
-            title: 'Settings', 
+            title: 'Tax Settings', 
             user: typeof user !== 'undefined' ? user : { name: 'User', email: '', avatar: 'U' } 
         }) %>
 
         <!-- Page Content -->
         <main class="dashboard-content">
-            <div class="container-fluid px-4 py-3">
-                <div class="d-flex align-items-center justify-content-between mb-3">
-                    <div>
-                        <div class="text-muted">Manage backups, payroll options, tax rules, bank details, and appearance.</div>
-                    </div>
-                    <div>
-                        <button id="btnExportSettings" class="btn btn-outline-secondary me-2"><i class="fa-solid fa-file-export me-2"></i>Export JSON</button>
-                        <label class="btn btn-outline-primary mb-0">
-                            <i class="fa-solid fa-file-import me-2"></i>Import JSON
-                            <input id="inputImportSettings" type="file" accept="application/json" hidden>
-                        </label>
-                    </div>
+            <div class="container-fluid px-4">
+                <div class="d-flex justify-content-between align-items-center mb-4 mt-3">
+                    <h5 class="mb-0">Tax Settings Management</h5>
+                    <button class="btn btn-primary" id="addTaxBracketBtn">
+                        <i class="fas fa-plus me-1"></i> Add Tax Bracket
+                    </button>
                 </div>
 
-                <!-- Tabs -->
-                <ul class="nav nav-tabs" id="settingsTabs" role="tablist">
+                <!-- Tabs Navigation -->
+                <ul class="nav nav-pills settings-tabs mb-4" id="settingsTabs" role="tablist">
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="backup-tab" data-bs-toggle="tab" data-bs-target="#backup" type="button" role="tab" aria-controls="backup" aria-selected="true"><i class="fa-solid fa-database me-2"></i>Backup & Restore</button>
+                        <button class="nav-link active" id="tax-brackets-tab" data-bs-toggle="pill" data-bs-target="#tax-brackets" type="button" role="tab" aria-controls="tax-brackets" aria-selected="true">
+                            <i class="fas fa-percent me-1"></i> Tax Brackets
+                        </button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="payroll-tab" data-bs-toggle="tab" data-bs-target="#payroll" type="button" role="tab" aria-controls="payroll" aria-selected="false"><i class="fa-solid fa-calculator me-2"></i>Payroll</button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="appearance-tab" data-bs-toggle="tab" data-bs-target="#appearance" type="button" role="tab" aria-controls="appearance" aria-selected="false"><i class="fa-solid fa-palette me-2"></i>Appearance</button>
+                        <button class="nav-link" id="tax-test-tab" data-bs-toggle="pill" data-bs-target="#tax-test" type="button" role="tab" aria-controls="tax-test" aria-selected="false">
+                            <i class="fas fa-calculator me-1"></i> Tax Calculator
+                        </button>
                     </li>
                 </ul>
 
-                <div class="tab-content pt-3" id="settingsTabsContent">
-                    <!-- Backup & Restore -->
-                    <div class="tab-pane fade show active" id="backup" role="tabpanel" aria-labelledby="backup-tab">
-                        <div class="card settings-card">
-                            <div class="card-header d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h5 class="mb-0">Backup & Restore</h5>
-                                    <small class="text-muted">Download a backup of your settings or restore from a JSON file.</small>
+                <!-- Tab Content -->
+                <div class="tab-content" id="settingsTabsContent">
+                    <!-- Tax Brackets Tab -->
+                    <div class="tab-pane fade show active" id="tax-brackets" role="tabpanel" aria-labelledby="tax-brackets-tab">
+                        <!-- Filters -->
+                        <div class="row mb-4">
+                            <div class="col-md-3">
+                                <label for="countryFilter" class="form-label">Country</label>
+                                <select class="form-select" id="countryFilter">
+                                    <option value="">All Countries</option>
+                                    <option value="MW">Malawi</option>
+                                    <option value="US">United States</option>
+                                    <option value="GB">United Kingdom</option>
+                                    <option value="ZA">South Africa</option>
+                                    <option value="ZM">Zambia</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="currencyFilter" class="form-label">Currency</label>
+                                <select class="form-select" id="currencyFilter">
+                                    <option value="">All Currencies</option>
+                                    <option value="MWK">Malawian Kwacha</option>
+                                    <option value="USD">US Dollar</option>
+                                    <option value="GBP">British Pound</option>
+                                    <option value="ZAR">South African Rand</option>
+                                    <option value="ZMW">Zambian Kwacha</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="statusFilter" class="form-label">Status</label>
+                                <select class="form-select" id="statusFilter">
+                                    <option value="">All Status</option>
+                                    <option value="active">Active</option>
+                                    <option value="inactive">Inactive</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3 d-flex align-items-end">
+                                <button class="btn btn-outline-secondary w-100" id="applyFiltersBtn">
+                                    <i class="fas fa-filter me-1"></i> Apply Filters
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Tax Brackets List -->
+                        <div class="row" id="taxBracketsContainer">
+                            <!-- Tax brackets will be loaded here -->
+                        </div>
+
+                        <!-- Loading and Empty States -->
+                        <div class="text-center py-5" id="loadingState">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-3">Loading tax brackets...</p>
+                        </div>
+
+                        <div class="text-center py-5 d-none" id="emptyState">
+                            <i class="fas fa-percent fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No tax brackets found</h5>
+                            <p class="text-muted">Get started by adding your first tax bracket</p>
+                            <button class="btn btn-primary mt-2" id="addFirstBracketBtn">
+                                <i class="fas fa-plus me-1"></i> Add Tax Bracket
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Tax Calculator Tab -->
+                    <div class="tab-pane fade" id="tax-test" role="tabpanel" aria-labelledby="tax-test-tab">
+                        <div class="test-tax-box">
+                            <h6 class="mb-3"><i class="fas fa-calculator me-2"></i>Test Tax Calculation</h6>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <label for="testCountry" class="form-label">Country</label>
+                                    <select class="form-select" id="testCountry">
+                                        <option value="MW">Malawi</option>
+                                        <option value="US">United States</option>
+                                        <option value="GB">United Kingdom</option>
+                                        <option value="ZA">South Africa</option>
+                                        <option value="ZM">Zambia</option>
+                                    </select>
                                 </div>
-                                <span class="pill" id="lastBackupPill">Last backup: never</span>
+                                <div class="col-md-4">
+                                    <label for="testCurrency" class="form-label">Currency</label>
+                                    <select class="form-select" id="testCurrency">
+                                        <option value="MWK">MWK - Malawian Kwacha</option>
+                                        <option value="USD">USD - US Dollar</option>
+                                        <option value="GBP">GBP - British Pound</option>
+                                        <option value="ZAR">ZAR - South African Rand</option>
+                                        <option value="ZMW">ZMW - Zambian Kwacha</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="testIncome" class="form-label">Gross Income</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text" id="currencySymbol">MWK</span>
+                                        <input type="number" class="form-control" id="testIncome" placeholder="Enter amount">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-3">
+                                <button class="btn btn-success" id="calculateTaxBtn">
+                                    <i class="fas fa-calculator me-1"></i> Calculate Tax
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Results -->
+                        <div class="card d-none" id="taxResultCard">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0">Tax Calculation Results</h6>
                             </div>
                             <div class="card-body">
-                                <div class="row g-3">
-                                    <div class="col-12 col-lg-6">
-                                        <div class="p-3 border rounded-3 h-100">
-                                            <div class="form-section-title mb-2">Create Backup</div>
-                                            <p class="text-muted">Export all settings (payroll, bank, tax, and appearance) as a single JSON file.</p>
-                                            <button id="btnDownloadBackup" class="btn btn-primary"><i class="fa-solid fa-download me-2"></i>Download Backup</button>
-                                        </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <table class="table table-sm">
+                                            <tr>
+                                                <th>Gross Income:</th>
+                                                <td id="resultGrossIncome" class="text-end">-</td>
+                                            </tr>
+                                            <tr>
+                                                <th>Tax Amount:</th>
+                                                <td id="resultTaxAmount" class="text-end">-</td>
+                                            </tr>
+                                            <tr class="table-primary">
+                                                <th>Net Income:</th>
+                                                <td id="resultNetIncome" class="text-end fw-bold">-</td>
+                                            </tr>
+                                            <tr>
+                                                <th>Effective Tax Rate:</th>
+                                                <td id="resultTaxRate" class="text-end">-</td>
+                                            </tr>
+                                        </table>
                                     </div>
-                                    <div class="col-12 col-lg-6">
-                                        <div class="p-3 border rounded-3 h-100">
-                                            <div class="form-section-title mb-2">Restore</div>
-                                            <p class="text-muted">Restore settings from a previously exported JSON file.</p>
-                                            <label class="btn btn-soft">
-                                                <i class="fa-solid fa-upload me-2"></i>Choose File
-                                                <input id="inputRestore" type="file" accept="application/json" hidden>
-                                            </label>
-                                            <button id="btnRestore" class="btn btn-success ms-2" disabled><i class="fa-solid fa-rotate me-2"></i>Restore</button>
-                                            <div class="mt-3 small text-muted" id="restoreFileName">No file selected</div>
-                                        </div>
-                                    </div>
-                                    <div class="col-12">
-                                        <div class="p-3 border rounded-3">
-                                            <div class="form-section-title mb-2">Danger Zone</div>
-                                            <p class="text-muted mb-2">Reset all settings to safe defaults. This cannot be undone.</p>
-                                            <button id="btnResetDefaults" class="btn btn-outline-danger"><i class="fa-solid fa-triangle-exclamation me-2"></i>Reset to Defaults</button>
+                                    <div class="col-md-6">
+                                        <h6 class="mb-3">Brackets Used:</h6>
+                                        <div id="bracketsUsedList">
+                                            <!-- Brackets will be listed here -->
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+        </main>
+    </div>
 
-                    <!-- Payroll -->
-                    <div class="tab-pane fade" id="payroll" role="tabpanel" aria-labelledby="payroll-tab">
-                        <div class="card settings-card mb-3">
-                            <div class="card-header">
-                                <h5 class="mb-0">General Payroll Settings</h5>
+    <!-- Add/Edit Tax Bracket Modal -->
+    <div class="modal fade" id="taxBracketModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalTitle">Add Tax Bracket</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="taxBracketForm">
+                        <input type="hidden" id="bracketId">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="bracketName" class="form-label">Bracket Name *</label>
+                                    <input type="text" class="form-control" id="bracketName" required>
+                                </div>
                             </div>
-                            <div class="card-body">
-                                <div class="row g-3">
-                                    <div class="col-md-3">
-                                        <label class="form-label">Payroll Cycle</label>
-                                        <select id="payrollCycle" class="form-select">
-                                            <option value="monthly">Monthly</option>
-                                            <option value="biweekly">Bi-weekly</option>
-                                            <option value="weekly">Weekly</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <label class="form-label">Overtime Rate (x)</label>
-                                        <input id="overtimeRate" type="number" step="0.01" class="form-control" placeholder="1.5">
-                                    </div>
-                                    <div class="col-md-3">
-                                        <label class="form-label">Employer Pension %</label>
-                                        <input id="employerPension" type="number" step="0.01" class="form-control" placeholder="10">
-                                    </div>
-                                    <div class="col-md-3">
-                                        <label class="form-label">Employee Pension %</label>
-                                        <input id="employeePension" type="number" step="0.01" class="form-control" placeholder="5">
-                                    </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="taxRate" class="form-label">Tax Rate (%) *</label>
+                                    <input type="number" class="form-control" id="taxRate" min="0" max="100" step="0.01" required>
                                 </div>
                             </div>
                         </div>
-
-                        <div class="card settings-card mb-3">
-                            <div class="card-header d-flex align-items-center justify-content-between">
-                                <h5 class="mb-0">Tax Calculation</h5>
-                                <div>
-                                    <span class="me-2 text-muted">Regime:</span>
-                                    <select id="taxRegime" class="form-select form-select-sm d-inline-block" style="width:auto;">
-                                        <option value="progressive">Progressive</option>
-                                        <option value="flat">Flat</option>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="minAmount" class="form-label">Minimum Amount *</label>
+                                    <input type="number" class="form-control" id="minAmount" min="0" step="0.01" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="maxAmount" class="form-label">Maximum Amount</label>
+                                    <input type="number" class="form-control" id="maxAmount" min="0" step="0.01">
+                                    <div class="form-text">Leave empty for no upper limit</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="country" class="form-label">Country *</label>
+                                    <select class="form-select" id="country" required>
+                                        <option value="MW">Malawi</option>
+                                        <option value="US">United States</option>
+                                        <option value="GB">United Kingdom</option>
+                                        <option value="ZA">South Africa</option>
+                                        <option value="ZM">Zambia</option>
+                                        <option value="OTHER">Other</option>
                                     </select>
                                 </div>
                             </div>
-                            <div class="card-body">
-                                <div id="progressiveConfig">
-                                    <div class="d-flex align-items-center justify-content-between mb-2">
-                                        <div class="form-section-title mb-0">Brackets</div>
-                                        <button id="btnAddBracket" class="btn btn-sm btn-outline-primary"><i class="fa-solid fa-plus me-2"></i>Add Bracket</button>
-                                    </div>
-                                    <div class="table-responsive">
-                                        <table class="table table-sm table-brackets align-middle">
-                                            <thead>
-                                                <tr>
-                                                    <th scope="col">From</th>
-                                                    <th scope="col">To</th>
-                                                    <th scope="col">Rate %</th>
-                                                    <th scope="col" style="width:60px"></th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="bracketsBody">
-                                                <!-- rows injected -->
-                                            </tbody>
-                                        </table>
-                                    </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="currency" class="form-label">Currency *</label>
+                                    <select class="form-select" id="currency" required>
+                                        <option value="MWK">MWK - Malawian Kwacha</option>
+                                        <option value="USD">USD - US Dollar</option>
+                                        <option value="GBP">GBP - British Pound</option>
+                                        <option value="ZAR">ZAR - South African Rand</option>
+                                        <option value="ZMW">ZMW - Zambian Kwacha</option>
+                                        <option value="OTHER">Other</option>
+                                    </select>
                                 </div>
-
-                                <div id="flatConfig" class="d-none">
-                                    <div class="row g-3">
-                                        <div class="col-md-4">
-                                            <label class="form-label">Flat Tax %</label>
-                                            <input id="flatTaxRate" type="number" step="0.01" class="form-control" placeholder="20">
-                                        </div>
-                                        <div class="col-md-4">
-                                            <label class="form-label">Tax-free Threshold</label>
-                                            <input id="flatThreshold" type="number" step="0.01" class="form-control" placeholder="0">
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <hr>
-                                <div class="row g-3 align-items-end">
-                                    <div class="col-md-3">
-                                        <label class="form-label">Sample Gross (for preview)</label>
-                                        <input id="sampleGross" type="number" step="0.01" class="form-control" placeholder="2500000">
-                                    </div>
-                                    <div class="col-md-2 d-grid">
-                                        <button id="btnPreviewTax" class="btn btn-outline-secondary"><i class="fa-solid fa-magnifying-glass me-2"></i>Preview Tax</button>
-                                    </div>
-                                    <div class="col-md-7">
-                                        <div id="previewTaxResult" class="alert alert-light border d-flex justify-content-between align-items-center mb-0">
-                                            <div>
-                                                <div class="small text-muted">Estimated PAYE</div>
-                                                <div class="fs-5 fw-semibold" id="payeAmount">—</div>
-                                            </div>
-                                            <div class="text-end">
-                                                <div class="small text-muted">Effective Rate</div>
-                                                <div class="fs-5 fw-semibold" id="effectiveRate">—</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="card-footer text-end">
-                                <button id="btnSaveTax" class="btn btn-primary"><i class="fa-solid fa-floppy-disk me-2"></i>Save Tax Settings</button>
                             </div>
                         </div>
-
-                        <div class="card settings-card">
-                            <div class="card-header">
-                                <h5 class="mb-0">Default Bank Details</h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="row g-3">
-                                    <div class="col-md-4">
-                                        <label class="form-label">Bank Name</label>
-                                        <input id="bankName" type="text" class="form-control" placeholder="National Bank of Malawi">
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label">Account Name</label>
-                                        <input id="accountName" type="text" class="form-control" placeholder="Norah Tech Supplies Ltd.">
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label">Account Number</label>
-                                        <input id="accountNumber" type="text" class="form-control" placeholder="0012345678901">
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label">Branch</label>
-                                        <input id="bankBranch" type="text" class="form-control" placeholder="City Centre, Lilongwe">
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label">SWIFT/BIC</label>
-                                        <input id="swift" type="text" class="form-control" placeholder="NBMAMWMWXXX">
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label">Currency</label>
-                                        <select id="currency" class="form-select">
-                                            <option value="MWK">MWK</option>
-                                            <option value="USD">USD</option>
-                                            <option value="ZAR">ZAR</option>
-                                        </select>
-                                    </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="effectiveFrom" class="form-label">Effective From *</label>
+                                    <input type="date" class="form-control" id="effectiveFrom" required>
                                 </div>
                             </div>
-                            <div class="card-footer d-flex justify-content-between">
-                                <div class="text-muted small"><i class="fa-regular fa-circle-question me-1"></i>These defaults are used when employee-specific bank details are missing.</div>
-                                <button id="btnSaveBank" class="btn btn-primary"><i class="fa-solid fa-floppy-disk me-2"></i>Save Bank Details</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Appearance -->
-                    <div class="tab-pane fade" id="appearance" role="tabpanel" aria-labelledby="appearance-tab">
-                        <div class="card settings-card">
-                            <div class="card-header">
-                                <h5 class="mb-0">Appearance</h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="row g-4">
-                                    <div class="col-md-4">
-                                        <div class="form-section-title mb-2">Theme</div>
-                                        <div class="form-check form-switch mb-2">
-                                            <input class="form-check-input" type="checkbox" id="toggleDark">
-                                            <label class="form-check-label" for="toggleDark">Dark mode</label>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label class="form-label">Primary Color</label>
-                                            <input id="primaryColor" type="color" class="form-control form-control-color" value="#0f5132" title="Choose your color">
-                                        </div>
-                                        <div>
-                                            <label class="form-label">Accent Color</label>
-                                            <input id="accentColor" type="color" class="form-control form-control-color" value="#f0ad00" title="Choose your color">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="form-section-title mb-2">Branding</div>
-                                        <div class="mb-2 d-flex align-items-center gap-3">
-                                            <img id="logoPreview" class="logo-preview" src="/public/logo.png" alt="Logo preview" onerror="this.src='';">
-                                            <div>
-                                                <label class="btn btn-soft mb-2">
-                                                    <i class="fa-solid fa-image me-2"></i>Upload Logo
-                                                    <input id="inputLogo" type="file" accept="image/*" hidden>
-                                                </label>
-                                                <div class="small text-muted">Recommended: PNG/SVG, at least 256×256.</div>
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <label class="form-label">Favicon (ICO/PNG)</label>
-                                            <input id="inputFavicon" class="form-control" type="file" accept="image/*">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="form-section-title mb-2">Preview</div>
-                                        <div class="p-3 border rounded-3" id="themePreview">
-                                            <div class="d-flex align-items-center justify-content-between mb-2">
-                                                <span class="fw-semibold">Button</span>
-                                                <button class="btn btn-primary" type="button">Primary</button>
-                                            </div>
-                                            <div class="alert alert-primary mb-2">Primary alert sample</div>
-                                            <div class="form-check form-switch">
-                                                <input class="form-check-input" type="checkbox" id="previewSwitch">
-                                                <label class="form-check-label" for="previewSwitch">Switch example</label>
-                                            </div>
-                                        </div>
-                                    </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="effectiveTo" class="form-label">Effective To</label>
+                                    <input type="date" class="form-control" id="effectiveTo">
+                                    <div class="form-text">Leave empty for no expiration</div>
                                 </div>
                             </div>
-                            <div class="card-footer text-end">
-                                <button id="btnSaveAppearance" class="btn btn-primary"><i class="fa-solid fa-floppy-disk me-2"></i>Save Appearance</button>
-                            </div>
                         </div>
-                    </div>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="isActive" checked>
+                            <label class="form-check-label" for="isActive">Active</label>
+                        </div>
+                    </form>
                 </div>
-
-            </div>
-        </main>
-
-        <!-- Toasts -->
-        <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1080">
-            <div id="toast" class="toast align-items-center" role="alert" aria-live="assertive" aria-atomic="true">
-                <div class="d-flex">
-                    <div id="toastBody" class="toast-body"></div>
-                    <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="saveTaxBracketBtn">Save Tax Bracket</button>
                 </div>
             </div>
         </div>
-
     </div>
-
 
     <!-- Bootstrap JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
-    <!-- Axios (optional if you later wire APIs) -->
+    <!-- jQuery (for simpler DOM manipulation) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <!-- Axios -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.2/axios.min.js"></script>
-    <!-- Custom JS (if any) -->
-    <script>
-    // ---------- Mock Storage & Defaults ----------
-    const STORAGE_KEY = 'tps.settings.v1';
-    const defaults = {
-        meta: { lastBackupAt: null },
-        payroll: {
-            cycle: 'monthly',
-            overtimeRate: 1.5,
-            employerPension: 10,
-            employeePension: 5,
-            tax: {
-                regime: 'progressive',
-                brackets: [
-                    { from: 0, to: 150000, rate: 0 },
-                    { from: 150001, to: 1000000, rate: 25 },
-                    { from: 1000001, to: null, rate: 30 }
-                ],
-                flat: { rate: 20, threshold: 0 }
-            }
-        },
-        bank: {
-            bankName: 'National Bank of Malawi',
-            accountName: 'Norah Tech Supplies Ltd.',
-            accountNumber: '0012345678901',
-            branch: 'City Centre, Lilongwe',
-            swift: 'NBMAMWMWXXX',
-            currency: 'MWK'
-        },
-        appearance: {
-            dark: false,
-            primary: '#0f5132',
-            accent: '#f0ad00',
-            logoDataUrl: '',
-            faviconDataUrl: ''
-        }
-    };
-
-    function loadSettings() {
-        try {
-            return JSON.parse(localStorage.getItem(STORAGE_KEY)) || structuredClone(defaults);
-        } catch (e) { return structuredClone(defaults); }
-    }
-    function saveSettings(obj) { localStorage.setItem(STORAGE_KEY, JSON.stringify(obj)); }
-
-    let settings = loadSettings();
-
-    // ---------- Helpers ----------
-    const toastEl = document.getElementById('toast');
-    const toast = new bootstrap.Toast(toastEl, { delay: 2200 });
-    function showToast(msg) { document.getElementById('toastBody').textContent = msg; toast.show(); }
-
-    function fmtMoney(n) { return new Intl.NumberFormat(undefined, { style: 'currency', currency: settings.bank.currency || 'MWK', maximumFractionDigits: 0 }).format(n); }
-
-    function renderLastBackup() {
-        const pill = document.getElementById('lastBackupPill');
-        if (settings.meta.lastBackupAt) {
-            const d = new Date(settings.meta.lastBackupAt);
-            pill.textContent = 'Last backup: ' + d.toLocaleString();
-        } else { pill.textContent = 'Last backup: never'; }
-    }
-
-    // ---------- Populate Payroll General ----------
-    const payrollCycle = document.getElementById('payrollCycle');
-    const overtimeRate = document.getElementById('overtimeRate');
-    const employerPension = document.getElementById('employerPension');
-    const employeePension = document.getElementById('employeePension');
-
-    function populatePayrollGeneral() {
-        payrollCycle.value = settings.payroll.cycle;
-        overtimeRate.value = settings.payroll.overtimeRate;
-        employerPension.value = settings.payroll.employerPension;
-        employeePension.value = settings.payroll.employeePension;
-    }
-
-    // ---------- Tax UI ----------
-    const taxRegime = document.getElementById('taxRegime');
-    const progressiveConfig = document.getElementById('progressiveConfig');
-    const flatConfig = document.getElementById('flatConfig');
-    const flatTaxRate = document.getElementById('flatTaxRate');
-    const flatThreshold = document.getElementById('flatThreshold');
-    const bracketsBody = document.getElementById('bracketsBody');
-
-    function renderRegime() {
-        const regime = settings.payroll.tax.regime;
-        taxRegime.value = regime;
-        progressiveConfig.classList.toggle('d-none', regime !== 'progressive');
-        flatConfig.classList.toggle('d-none', regime !== 'flat');
-        flatTaxRate.value = settings.payroll.tax.flat.rate;
-        flatThreshold.value = settings.payroll.tax.flat.threshold;
-        renderBrackets();
-    }
-
-    function renderBrackets() {
-        bracketsBody.innerHTML = '';
-        const rows = settings.payroll.tax.brackets;
-        rows.forEach((b, idx) => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td><input type="number" class="form-control form-control-sm" value="${b.from}" data-idx="${idx}" data-field="from"></td>
-                <td><input type="number" class="form-control form-control-sm" value="${b.to ?? ''}" placeholder="∞" data-idx="${idx}" data-field="to"></td>
-                <td><input type="number" step="0.01" class="form-control form-control-sm" value="${b.rate}" data-idx="${idx}" data-field="rate"></td>
-                <td class="text-end">
-                    <button class="btn btn-sm btn-outline-danger" data-action="del" data-idx="${idx}"><i class="fa-solid fa-trash"></i></button>
-                </td>`;
-            bracketsBody.appendChild(tr);
-        });
-    }
-
-    document.getElementById('btnAddBracket').addEventListener('click', () => {
-        settings.payroll.tax.brackets.push({ from: 0, to: null, rate: 0 });
-        renderBrackets();
-    });
-
-    bracketsBody.addEventListener('input', (e) => {
-        const t = e.target; if (!t.dataset) return;
-        const i = +t.dataset.idx; const f = t.dataset.field;
-        let val = t.value === '' ? null : Number(t.value);
-        if (f === 'rate' && val != null) val = Math.max(0, val);
-        settings.payroll.tax.brackets[i][f] = val;
-    });
-
-    bracketsBody.addEventListener('click', (e) => {
-        const btn = e.target.closest('button[data-action="del"]');
-        if (!btn) return;
-        const i = +btn.dataset.idx; settings.payroll.tax.brackets.splice(i,1); renderBrackets();
-    });
-
-    taxRegime.addEventListener('change', () => {
-        settings.payroll.tax.regime = taxRegime.value;
-        renderRegime();
-    });
-
-    // ---------- Tax Preview Logic ----------
-    function calcTaxProgressive(gross, brackets) {
-        let tax = 0; let remaining = gross;
-        const sorted = [...brackets].sort((a,b)=> (a.from??0) - (b.from??0));
-        for (const b of sorted) {
-            const from = b.from ?? 0;
-            const to = b.to ?? Infinity;
-            if (gross <= from) continue;
-            const taxable = Math.min(remaining, to - from + (Number.isFinite(to) ? 0 : 0));
-            const span = Math.max(0, Math.min(gross, to) - from);
-            tax += span * (b.rate/100);
-            if (gross <= to) break;
-        }
-        return Math.max(0, Math.round(tax));
-    }
-
-    function calcTaxFlat(gross, rate, threshold) {
-        const taxable = Math.max(0, gross - threshold);
-        return Math.round(taxable * (rate/100));
-    }
-
-    document.getElementById('btnPreviewTax').addEventListener('click', () => {
-        const gross = Number(document.getElementById('sampleGross').value || 0);
-        let tax = 0;
-        if (settings.payroll.tax.regime === 'progressive') {
-            tax = calcTaxProgressive(gross, settings.payroll.tax.brackets);
-        } else {
-            tax = calcTaxFlat(gross, Number(flatTaxRate.value||0), Number(flatThreshold.value||0));
-        }
-        document.getElementById('payeAmount').textContent = fmtMoney(tax);
-        const eff = gross > 0 ? ((tax / gross) * 100).toFixed(2) + '%' : '—';
-        document.getElementById('effectiveRate').textContent = eff;
-    });
-
-    document.getElementById('btnSaveTax').addEventListener('click', () => {
-        settings.payroll.cycle = payrollCycle.value;
-        settings.payroll.overtimeRate = Number(overtimeRate.value || 0);
-        settings.payroll.employerPension = Number(employerPension.value || 0);
-        settings.payroll.employeePension = Number(employeePension.value || 0);
-        settings.payroll.tax.flat.rate = Number(flatTaxRate.value || 0);
-        settings.payroll.tax.flat.threshold = Number(flatThreshold.value || 0);
-        saveSettings(settings);
-        showToast('Payroll & tax settings saved.');
-    });
-
-    // ---------- Bank Details ----------
-    const bankName = document.getElementById('bankName');
-    const accountName = document.getElementById('accountName');
-    const accountNumber = document.getElementById('accountNumber');
-    const bankBranch = document.getElementById('bankBranch');
-    const swift = document.getElementById('swift');
-    const currency = document.getElementById('currency');
-
-    function populateBank() {
-        bankName.value = settings.bank.bankName;
-        accountName.value = settings.bank.accountName;
-        accountNumber.value = settings.bank.accountNumber;
-        bankBranch.value = settings.bank.branch;
-        swift.value = settings.bank.swift;
-        currency.value = settings.bank.currency;
-    }
-
-    document.getElementById('btnSaveBank').addEventListener('click', () => {
-        settings.bank.bankName = bankName.value.trim();
-        settings.bank.accountName = accountName.value.trim();
-        settings.bank.accountNumber = accountNumber.value.trim();
-        settings.bank.branch = bankBranch.value.trim();
-        settings.bank.swift = swift.value.trim();
-        settings.bank.currency = currency.value;
-        saveSettings(settings);
-        showToast('Bank details saved.');
-    });
-
-    // ---------- Appearance ----------
-    const toggleDark = document.getElementById('toggleDark');
-    const primaryColor = document.getElementById('primaryColor');
-    const accentColor = document.getElementById('accentColor');
-    const inputLogo = document.getElementById('inputLogo');
-    const inputFavicon = document.getElementById('inputFavicon');
-    const logoPreview = document.getElementById('logoPreview');
-
-    function applyTheme() {
-        document.body.dataset.theme = settings.appearance.dark ? 'dark' : 'light';
-        document.documentElement.style.setProperty('--bs-primary', settings.appearance.primary);
-        document.documentElement.style.setProperty('--bs-link-color', settings.appearance.primary);
-        document.documentElement.style.setProperty('--bs-warning', settings.appearance.accent);
-        if (settings.appearance.logoDataUrl) logoPreview.src = settings.appearance.logoDataUrl;
-        if (settings.appearance.faviconDataUrl) {
-            let link = document.querySelector("link[rel='icon']");
-            if (!link) { link = document.createElement('link'); link.rel='icon'; document.head.appendChild(link); }
-            link.href = settings.appearance.faviconDataUrl;
-        }
-        // Dark mode class toggle (basic demo)
-        document.body.classList.toggle('bg-dark', settings.appearance.dark);
-        document.body.classList.toggle('text-white', settings.appearance.dark);
-    }
-
-    function populateAppearance() {
-        toggleDark.checked = settings.appearance.dark;
-        primaryColor.value = settings.appearance.primary;
-        accentColor.value = settings.appearance.accent;
-    }
-
-    toggleDark.addEventListener('change', () => { settings.appearance.dark = toggleDark.checked; applyTheme(); });
-    primaryColor.addEventListener('input', () => { settings.appearance.primary = primaryColor.value; applyTheme(); });
-    accentColor.addEventListener('input', () => { settings.appearance.accent = accentColor.value; applyTheme(); });
-
-    inputLogo.addEventListener('change', (e) => {
-        const file = e.target.files?.[0]; if (!file) return;
-        const reader = new FileReader();
-        reader.onload = () => { settings.appearance.logoDataUrl = reader.result; logoPreview.src = reader.result; };
-        reader.readAsDataURL(file);
-    });
-    inputFavicon.addEventListener('change', (e) => {
-        const file = e.target.files?.[0]; if (!file) return;
-        const reader = new FileReader();
-        reader.onload = () => { settings.appearance.faviconDataUrl = reader.result; applyTheme(); };
-        reader.readAsDataURL(file);
-    });
-
-    document.getElementById('btnSaveAppearance').addEventListener('click', () => {
-        saveSettings(settings);
-        applyTheme();
-        showToast('Appearance saved.');
-    });
-
-    // ---------- Backup / Restore ----------
-    document.getElementById('btnDownloadBackup').addEventListener('click', () => {
-        const blob = new Blob([JSON.stringify(settings, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url; a.download = `tps-settings-backup-${new Date().toISOString().slice(0,19)}.json`;
-        document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-        settings.meta.lastBackupAt = new Date().toISOString(); saveSettings(settings); renderLastBackup();
-        showToast('Backup downloaded.');
-    });
-
-    const inputRestore = document.getElementById('inputRestore');
-    const restoreFileName = document.getElementById('restoreFileName');
-    const btnRestore = document.getElementById('btnRestore');
-    inputRestore.addEventListener('change', (e) => {
-        const file = e.target.files?.[0];
-        restoreFileName.textContent = file ? file.name : 'No file selected';
-        btnRestore.disabled = !file;
-    });
-
-    btnRestore.addEventListener('click', async () => {
-        const file = inputRestore.files?.[0]; if (!file) return;
-        try {
-            const text = await file.text();
-            const obj = JSON.parse(text);
-            // Basic shape validation
-            if (!obj.payroll || !obj.bank || !obj.appearance) throw new Error('Invalid backup file');
-            settings = obj; saveSettings(settings); init();
-            showToast('Settings restored successfully.');
-        } catch (err) {
-            console.error(err); showToast('Failed to restore. Invalid or corrupted file.');
-        }
-    });
-
-    document.getElementById('btnResetDefaults').addEventListener('click', () => {
-        if (!confirm('Reset ALL settings to defaults?')) return;
-        settings = structuredClone(defaults); saveSettings(settings); init();
-        showToast('Settings reset to defaults.');
-    });
-
-    // Export/Import buttons on header row
-    document.getElementById('btnExportSettings').addEventListener('click', () => {
-        const blob = new Blob([JSON.stringify(settings, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a'); a.href = url; a.download = 'tps-settings.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-    });
-    document.getElementById('inputImportSettings').addEventListener('change', async (e) => {
-        const file = e.target.files?.[0]; if (!file) return;
-        try { const text = await file.text(); const obj = JSON.parse(text); settings = obj; saveSettings(settings); init(); showToast('Settings imported.'); } catch { showToast('Import failed.'); }
-    });
-
-    // ---------- INIT ----------
-    function init() {
-        renderLastBackup();
-        populatePayrollGeneral();
-        renderRegime();
-        populateBank();
-        populateAppearance();
-        applyTheme();
-    }
-    init();
-
-    // ---------- OPTIONAL: Example API Wire-up (commented) ----------
-    // async function saveToServer() {
-    //   await axios.post('/api/settings', settings, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }});
-    // }
-
-    </script>
+    <!-- SweetAlert2 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/11.7.12/sweetalert2.all.min.js"></script>
+    
+    <!-- Custom JS -->
     <script src="/js/admin.js"></script>
+    
+    <script>
+        // Get token from localStorage
+        const authToken = localStorage.getItem('authToken');
+        if (!authToken) {
+            window.location.href = '/login';
+        }
 
+        // Set up Axios defaults
+        axios.defaults.baseURL = '/api';
+        axios.defaults.headers.common['Authorization'] = `Bearer ${authToken}`;
+        
+        // DOM Elements
+        const taxBracketsContainer = document.getElementById('taxBracketsContainer');
+        const loadingState = document.getElementById('loadingState');
+        const emptyState = document.getElementById('emptyState');
+        const taxBracketModal = new bootstrap.Modal(document.getElementById('taxBracketModal'));
+        const taxResultCard = document.getElementById('taxResultCard');
+        
+        // Country to currency mapping
+        const countryCurrencyMap = {
+            'MW': 'MWK',
+            'US': 'USD',
+            'GB': 'GBP',
+            'ZA': 'ZAR',
+            'ZM': 'ZMW'
+        };
+        
+        // Currency symbols
+        const currencySymbols = {
+            'MWK': 'MK',
+            'USD': '$',
+            'GBP': '£',
+            'ZAR': 'R',
+            'ZMW': 'ZK'
+        };
+
+        // Format currency
+        function formatCurrency(amount, currency = 'MWK') {
+            const symbol = currencySymbols[currency] || currency;
+            return `${symbol} ${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        }
+
+        // Format date
+        function formatDate(dateString) {
+            if (!dateString) return 'No expiration';
+            const date = new Date(dateString);
+            return date.toLocaleDateString();
+        }
+
+        // Load tax brackets
+        async function loadTaxBrackets(filters = {}) {
+            showLoading();
+            try {
+                const params = new URLSearchParams();
+                if (filters.country) params.append('country', filters.country);
+                if (filters.currency) params.append('currency', filters.currency);
+                if (filters.status) params.append('isActive', filters.status === 'active');
+                
+                const response = await axios.get(`/tax-brackets?${params.toString()}`);
+                renderTaxBrackets(response.data.data);
+            } catch (error) {
+                console.error('Error loading tax brackets:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: error.response?.data?.error || 'Failed to load tax brackets'
+                });
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Render tax brackets
+        function renderTaxBrackets(brackets) {
+            taxBracketsContainer.innerHTML = '';
+            
+            if (!brackets || brackets.length === 0) {
+                emptyState.classList.remove('d-none');
+                return;
+            }
+            
+            emptyState.classList.add('d-none');
+            
+            brackets.forEach(bracket => {
+                const bracketElement = document.createElement('div');
+                bracketElement.className = 'col-md-6 col-lg-4';
+                bracketElement.innerHTML = `
+                    <div class="card tax-bracket-card">
+                        <div class="tax-bracket-header d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0">${bracket.bracketName}</h6>
+                            <span class="tax-rate-badge">${bracket.taxRate}%</span>
+                        </div>
+                        <div class="tax-bracket-body">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="bracket-range">
+                                    ${formatCurrency(bracket.minAmount, bracket.currency)} 
+                                    - 
+                                    ${bracket.maxAmount ? formatCurrency(bracket.maxAmount, bracket.currency) : '∞'}
+                                </span>
+                                <span class="currency-badge">${bracket.currency}</span>
+                            </div>
+                            <div class="mb-3">
+                                <small class="text-muted">
+                                    <i class="fas fa-globe me-1"></i> ${getCountryName(bracket.country)}
+                                </small>
+                            </div>
+                            <div class="mb-3">
+                                <small class="text-muted">
+                                    Effective: ${formatDate(bracket.effectiveFrom)} 
+                                    ${bracket.effectiveTo ? ` to ${formatDate(bracket.effectiveTo)}` : 'onwards'}
+                                </small>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="badge ${bracket.isActive ? 'bg-success' : 'bg-secondary'}">
+                                    ${bracket.isActive ? 'Active' : 'Inactive'}
+                                </span>
+                                <div class="action-buttons">
+                                    <button class="btn btn-sm btn-outline-primary edit-bracket" data-id="${bracket._id}">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger delete-bracket" data-id="${bracket._id}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                taxBracketsContainer.appendChild(bracketElement);
+            });
+            
+            // Add event listeners to buttons
+            document.querySelectorAll('.edit-bracket').forEach(btn => {
+                btn.addEventListener('click', () => editTaxBracket(btn.dataset.id));
+            });
+            
+            document.querySelectorAll('.delete-bracket').forEach(btn => {
+                btn.addEventListener('click', () => deleteTaxBracket(btn.dataset.id));
+            });
+        }
+
+        // Get country name from code
+        function getCountryName(code) {
+            const countries = {
+                'MW': 'Malawi',
+                'US': 'United States',
+                'GB': 'United Kingdom',
+                'ZA': 'South Africa',
+                'ZM': 'Zambia',
+                'OTHER': 'Other'
+            };
+            return countries[code] || code;
+        }
+
+        // Show loading state
+        function showLoading() {
+            loadingState.classList.remove('d-none');
+            taxBracketsContainer.classList.add('d-none');
+        }
+
+        // Hide loading state
+        function hideLoading() {
+            loadingState.classList.add('d-none');
+            taxBracketsContainer.classList.remove('d-none');
+        }
+
+        // Open modal to add new tax bracket
+        function openAddModal() {
+            document.getElementById('modalTitle').textContent = 'Add Tax Bracket';
+            document.getElementById('taxBracketForm').reset();
+            document.getElementById('bracketId').value = '';
+            document.getElementById('effectiveFrom').valueAsDate = new Date();
+            document.getElementById('isActive').checked = true;
+            
+            taxBracketModal.show();
+        }
+
+        // Edit tax bracket
+        async function editTaxBracket(id) {
+            try {
+                const response = await axios.get(`/tax-brackets/${id}`);
+                const bracket = response.data.data;
+                
+                document.getElementById('modalTitle').textContent = 'Edit Tax Bracket';
+                document.getElementById('bracketId').value = bracket._id;
+                document.getElementById('bracketName').value = bracket.bracketName;
+                document.getElementById('taxRate').value = bracket.taxRate;
+                document.getElementById('minAmount').value = bracket.minAmount;
+                document.getElementById('maxAmount').value = bracket.maxAmount || '';
+                document.getElementById('country').value = bracket.country;
+                document.getElementById('currency').value = bracket.currency;
+                
+                // Format dates for input fields (YYYY-MM-DD)
+                document.getElementById('effectiveFrom').value = new Date(bracket.effectiveFrom).toISOString().split('T')[0];
+                if (bracket.effectiveTo) {
+                    document.getElementById('effectiveTo').value = new Date(bracket.effectiveTo).toISOString().split('T')[0];
+                } else {
+                    document.getElementById('effectiveTo').value = '';
+                }
+                
+                document.getElementById('isActive').checked = bracket.isActive;
+                
+                taxBracketModal.show();
+            } catch (error) {
+                console.error('Error loading tax bracket:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: error.response?.data?.error || 'Failed to load tax bracket'
+                });
+            }
+        }
+
+        // Save tax bracket
+        async function saveTaxBracket() {
+            const formData = {
+                bracketName: document.getElementById('bracketName').value,
+                taxRate: parseFloat(document.getElementById('taxRate').value),
+                minAmount: parseFloat(document.getElementById('minAmount').value),
+                maxAmount: document.getElementById('maxAmount').value ? parseFloat(document.getElementById('maxAmount').value) : null,
+                country: document.getElementById('country').value,
+                currency: document.getElementById('currency').value,
+                effectiveFrom: document.getElementById('effectiveFrom').value,
+                effectiveTo: document.getElementById('effectiveTo').value || null,
+                isActive: document.getElementById('isActive').checked
+            };
+            
+            const bracketId = document.getElementById('bracketId').value;
+            
+            try {
+                if (bracketId) {
+                    // Update existing bracket
+                    await axios.put(`/tax-brackets/${bracketId}`, formData);
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success',
+                        text: 'Tax bracket updated successfully',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                } else {
+                    // Create new bracket
+                    await axios.post('/tax-brackets', formData);
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success',
+                        text: 'Tax bracket created successfully',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                }
+                
+                taxBracketModal.hide();
+                loadTaxBrackets(getCurrentFilters());
+            } catch (error) {
+                console.error('Error saving tax bracket:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: error.response?.data?.error || 'Failed to save tax bracket'
+                });
+            }
+        }
+
+        // Delete tax bracket
+        async function deleteTaxBracket(id) {
+            const result = await Swal.fire({
+                title: 'Are you sure?',
+                text: 'This will deactivate the tax bracket. You can reactivate it later.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, delete it!',
+                cancelButtonText: 'Cancel'
+            });
+            
+            if (result.isConfirmed) {
+                try {
+                    await axios.delete(`/tax-brackets/${id}`);
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Deleted!',
+                        text: 'Tax bracket has been deactivated.',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                    loadTaxBrackets(getCurrentFilters());
+                } catch (error) {
+                    console.error('Error deleting tax bracket:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: error.response?.data?.error || 'Failed to delete tax bracket'
+                    });
+                }
+            }
+        }
+
+        // Test tax calculation
+        async function testTaxCalculation() {
+            const country = document.getElementById('testCountry').value;
+            const currency = document.getElementById('testCurrency').value;
+            const income = parseFloat(document.getElementById('testIncome').value);
+            
+            if (!income || income <= 0) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Invalid Input',
+                    text: 'Please enter a valid income amount'
+                });
+                return;
+            }
+            
+            try {
+                const response = await axios.post('/tax-brackets/test-calculation', {
+                    grossPay: income,
+                    country: country,
+                    currency: currency
+                });
+                
+                const result = response.data.data;
+                
+                // Update results
+                document.getElementById('resultGrossIncome').textContent = formatCurrency(income, currency);
+                document.getElementById('resultTaxAmount').textContent = formatCurrency(result.amount, currency);
+                document.getElementById('resultNetIncome').textContent = formatCurrency(income - result.amount, currency);
+                document.getElementById('resultTaxRate').textContent = `${result.rate.toFixed(2)}%`;
+                
+                // Show brackets used
+                const bracketsList = document.getElementById('bracketsUsedList');
+                if (result.bracketsUsed && result.bracketsUsed.length > 0) {
+                    bracketsList.innerHTML = result.bracketsUsed.map(bracket => `
+                        <div class="mb-2 p-2 border rounded">
+                            <div class="d-flex justify-content-between">
+                                <strong>${bracket.name}</strong>
+                                <span class="badge bg-primary">${bracket.rate}%</span>
+                            </div>
+                            <div class="text-muted small">
+                                ${formatCurrency(bracket.min, currency)} - ${bracket.max ? formatCurrency(bracket.max, currency) : '∞'}
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    bracketsList.innerHTML = '<p class="text-muted">No bracket details available</p>';
+                }
+                
+                // Show results card
+                taxResultCard.classList.remove('d-none');
+                
+            } catch (error) {
+                console.error('Error testing tax calculation:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: error.response?.data?.error || 'Failed to calculate tax'
+                });
+            }
+        }
+
+        // Get current filter values
+        function getCurrentFilters() {
+            return {
+                country: document.getElementById('countryFilter').value,
+                currency: document.getElementById('currencyFilter').value,
+                status: document.getElementById('statusFilter').value
+            };
+        }
+
+        // Update currency symbol based on selected currency
+        function updateCurrencySymbol() {
+            const currency = document.getElementById('testCurrency').value;
+            document.getElementById('currencySymbol').textContent = currencySymbols[currency] || currency;
+        }
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', () => {
+            // Load initial tax brackets
+            loadTaxBrackets();
+            
+            // Event listeners
+            document.getElementById('addTaxBracketBtn').addEventListener('click', openAddModal);
+            document.getElementById('addFirstBracketBtn').addEventListener('click', openAddModal);
+            document.getElementById('saveTaxBracketBtn').addEventListener('click', saveTaxBracket);
+            document.getElementById('applyFiltersBtn').addEventListener('click', () => {
+                loadTaxBrackets(getCurrentFilters());
+            });
+            document.getElementById('calculateTaxBtn').addEventListener('click', testTaxCalculation);
+            
+            // Update currency symbol when currency changes
+            document.getElementById('testCurrency').addEventListener('change', updateCurrencySymbol);
+            
+            // Set default currency symbol
+            updateCurrencySymbol();
+            
+            // Sync country and currency in test form
+            document.getElementById('testCountry').addEventListener('change', function() {
+                const currency = countryCurrencyMap[this.value] || 'MWK';
+                document.getElementById('testCurrency').value = currency;
+                updateCurrencySymbol();
+            });
+        });
+    </script>
 </body>
 </html>

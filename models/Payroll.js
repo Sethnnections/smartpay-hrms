@@ -229,34 +229,104 @@ payrollSchema.virtual('approvalStatus').get(function() {
 });
 
 // Static method: Calculate progressive tax according to Malawi tax brackets
-payrollSchema.statics.calculateProgressiveTax = function(grossPay) {
+// In your Payroll.js model, replace the calculateProgressiveTax method:
+
+// Remove the static calculateProgressiveTax method and replace with:
+payrollSchema.statics.calculateProgressiveTax = async function(grossPay, country = 'MW', currency = 'MWK') {
+  const TaxBracket = mongoose.model('TaxBracket');
+  
+  try {
+    // Get current tax brackets from database
+    const taxBrackets = await TaxBracket.getCurrentBrackets(country, currency);
+    
+    if (taxBrackets.length === 0) {
+      throw new Error('No active tax brackets found for the specified country and currency');
+    }
+    
+    let tax = 0;
+    let remainingIncome = grossPay;
+    
+    // Sort brackets by minAmount to ensure proper calculation
+    const sortedBrackets = taxBrackets.sort((a, b) => a.minAmount - b.minAmount);
+    
+    for (let i = 0; i < sortedBrackets.length; i++) {
+      const bracket = sortedBrackets[i];
+      
+      // Check if there's remaining income to tax in this bracket
+      if (remainingIncome <= 0) break;
+      
+      // Calculate the taxable amount in this bracket
+      const bracketMin = bracket.minAmount;
+      const bracketMax = bracket.maxAmount === null ? Infinity : bracket.maxAmount;
+      
+      // Determine how much income falls into this bracket
+      const taxableInBracket = Math.min(
+        remainingIncome,
+        bracketMax - (i === 0 ? 0 : sortedBrackets[i-1].maxAmount || Infinity)
+      );
+      
+      // Only tax income that exceeds the minimum threshold for this bracket
+      if (remainingIncome > bracketMin) {
+        const amountToTax = Math.min(
+          taxableInBracket,
+          remainingIncome - bracketMin
+        );
+        
+        if (amountToTax > 0) {
+          tax += amountToTax * (bracket.taxRate / 100);
+          remainingIncome -= amountToTax;
+        }
+      }
+    }
+    
+    // Calculate effective tax rate
+    const effectiveRate = grossPay > 0 ? (tax / grossPay) * 100 : 0;
+    
+    return { 
+      amount: Math.round(tax * 100) / 100, 
+      rate: Math.round(effectiveRate * 100) / 100,
+      bracketsUsed: sortedBrackets.map(b => ({
+        name: b.bracketName,
+        min: b.minAmount,
+        max: b.maxAmount,
+        rate: b.taxRate,
+        amount: 0 // This would need additional calculation to show per bracket
+      }))
+    };
+    
+  } catch (error) {
+    console.error('Error calculating progressive tax:', error);
+    
+    // Fallback to default Malawi tax brackets if database query fails
+    return this.calculateProgressiveTaxFallback(grossPay);
+  }
+};
+
+// Add fallback method with default Malawi tax brackets
+payrollSchema.statics.calculateProgressiveTaxFallback = function(grossPay) {
   let tax = 0;
   let remainingIncome = grossPay;
   let effectiveRate = 0;
 
-  // Tax bracket 1: 0 - 150,000 (0%)
-  if (remainingIncome <= 150000) {
-    tax = 0;
-  } else {
-    // Tax bracket 2: 150,001 - 500,000 (25%)
-    const bracket2Amount = Math.min(remainingIncome - 150000, 350000);
-    if (bracket2Amount > 0) {
-      tax += bracket2Amount * 0.25;
-      remainingIncome -= bracket2Amount;
-    }
+  // Default Malawi tax brackets (fallback)
+  const defaultBrackets = [
+    { min: 0, max: 150000, rate: 0 },
+    { min: 150001, max: 500000, rate: 25 },
+    { min: 500001, max: 2550000, rate: 30 },
+    { min: 2550001, max: null, rate: 35 }
+  ];
 
-    // Tax bracket 3: 500,001 - 2,550,000 (30%)
-    if (remainingIncome > 0) {
-      const bracket3Amount = Math.min(remainingIncome, 2050000);
-      if (bracket3Amount > 0) {
-        tax += bracket3Amount * 0.30;
-        remainingIncome -= bracket3Amount;
+  for (const bracket of defaultBrackets) {
+    if (remainingIncome <= 0) break;
+    
+    if (remainingIncome > bracket.min) {
+      const bracketRange = bracket.max === null ? Infinity : bracket.max - bracket.min;
+      const taxableInBracket = Math.min(remainingIncome - bracket.min, bracketRange);
+      
+      if (taxableInBracket > 0) {
+        tax += taxableInBracket * (bracket.rate / 100);
+        remainingIncome -= taxableInBracket;
       }
-    }
-
-    // Tax bracket 4: Above 2,550,000 (35%)
-    if (remainingIncome > 0) {
-      tax += remainingIncome * 0.35;
     }
   }
 
@@ -271,8 +341,10 @@ payrollSchema.statics.calculateProgressiveTax = function(grossPay) {
   };
 };
 
+
+
 // Pre-save calculations
-payrollSchema.pre('save', function(next) {
+payrollSchema.pre('save', async function(next) {
   // Calculate prorated salary based on days worked
   this.salary.prorated = (this.salary.base / this.payPeriod.workingDays) * this.payPeriod.daysWorked;
   
@@ -291,9 +363,22 @@ payrollSchema.pre('save', function(next) {
   this.grossPay = this.salary.prorated + this.allowances.total + this.overtime.amount + this.bonuses.total;
   
   // Calculate progressive tax amount using the new method
-  const taxCalculation = this.constructor.calculateProgressiveTax(this.grossPay);
-  this.deductions.tax.amount = taxCalculation.amount;
-  this.deductions.tax.rate = taxCalculation.rate;
+    try {
+    // Calculate progressive tax amount using the new adjustable method
+    const taxCalculation = await this.constructor.calculateProgressiveTax(
+      this.grossPay, 
+      'MW', // Default country
+      this.currency
+    );
+    this.deductions.tax.amount = taxCalculation.amount;
+    this.deductions.tax.rate = taxCalculation.rate;
+  } catch (error) {
+    console.error('Error calculating tax:', error);
+    // Fallback to default calculation
+    const taxCalculation = this.constructor.calculateProgressiveTaxFallback(this.grossPay);
+    this.deductions.tax.amount = taxCalculation.amount;
+    this.deductions.tax.rate = taxCalculation.rate;
+  }
   
   // Calculate pension amount (keep existing logic)
   this.deductions.pension.amount = (this.grossPay * this.deductions.pension.rate) / 100;
