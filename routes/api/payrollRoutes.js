@@ -34,7 +34,96 @@ const flexibleAuth = (req, res, next) => {
 
 router.use(authenticateToken);
 
-// Generate bank instruction PDF (Finance/Admin only)
+// IMPORTANT: Specific routes MUST come BEFORE dynamic routes to avoid conflicts
+
+// Generate all payslips in one PDF document - MOVED UP
+router.post('/payslips/consolidated', flexibleAuth, async (req, res) => {
+  try {
+    console.log('=== CONSOLIDATED PAYSLIPS ROUTE HIT ===');
+    console.log('Request body:', req.body);
+    console.log('User role:', req.user?.role);
+    
+    // Security: only finance or admin can generate the report
+    if (!req.user || !['admin', 'finance', 'hr'].includes(req.user.role)) {
+      return res.status(403).json({ error: 'Access denied. Admin/HR/Finance role required.' });
+    }
+
+    // Accept either { month } OR { startDate, endDate } in body
+    const { month, startDate, endDate } = req.body;
+
+    if (!month && !(startDate && endDate)) {
+      return res.status(400).json({ error: 'Provide either month (YYYY-MM) or startDate and endDate (YYYY-MM-DD).' });
+    }
+
+    console.log('Generating consolidated payslips for:', { month, startDate, endDate });
+
+    // Call controller function
+    await payrollController.generateAllPayslipsPDF(res, { month, startDate, endDate }, req.user);
+  } catch (error) {
+    console.error('consolidated-payslips route error', error);
+    if (!res.headersSent) {
+      res.status(error.statusCode || 500).json({ error: error.message });
+    }
+  }
+});
+
+// Generate all payslips for a month - MOVED UP
+router.post('/payslips/generate-all', flexibleAuth, async (req, res) => {
+  try {
+    const { month } = req.body;
+    
+    if (!month) {
+      return res.status(400).json({ error: 'Month is required' });
+    }
+
+    const result = await payrollController.generateAllPayslips(month);
+    res.json(result);
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ error: error.message });
+  }
+});
+
+// Generate consolidated payroll PDF - MOVED UP
+router.get('/consolidated-payslips/:month', async (req, res) => {
+  try {
+    await payrollController.generateConsolidatedPayslipsPDF(
+      res, 
+      { month: req.params.month },
+      req.user
+    );
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Generate specific reports - MOVED UP
+router.post('/report/:type', flexibleAuth, async (req, res) => {
+  try {
+    // Security: only finance or admin can generate reports
+    if (!req.user || !['admin', 'finance', 'hr'].includes(req.user.role)) {
+      return res.status(403).json({ error: 'Access denied. Admin/HR/Finance role required.' });
+    }
+
+    const { type } = req.params;
+    const { month, startDate, endDate } = req.body;
+    
+    // Validate report type
+    const validReportTypes = ['paye', 'pension', 'overtime', 'loan', 'advance', 'housing'];
+    if (!validReportTypes.includes(type)) {
+      return res.status(400).json({ error: 'Invalid report type' });
+    }
+
+    // Call controller function
+    await payrollController.generateReport(res, type, { month, startDate, endDate }, req.user);
+  } catch (error) {
+    console.error('report route error', error);
+    if (!res.headersSent) {
+      res.status(error.statusCode || 500).json({ error: error.message });
+    }
+  }
+});
+
+// Generate bank instruction PDF - MOVED UP
 router.post('/bank-instruction', authenticateToken, async (req, res) => {
   try {
     // security: only finance or admin can generate the bank instruction
@@ -57,6 +146,9 @@ router.post('/bank-instruction', authenticateToken, async (req, res) => {
     }
   }
 });
+
+// Specific payslip routes - MOVED UP BEFORE dynamic routes
+router.get('/payslip/:employeeId/:month', flexibleAuth, payrollController.getPayslip);
 
 // Process payroll for all active employees (Admin/HR only)
 router.post('/process', requireHROrAdmin, async (req, res) => {
@@ -118,7 +210,96 @@ router.post('/batch-payment', requireAdmin, async (req, res) => {
   }
 });
 
-// NEW ROUTE: View payslip (inline PDF)
+// Create payroll from previous month
+router.post('/create-from-previous', requireHROrAdmin, async (req, res) => {
+  try {
+    const { month } = req.body;
+    
+    if (!month) {
+      return res.status(400).json({ 
+        error: 'Month is required in format YYYY-MM' 
+      });
+    }
+
+    const result = await payrollController.createFromPreviousMonth(month, req.user.id);
+    res.status(201).json(result);
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ error: error.message });
+  }
+});
+
+// Get payroll by period with filtering
+router.get('/period/:period', requireHROrAdmin, async (req, res) => {
+  try {
+    const { period } = req.params;
+    const { page = 1, limit = 20, department, status } = req.query;
+    
+    const result = await payrollController.getPayrollByPeriod({
+      period,
+      page: parseInt(page),
+      limit: parseInt(limit),
+      department,
+      status
+    });
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Finalize single payroll
+router.patch('/:id/finalize', requireHROrAdmin, async (req, res) => {
+  try {
+    const payroll = await payrollController.finalizePayroll(
+      req.params.id,
+      req.user.id
+    );
+    res.json(payroll);
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ error: error.message });
+  }
+});
+
+// Finalize all payrolls for a month
+router.patch('/finalize-all/:month', requireHROrAdmin, async (req, res) => {
+  try {
+    const { month } = req.params;
+    
+    const result = await payrollController.finalizeAllPayrolls(
+      month,
+      req.user.id
+    );
+    res.json(result);
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ error: error.message });
+  }
+});
+
+// Get available payroll periods
+router.get('/periods/available', requireHROrAdmin, async (req, res) => {
+  try {
+    const periods = await Payroll.aggregate([
+      { $match: { isActive: true } },
+      {
+        $group: {
+          _id: '$payrollMonth',
+          count: { $sum: 1 },
+          startDate: { $min: '$payPeriod.startDate' },
+          endDate: { $max: '$payPeriod.endDate' }
+        }
+      },
+      { $sort: { _id: -1 } }
+    ]);
+    
+    res.json(periods);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// NOW the dynamic routes that can match multiple patterns
+
+// View payslip (inline PDF)
 router.get('/:id/payslip-view', flexibleAuth, async (req, res) => {
   try {
     const { id } = req.params;
@@ -204,7 +385,7 @@ router.get('/:id/payslip', flexibleAuth, async (req, res) => {
 });
 
 // Generate individual payslip (HR/Admin only, or employee for own payslip)
-router.post('/:id/payslip',flexibleAuth, async (req, res) => {
+router.post('/:id/payslip', flexibleAuth, async (req, res) => {
   try {
     const payroll = await payrollController.getPayrollDetails(req.params.id);
     
@@ -225,26 +406,24 @@ router.post('/:id/payslip',flexibleAuth, async (req, res) => {
   }
 });
 
-// Generate all payslips for a month
-router.post('/payslips/generate-all', flexibleAuth, async (req, res) => {
+// Update payroll record (HR/Admin only)
+router.put('/:id', requireHROrAdmin, async (req, res) => {
   try {
-    const { month } = req.body;
-    
-    if (!month) {
-      return res.status(400).json({ error: 'Month is required' });
-    }
-
-    const result = await payrollController.generateAllPayslips(month);
-    res.json(result);
+    const payroll = await payrollController.updatePayroll(
+      req.params.id,
+      req.body,
+      req.user.id
+    );
+    res.json(payroll);
   } catch (error) {
     res.status(error.statusCode || 500).json({ error: error.message });
   }
 });
 
-// Update payroll record (HR/Admin only)
-router.put('/:id', requireHROrAdmin, async (req, res) => {
+// Update payroll details
+router.put('/:id/details', requireHROrAdmin, async (req, res) => {
   try {
-    const payroll = await payrollController.updatePayroll(
+    const payroll = await payrollController.updatePayrollDetails(
       req.params.id,
       req.body,
       req.user.id
@@ -275,6 +454,36 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+// Get payroll with full details for editing
+router.get('/:id/editable', requireHROrAdmin, async (req, res) => {
+  try {
+    const payroll = await Payroll.findById(req.params.id)
+      .populate({
+        path: 'employeeId',
+        populate: [
+          { path: 'employmentInfo.departmentId', select: 'name code' },
+          { path: 'employmentInfo.positionId', select: 'name' },
+          { path: 'employmentInfo.gradeId', select: 'name code level' }
+        ]
+      })
+      .populate('processedBy', 'name email');
+
+    if (!payroll) {
+      return res.status(404).json({ error: 'Payroll record not found' });
+    }
+
+    // Check if payroll can be edited (not paid)
+    if (payroll.payment.status === 'paid') {
+      return res.status(400).json({ error: 'Cannot edit paid payroll' });
+    }
+
+    res.json(payroll);
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ error: error.message });
+  }
+});
+
+// List payrolls
 router.get('/', requireHROrAdmin, async (req, res) => {
   try {
     const filters = {
@@ -287,6 +496,9 @@ router.get('/', requireHROrAdmin, async (req, res) => {
     res.status(error.statusCode || 500).json({ error: error.message });
   }
 });
+
+// Get all payslips for a month - MOVED TO END because it's a dynamic route
+router.get('/payslips/:month', flexibleAuth, payrollController.getAllPayslips);
 
 // Approve payroll (HR for hr approval, Finance for finance approval)
 router.patch('/:id/approve', async (req, res) => {
@@ -377,190 +589,6 @@ router.patch('/:id/deactivate', requireAdmin, async (req, res) => {
     res.status(error.statusCode || 500).json({ error: error.message });
   }
 });
-
-router.get('/payslip/:employeeId/:month', payrollController.getPayslip);
-
-// Get all payslips for a month
-router.get('/payslips/:month', payrollController.getAllPayslips);// Add these routes to payrollRoutes.js
-
-// Create payroll from previous month
-router.post('/create-from-previous', requireHROrAdmin, async (req, res) => {
-  try {
-    const { month } = req.body;
-    
-    if (!month) {
-      return res.status(400).json({ 
-        error: 'Month is required in format YYYY-MM' 
-      });
-    }
-
-    const result = await payrollController.createFromPreviousMonth(month, req.user.id);
-    res.status(201).json(result);
-  } catch (error) {
-    res.status(error.statusCode || 500).json({ error: error.message });
-  }
-});
-
-// Get payroll by period with filtering
-router.get('/period/:period', requireHROrAdmin, async (req, res) => {
-  try {
-    const { period } = req.params;
-    const { page = 1, limit = 20, department, status } = req.query;
-    
-    const result = await payrollController.getPayrollByPeriod({
-      period,
-      page: parseInt(page),
-      limit: parseInt(limit),
-      department,
-      status
-    });
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Update payroll details
-router.put('/:id/details', requireHROrAdmin, async (req, res) => {
-  try {
-    const payroll = await payrollController.updatePayrollDetails(
-      req.params.id,
-      req.body,
-      req.user.id
-    );
-    res.json(payroll);
-  } catch (error) {
-    res.status(error.statusCode || 500).json({ error: error.message });
-  }
-});
-
-// Generate consolidated payroll PDF
-router.post('/consolidated-payroll', flexibleAuth, async (req, res) => {
-  try {
-    // Security: only finance or admin can generate the report
-    if (!req.user || !['admin', 'finance', 'hr'].includes(req.user.role)) {
-      return res.status(403).json({ error: 'Access denied. Admin/HR/Finance role required.' });
-    }
-
-    // Accept either { month } OR { startDate, endDate } in body
-    const { month, startDate, endDate } = req.body;
-
-    // Call controller function
-    await payrollController.generateConsolidatedPayrollPDF(res, { month, startDate, endDate }, req.user);
-  } catch (error) {
-    console.error('consolidated-payroll route error', error);
-    if (!res.headersSent) {
-      res.status(error.statusCode || 500).json({ error: error.message });
-    }
-  }
-});
-
-// Generate specific reports (PAYE, Pension, Overtime, Loans, Housing, etc.)
-router.post('/report/:type', flexibleAuth, async (req, res) => {
-  try {
-    // Security: only finance or admin can generate reports
-    if (!req.user || !['admin', 'finance', 'hr'].includes(req.user.role)) {
-      return res.status(403).json({ error: 'Access denied. Admin/HR/Finance role required.' });
-    }
-
-    const { type } = req.params;
-    const { month, startDate, endDate } = req.body;
-    
-    // Validate report type
-    const validReportTypes = ['paye', 'pension', 'overtime', 'loan', 'advance', 'housing'];
-    if (!validReportTypes.includes(type)) {
-      return res.status(400).json({ error: 'Invalid report type' });
-    }
-
-    // Call controller function
-    await payrollController.generateReport(res, type, { month, startDate, endDate }, req.user);
-  } catch (error) {
-    console.error('report route error', error);
-    if (!res.headersSent) {
-      res.status(error.statusCode || 500).json({ error: error.message });
-    }
-  }
-});
-
-// Finalize single payroll
-router.patch('/:id/finalize', requireHROrAdmin, async (req, res) => {
-  try {
-    const payroll = await payrollController.finalizePayroll(
-      req.params.id,
-      req.user.id
-    );
-    res.json(payroll);
-  } catch (error) {
-    res.status(error.statusCode || 500).json({ error: error.message });
-  }
-});
-
-// Finalize all payrolls for a month
-router.patch('/finalize-all/:month', requireHROrAdmin, async (req, res) => {
-  try {
-    const { month } = req.params;
-    
-    const result = await payrollController.finalizeAllPayrolls(
-      month,
-      req.user.id
-    );
-    res.json(result);
-  } catch (error) {
-    res.status(error.statusCode || 500).json({ error: error.message });
-  }
-});
-
-// Get payroll with full details for editing
-router.get('/:id/editable', requireHROrAdmin, async (req, res) => {
-  try {
-    const payroll = await Payroll.findById(req.params.id)
-      .populate({
-        path: 'employeeId',
-        populate: [
-          { path: 'employmentInfo.departmentId', select: 'name code' },
-          { path: 'employmentInfo.positionId', select: 'name' },
-          { path: 'employmentInfo.gradeId', select: 'name code level' }
-        ]
-      })
-      .populate('processedBy', 'name email');
-
-    if (!payroll) {
-      return res.status(404).json({ error: 'Payroll record not found' });
-    }
-
-    // Check if payroll can be edited (not paid)
-    if (payroll.payment.status === 'paid') {
-      return res.status(400).json({ error: 'Cannot edit paid payroll' });
-    }
-
-    res.json(payroll);
-  } catch (error) {
-    res.status(error.statusCode || 500).json({ error: error.message });
-  }
-});
-
-// Get available payroll periods
-router.get('/periods/available', requireHROrAdmin, async (req, res) => {
-  try {
-    const periods = await Payroll.aggregate([
-      { $match: { isActive: true } },
-      {
-        $group: {
-          _id: '$payrollMonth',
-          count: { $sum: 1 },
-          startDate: { $min: '$payPeriod.startDate' },
-          endDate: { $max: '$payPeriod.endDate' }
-        }
-      },
-      { $sort: { _id: -1 } }
-    ]);
-    
-    res.json(periods);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-
+// Debug route to check payroll data
 
 module.exports = router;

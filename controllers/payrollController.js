@@ -1293,46 +1293,27 @@ const payrollController = {
       }
     }
   },
-// Add these functions to payrollController.js
 
-// Get payslip breakdown for one employee by month
-getPayslip: async (req, res) => {
-  try {
-    const { employeeId, month } = req.params;
-
-    const payroll = await Payroll.findOne({
-      employeeId,
-      payrollMonth: month
-    })
-      .populate({
-        path: 'employeeId',
-        select: 'employeeId personalInfo employmentInfo bankInfo fullName',
-      });
-
-    if (!payroll) {
-      return res.status(404).json({ error: 'Payroll not found for this employee and month' });
-    }
-
-    const breakdown = payroll.getPayslipBreakdown();
-    breakdown.employee = payroll.employeeId;
-
-    res.json({ success: true, data: breakdown });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Server error' });
-  }
-},
-
-// Get payslips for all employees in a month
 getAllPayslips: async (req, res) => {
   try {
     const { month } = req.params;
 
-    const payrolls = await Payroll.find({ payrollMonth: month })
+    const payrolls = await Payroll.find({ 
+      payrollMonth: month,
+      isActive: true 
+    })
       .populate({
         path: 'employeeId',
-        select: 'employeeId personalInfo employmentInfo bankInfo fullName',
+        select: 'employeeId personalInfo employmentInfo bankInfo',
+      })
+      .sort({ 'employeeId.personalInfo.lastName': 1 });
+
+    if (!payrolls || payrolls.length === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'No payrolls found for this month' 
       });
+    }
 
     const data = payrolls.map(p => {
       const breakdown = p.getPayslipBreakdown();
@@ -1342,8 +1323,263 @@ getAllPayslips: async (req, res) => {
 
     res.json({ success: true, data });
   } catch (error) {
-    console.error(error);
+    console.error('getAllPayslips error:', error);
     res.status(500).json({ error: 'Server error' });
+  }
+},
+
+// Fix the getPayslip method  
+getPayslip: async (req, res) => {
+  try {
+    const { employeeId, month } = req.params;
+
+    const payroll = await Payroll.findOne({
+      employeeId,
+      payrollMonth: month,
+      isActive: true
+    })
+      .populate({
+        path: 'employeeId',
+        select: 'employeeId personalInfo employmentInfo bankInfo',
+      });
+
+    if (!payroll) {
+      return res.status(404).json({ 
+        success: false,
+        error: 'Payroll not found for this employee and month' 
+      });
+    }
+
+    const breakdown = payroll.getPayslipBreakdown();
+    breakdown.employee = payroll.employeeId;
+
+    res.json({ success: true, data: breakdown });
+  } catch (error) {
+    console.error('getPayslip error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+},
+// Generate consolidated payslips (all employees in one document)
+generateConsolidatedPayslipsPDF: async function(res, options = {}, requestedBy = {}) {
+  try {
+    const { month, startDate, endDate } = options;
+    
+    if (!month && !(startDate && endDate)) {
+      throw new Error('Provide either month (YYYY-MM) or startDate and endDate (YYYY-MM-DD).');
+    }
+
+    // Build query
+    const query = { isActive: true };
+    
+    if (month) {
+      query.payrollMonth = month;
+    } else {
+      const sd = moment(startDate).startOf('day').toDate();
+      const ed = moment(endDate).endOf('day').toDate();
+      
+      query['payPeriod.startDate'] = { $gte: sd };
+      query['payPeriod.endDate'] = { $lte: ed };
+    }
+
+    // Get payrolls with detailed employee information
+    const payrolls = await Payroll.find(query)
+      .populate({
+        path: 'employeeId',
+        populate: [
+          { path: 'employmentInfo.departmentId', select: 'name code' },
+          { path: 'employmentInfo.positionId', select: 'name' },
+          { path: 'employmentInfo.gradeId', select: 'name level' }
+        ]
+      })
+      .sort({ 'employeeId.personalInfo.lastName': 1 })
+      .lean();
+
+    if (!payrolls || payrolls.length === 0) {
+      return res.status(404).json({ error: 'No payroll records found for the selected period.' });
+    }
+
+    const fileLabel = month ? month : `${startDate}_to_${endDate}`;
+    const filename = `consolidated_payslips_${fileLabel}.pdf`;
+    
+    res.setHeader('Content-disposition', `attachment; filename=${filename}`);
+    res.setHeader('Content-type', 'application/pdf');
+
+    const doc = new PDFDocument({ size: 'A4', margin: 30, bufferPages: true });
+    doc.pipe(res);
+
+    let currentY = this.addReportHeader(doc, 'CONSOLIDATED PAYSLIPS', fileLabel, payrolls.length, requestedBy);
+
+    // Helper function for page breaks
+    const checkPageBreak = (heightNeeded = 30) => {
+      if (currentY + heightNeeded > doc.page.height - 80) {
+        this.addReportFooter(doc, requestedBy);
+        doc.addPage();
+        currentY = this.addReportHeader(doc, 'CONSOLIDATED PAYSLIPS', fileLabel, payrolls.length, requestedBy);
+        return true;
+      }
+      return false;
+    };
+
+    // Process each employee's payslip
+    for (let i = 0; i < payrolls.length; i++) {
+      const payroll = payrolls[i];
+      const employee = payroll.employeeId || {};
+      const personalInfo = employee.personalInfo || {};
+      const employmentInfo = employee.employmentInfo || {};
+
+      // Check if we need a page break before starting a new employee
+      checkPageBreak(150); // Need space for full payslip
+
+      // Employee header
+      const employeeHeaderY = currentY;
+      doc.rect(30, employeeHeaderY, doc.page.width - 60, 25)
+        .fillAndStroke(COLORS.secondary, COLORS.secondary);
+
+      doc.fontSize(12)
+        .fillColor(COLORS.background)
+        .font('Helvetica-Bold')
+        .text(`${i + 1}. ${personalInfo.firstName || ''} ${personalInfo.lastName || ''}`, 40, employeeHeaderY + 8)
+        .fontSize(10)
+        .text(`ID: ${employee.employeeId || 'N/A'} | Department: ${employmentInfo.departmentId?.name || 'N/A'}`, 
+              doc.page.width - 150, employeeHeaderY + 8, { width: 140, align: 'right' });
+
+      currentY += 35;
+
+      // Employee details
+      doc.fontSize(9)
+        .fillColor(COLORS.text)
+        .font('Helvetica')
+        .text(`Position: ${employmentInfo.positionId?.name || 'N/A'}`, 40, currentY)
+        .text(`Grade: ${employmentInfo.gradeId?.name || 'N/A'} (Level ${employmentInfo.gradeId?.level || 'N/A'})`, 40, currentY + 12)
+        .text(`Days Worked: ${payroll.payPeriod?.daysWorked || 0}/${payroll.payPeriod?.workingDays || 0}`, 40, currentY + 24)
+        .text(`Payment Method: ${payroll.payment?.method || 'Bank Transfer'}`, 300, currentY)
+        .text(`Status: ${payroll.payment?.status?.toUpperCase() || 'PENDING'}`, 300, currentY + 12)
+        .text(`Payment Date: ${payroll.payment?.paidAt ? moment(payroll.payment.paidAt).format('DD MMM YYYY') : 'Pending'}`, 300, currentY + 24);
+
+      currentY += 45;
+
+      // Earnings and Deductions in two columns
+      const leftCol = 40;
+      const rightCol = 300;
+      const colWidth = (doc.page.width - 80) / 2;
+      const sectionStartY = currentY;
+
+      // EARNINGS section
+      doc.rect(leftCol, sectionStartY, colWidth, 20)
+        .fillAndStroke(COLORS.lightBg, COLORS.border);
+
+      doc.fontSize(10)
+        .fillColor(COLORS.primary)
+        .font('Helvetica-Bold')
+        .text('EARNINGS', leftCol + 10, sectionStartY + 6);
+
+      const earnings = [
+        { name: 'Basic Salary', amount: payroll.salary?.prorated || 0 },
+        { name: 'Transport', amount: payroll.allowances?.transport || 0 },
+        { name: 'Housing', amount: payroll.allowances?.housing || 0 },
+        { name: 'Medical', amount: payroll.allowances?.medical || 0 },
+        { name: 'Meals', amount: payroll.allowances?.meals || 0 },
+        { name: 'Communication', amount: payroll.allowances?.communication || 0 },
+        { name: 'Other Allowances', amount: payroll.allowances?.other || 0 },
+        { name: 'Overtime', amount: payroll.overtime?.amount || 0 },
+        { name: 'Performance Bonus', amount: payroll.bonuses?.performance || 0 },
+        { name: 'Annual Bonus', amount: payroll.bonuses?.annual || 0 },
+        { name: 'Other Bonuses', amount: payroll.bonuses?.other || 0 }
+      ].filter(item => item.amount > 0);
+
+      let earningsY = sectionStartY + 25;
+      doc.fontSize(8)
+        .fillColor(COLORS.text)
+        .font('Helvetica');
+
+      earnings.forEach(item => {
+        doc.text(item.name, leftCol + 10, earningsY)
+          .text(`${payroll.currency || 'MWK'} ${item.amount.toLocaleString()}`, leftCol + colWidth - 90, earningsY, { align: 'right', width: 80 });
+        earningsY += 12;
+      });
+
+      const earningsEndY = earningsY + 10;
+      doc.fontSize(9)
+        .fillColor(COLORS.primary)
+        .font('Helvetica-Bold')
+        .text('GROSS PAY', leftCol + 10, earningsEndY)
+        .text(`${payroll.currency || 'MWK'} ${(payroll.grossPay || 0).toLocaleString()}`, 
+              leftCol + colWidth - 90, earningsEndY, { align: 'right', width: 80 });
+
+      // DEDUCTIONS section
+      doc.rect(rightCol, sectionStartY, colWidth, 20)
+        .fillAndStroke(COLORS.lightBg, COLORS.border);
+
+      doc.fontSize(10)
+        .fillColor(COLORS.primary)
+        .font('Helvetica-Bold')
+        .text('DEDUCTIONS', rightCol + 10, sectionStartY + 6);
+
+      const deductions = [
+        { name: `PAYE Tax (${payroll.deductions?.tax?.rate || 0}%)`, amount: payroll.deductions?.tax?.amount || 0 },
+        { name: `Pension (${payroll.deductions?.pension?.rate || 0}%)`, amount: payroll.deductions?.pension?.amount || 0 },
+        ...((payroll.deductions?.loans || []).map(loan => ({ name: `Loan: ${loan.name}`, amount: loan.amount }))),
+        ...((payroll.deductions?.other || []).map(item => ({ name: item.name, amount: item.amount })))
+      ].filter(item => item.amount > 0);
+
+      let deductionsY = sectionStartY + 25;
+      doc.fontSize(8)
+        .fillColor(COLORS.text)
+        .font('Helvetica');
+
+      deductions.forEach(item => {
+        doc.text(item.name, rightCol + 10, deductionsY)
+          .text(`${payroll.currency || 'MWK'} ${item.amount.toLocaleString()}`, rightCol + colWidth - 90, deductionsY, { align: 'right', width: 80 });
+        deductionsY += 12;
+      });
+
+      const deductionsEndY = deductionsY + 10;
+      doc.fontSize(9)
+        .fillColor(COLORS.error)
+        .font('Helvetica-Bold')
+        .text('TOTAL DEDUCTIONS', rightCol + 10, deductionsEndY)
+        .text(`${payroll.currency || 'MWK'} ${(payroll.deductions?.total || 0).toLocaleString()}`, 
+              rightCol + colWidth - 90, deductionsEndY, { align: 'right', width: 80 });
+
+      // Determine the maximum Y position between earnings and deductions
+      const maxY = Math.max(earningsEndY, deductionsEndY);
+
+      // NET PAY section
+      const netPayY = maxY + 20;
+      checkPageBreak(netPayY + 30 - currentY); // Check if we need a page break for net pay
+      
+      doc.rect(30, netPayY, doc.page.width - 60, 30)
+        .fillAndStroke(COLORS.accent, COLORS.accent);
+
+      doc.fontSize(14)
+        .fillColor(COLORS.background)
+        .font('Helvetica-Bold')
+        .text('NET PAY', 40, netPayY + 10)
+        .text(`${payroll.currency || 'MWK'} ${(payroll.netPay || 0).toLocaleString()}`, 
+              doc.page.width - 200, netPayY + 10, { align: 'right', width: 150 });
+
+      currentY = netPayY + 50;
+
+      // Separator line between employees
+      if (i < payrolls.length - 1) {
+        checkPageBreak(20); // Check if we need a page break for the separator
+        doc.strokeColor(COLORS.border)
+          .lineWidth(1)
+          .moveTo(30, currentY)
+          .lineTo(doc.page.width - 30, currentY)
+          .stroke();
+        currentY += 20;
+      }
+    }
+
+    this.addReportFooter(doc, requestedBy);
+    doc.end();
+
+  } catch (err) {
+    console.error('generateConsolidatedPayslipsPDF error:', err);
+    if (!res.headersSent) {
+      res.status(500).json({ error: err.message || 'Failed to generate PDF' });
+    }
   }
 },
   // Individual payslip PDF generation (existing method improved)
@@ -1601,3 +1837,6 @@ getAllPayslips: async (req, res) => {
 };
 
 module.exports = payrollController;
+
+
+

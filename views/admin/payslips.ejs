@@ -70,19 +70,27 @@
             max-width: 200px;
         }
         
-        /* DataTables Custom Styling */
+        /* Enhanced DataTables Styling */
+        .dataTables_wrapper {
+            padding: 0;
+            margin-top: 1rem;
+        }
+        
         .dataTables_wrapper .dataTables_length,
         .dataTables_wrapper .dataTables_filter {
             margin-bottom: 1rem;
+            padding: 0 0.5rem;
         }
         
         .dataTables_wrapper .dataTables_info,
         .dataTables_wrapper .dataTables_paginate {
             margin-top: 1rem;
+            padding: 0.5rem;
         }
         
         .dt-buttons {
             margin-bottom: 1rem;
+            padding: 0 0.5rem;
         }
         
         .dt-button {
@@ -93,11 +101,13 @@
             padding: 0.375rem 0.75rem;
             font-size: 0.875rem;
             margin-right: 0.25rem;
+            transition: all 0.2s ease;
         }
         
         .dt-button:hover {
             background: #0056b3 !important;
             border-color: #0056b3 !important;
+            transform: translateY(-1px);
         }
         
         .dataTables_filter input {
@@ -105,6 +115,12 @@
             border-radius: 0.375rem;
             padding: 0.375rem 0.75rem;
             margin-left: 0.5rem;
+            transition: border-color 0.2s ease;
+        }
+        
+        .dataTables_filter input:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
         }
         
         .dataTables_length select {
@@ -112,15 +128,173 @@
             border-radius: 0.375rem;
             padding: 0.375rem 0.75rem;
             margin: 0 0.5rem;
+            transition: border-color 0.2s ease;
+        }
+        
+        .dataTables_length select:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
         }
         
         .page-link {
             color: #007bff;
+            border: 1px solid #dee2e6;
+            padding: 0.5rem 0.75rem;
+            transition: all 0.2s ease;
+        }
+        
+        .page-link:hover {
+            color: #0056b3;
+            background-color: #e9ecef;
+            border-color: #dee2e6;
         }
         
         .page-item.active .page-link {
             background-color: #007bff;
             border-color: #007bff;
+        }
+        
+        /* Enhanced table styling */
+        #payslipsTable {
+            border-collapse: separate;
+            border-spacing: 0;
+            width: 100%;
+        }
+        
+        #payslipsTable thead th {
+            background-color: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+            padding: 0.75rem;
+            font-weight: 600;
+            color: #495057;
+            vertical-align: middle;
+        }
+        
+        #payslipsTable tbody td {
+            padding: 0.75rem;
+            vertical-align: middle;
+            border-top: 1px solid #dee2e6;
+        }
+        
+        #payslipsTable tbody tr:hover {
+            background-color: rgba(0, 123, 255, 0.05);
+        }
+        
+        /* Text alignment improvements */
+        .text-end {
+            text-align: right !important;
+        }
+        
+        .text-center {
+            text-align: center !important;
+        }
+        
+        .text-start {
+            text-align: left !important;
+        }
+        
+        /* Avatar styling */
+        .avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background-color: #007bff;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+        
+        /* Button group styling */
+        .btn-group-sm > .btn, .btn-sm {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .dataTables_wrapper .dataTables_length,
+            .dataTables_wrapper .dataTables_filter {
+                float: none !important;
+                margin-bottom: 0.5rem;
+            }
+            
+            .dt-buttons {
+                margin-bottom: 0.5rem;
+            }
+            
+            .dataTables_wrapper .dataTables_info,
+            .dataTables_wrapper .dataTables_paginate {
+                float: none !important;
+                text-align: center;
+            }
+            
+            .month-selector {
+                max-width: 100%;
+            }
+        }
+        
+        /* Custom card styling */
+        .card {
+            border: none;
+            border-radius: 0.5rem;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        }
+        
+        .card-body {
+            padding: 1.5rem;
+        }
+        
+        /* Header styling */
+        h6 {
+            font-weight: 600;
+            color: #343a40;
+        }
+        
+        /* Form control styling */
+        .form-select-sm {
+            height: calc(1.5em + 0.5rem + 2px);
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+        }
+        
+        /* Button styling */
+        .btn-outline-primary {
+            color: #007bff;
+            border-color: #007bff;
+        }
+        
+        .btn-outline-primary:hover {
+            color: #fff;
+            background-color: #007bff;
+            border-color: #007bff;
+        }
+        
+        .btn-outline-success {
+            color: #28a745;
+            border-color: #28a745;
+        }
+        
+        .btn-outline-success:hover {
+            color: #fff;
+            background-color: #28a745;
+            border-color: #28a745;
+        }
+        
+        /* Input group styling */
+        .input-group-sm > .form-control,
+        .input-group-sm > .form-select {
+            height: calc(1.5em + 0.5rem + 2px);
+            padding: 0.25rem 0.5rem;
+        }
+        
+        /* Label styling */
+        .form-label {
+            margin-bottom: 0;
+            font-size: 0.875rem;
+            color: #495057;
         }
     </style>
 </head>
@@ -151,34 +325,62 @@
             <div class="container-fluid px-4">
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h6 class="mb-0">Employee Payslips</h6>
-                    <div class="d-flex gap-2">
-                        <select class="form-select month-selector" id="monthSelector">
-                            <!-- Options will be populated by JavaScript -->
-                        </select>
-                        <button class="btn btn-outline-primary" id="generateAllBtn">
-                            <i class="fas fa-file-pdf me-2"></i>Generate All
+                    <div class="d-flex align-items-center gap-3">
+                        <!-- Month Selector with label -->
+                        <div class="d-flex align-items-center gap-2">
+                            <label for="monthSelector" class="form-label mb-0 small fw-semibold">Select Month:</label>
+                            <select class="form-select form-select-sm month-selector" id="monthSelector">
+                                <!-- Options populated by JavaScript -->
+                            </select>
+                        </div>
+
+                        <!-- Generate All Button -->
+                        <button class="btn btn-sm btn-outline-primary" id="generateAllBtn">
+                            <i class="fas fa-file-pdf me-1"></i> Generate All
                         </button>
+
+                        <!-- Consolidated Payslip Download -->
+                        <div class="d-flex align-items-center gap-2">
+                            <label for="monthPicker" class="form-label mb-0 small fw-semibold">Employee Payslips Month:</label>
+                            <div class="input-group input-group-sm" style="width: auto;">
+                                <input type="month" class="form-control" id="monthPicker">
+                                <button class="btn btn-sm btn-outline-success" id="downloadBtn">
+                                    <i class="fas fa-download me-1"></i> Download All
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
                 <div class="card shadow-sm">
                     <div class="card-body">
                         <div class="table-responsive">
-                            <table class="table table-hover" id="payslipsTable">
-                                <thead>
+                            <table class="table table-hover table-striped" id="payslipsTable">
+                                <thead class="table-light">
                                     <tr>
-                                        <th>Employee</th>
-                                        <th>Payroll Month</th>
-                                        <th>Gross Pay</th>
-                                        <th>Deductions</th>
-                                        <th>Net Pay</th>
-                                        <th>Status</th>
-                                        <th>Actions</th>
+                                        <th class="text-start">Employee</th>
+                                        <th class="text-start">Payroll Month</th>
+                                        <th class="text-end">Gross Pay</th>
+                                        <th class="text-end">Deductions</th>
+                                        <th class="text-end">Net Pay</th>
+                                        <th class="text-center">Status</th>
+                                        <th class="text-center">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody id="payslipsTableBody">
                                     <!-- Table content will be populated by JavaScript -->
                                 </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <th class="text-start">Employee</th>
+                                        <th class="text-start">Payroll Month</th>
+                                        <th class="text-end">Gross Pay</th>
+                                        <th class="text-end">Deductions</th>
+                                        <th class="text-end">Net Pay</th>
+                                        <th class="text-center">Status</th>
+                                        <th class="text-center">Actions</th>
+                                    </tr>
+                                </tfoot>
                             </table>
                         </div>
                     </div>
@@ -307,12 +509,16 @@
             
             payslipsDataTable = $('#payslipsTable').DataTable({
                 responsive: true,
-                dom: 'Bfrtip',
+                dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>' +
+                     '<"row"<"col-sm-12"tr>>' +
+                     '<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>' +
+                     '<"row"<"col-sm-12 col-md-6"B><"col-sm-12 col-md-6">>',
                 buttons: [
                     {
                         extend: 'excel',
                         text: '<i class="fas fa-file-excel me-1"></i> Excel',
                         title: `Payslips - ${formatMonth(monthSelector.value)}`,
+                        className: 'btn-sm',
                         exportOptions: {
                             columns: [0, 1, 2, 3, 4, 5]
                         }
@@ -321,6 +527,7 @@
                         extend: 'pdf',
                         text: '<i class="fas fa-file-pdf me-1"></i> PDF',
                         title: `Payslips - ${formatMonth(monthSelector.value)}`,
+                        className: 'btn-sm',
                         exportOptions: {
                             columns: [0, 1, 2, 3, 4, 5]
                         }
@@ -329,6 +536,7 @@
                         extend: 'print',
                         text: '<i class="fas fa-print me-1"></i> Print',
                         title: `Payslips - ${formatMonth(monthSelector.value)}`,
+                        className: 'btn-sm',
                         exportOptions: {
                             columns: [0, 1, 2, 3, 4, 5]
                         }
@@ -337,18 +545,21 @@
                         extend: 'csv',
                         text: '<i class="fas fa-file-csv me-1"></i> CSV',
                         title: `Payslips - ${formatMonth(monthSelector.value)}`,
+                        className: 'btn-sm',
                         exportOptions: {
                             columns: [0, 1, 2, 3, 4, 5]
                         }
                     }
                 ],
-                pageLength: 25,
-                lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+                pageLength: 10,
+                lengthMenu: [[5, 10, 25, 50, 100, -1], [5, 10, 25, 50, 100, "All"]],
                 order: [[1, 'desc']],
                 language: {
-                    search: "Search payslips:",
+                    search: "Search:",
                     lengthMenu: "Show _MENU_ entries",
-                    info: "Showing _START_ to _END_ of _TOTAL_ payslips",
+                    info: "Showing _START_ to _END_ of _TOTAL_ entries",
+                    infoEmpty: "Showing 0 to 0 of 0 entries",
+                    infoFiltered: "(filtered from _MAX_ total entries)",
                     paginate: {
                         first: "First",
                         last: "Last",
@@ -357,6 +568,10 @@
                     }
                 },
                 columnDefs: [
+                    {
+                        targets: [0, 1], // Employee and Payroll Month columns
+                        className: 'text-start'
+                    },
                     {
                         targets: [2, 3, 4], // Gross Pay, Deductions, Net Pay columns
                         className: 'text-end'
@@ -371,7 +586,22 @@
                         searchable: false,
                         className: 'text-center'
                     }
-                ]
+                ],
+                initComplete: function() {
+                    // Add search functionality to footer
+                    this.api().columns().every(function() {
+                        var column = this;
+                        if (column.index() !== 6) { // Skip actions column
+                            var input = document.createElement('input');
+                            input.className = 'form-control form-control-sm';
+                            input.placeholder = 'Search...';
+                            $(input).appendTo($(column.footer()).empty())
+                            .on('keyup change', function() {
+                                column.search(this.value).draw();
+                            });
+                        }
+                    });
+                }
             });
         }
         
@@ -395,6 +625,7 @@
                 hideLoading();
             }
         }
+        
         function getCurrentUserRole() {
             try {
                 const userData = JSON.parse(localStorage.getItem('user'));
@@ -403,13 +634,14 @@
                 return 'employee';
             }
         }
+        
         // Render payslips in table
         function renderPayslips(payslips) {
             const userRole = getCurrentUserRole();
 
             payslipsTableBody.innerHTML = payslips.map(payslip => `
                 <tr>
-                    <td>
+                    <td class="text-start">
                         <div class="d-flex align-items-center">
                             <div class="avatar me-3">
                                 ${payslip.employeeId?.personalInfo?.firstName?.charAt(0) || 'E'}
@@ -420,29 +652,25 @@
                             </div>
                         </div>
                     </td>
-                    <td>${formatMonth(payslip.payrollMonth)}</td>
-                    <td>${formatCurrency(payslip.grossPay, payslip.currency)}</td>
-                    <td>${formatCurrency(payslip.deductions.total, payslip.currency)}</td>
-                    <td>${formatCurrency(payslip.netPay, payslip.currency)}</td>
-                    <td>
+                    <td class="text-start">${formatMonth(payslip.payrollMonth)}</td>
+                    <td class="text-end">${formatCurrency(payslip.grossPay, payslip.currency)}</td>
+                    <td class="text-end">${formatCurrency(payslip.deductions.total, payslip.currency)}</td>
+                    <td class="text-end">${formatCurrency(payslip.netPay, payslip.currency)}</td>
+                    <td class="text-center">
                         <span class="payslip-status ${getStatusClass(payslip.payment.status)}">
                             ${payslip.payment.status.toUpperCase()}
                         </span>
                     </td>
-                   <td>
+                    <td class="text-center">
                         <div class="d-flex gap-2 justify-content-center">
-                        <!-- View payslip button 
-                        <button class="btn btn-sm btn-outline-primary view-payslip" data-id="${payslip._id}">
-                            <i class="fas fa-eye"></i>
-                        </button> -->
-                        <button class="btn btn-sm btn-outline-success download-payslip" data-id="${payslip._id}" ${!payslip.payslip.generated ? 'disabled' : ''}>
-                            <i class="fas fa-download"></i>
-                        </button>
-                        ${['admin', 'hr'].includes(userRole) ? `
-                        <button class="btn btn-sm btn-outline-secondary generate-payslip" data-id="${payslip._id}" ${payslip.payslip.generated ? 'disabled' : ''}>
-                            <i class="fas fa-file-pdf"></i>
-                        </button>
-                        ` : ''}
+                            <button class="btn btn-sm btn-outline-success download-payslip" data-id="${payslip._id}" ${!payslip.payslip.generated ? 'disabled' : ''}>
+                                <i class="fas fa-download"></i>
+                            </button>
+                            ${['admin', 'hr'].includes(userRole) ? `
+                            <button class="btn btn-sm btn-outline-secondary generate-payslip" data-id="${payslip._id}" ${payslip.payslip.generated ? 'disabled' : ''}>
+                                <i class="fas fa-file-pdf"></i>
+                            </button>
+                            ` : ''}
                         </div>
                     </td>
                 </tr>
@@ -452,10 +680,6 @@
             initializeDataTable();
             
             // Add event listeners to buttons
-            document.querySelectorAll('.view-payslip').forEach(btn => {
-                btn.addEventListener('click', () => viewPayslip(btn.dataset.id));
-            });
-            
             document.querySelectorAll('.download-payslip').forEach(btn => {
                 btn.addEventListener('click', () => downloadPayslip(btn.dataset.id));
             });
@@ -464,98 +688,55 @@
                 btn.addEventListener('click', () => generatePayslip(btn.dataset.id));
             });
         }
-        async function viewPayslip(payslipId) {
-  showLoading();
-  try {
-    const token = localStorage.getItem('authToken');
-    
-    // Create a form to send the token securely
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = `/api/payroll/${payslipId}/payslip-view`;
-    form.target = '_blank';
-    form.style.display = 'none';
-    
-    // Add token as hidden input
-    const tokenInput = document.createElement('input');
-    tokenInput.type = 'hidden';
-    tokenInput.name = 'token';
-    tokenInput.value = token;
-    form.appendChild(tokenInput);
-    
-    // Add view parameter
-    const viewInput = document.createElement('input');
-    viewInput.type = 'hidden';
-    viewInput.name = 'view';
-    viewInput.value = 'true';
-    form.appendChild(viewInput);
-    
-    document.body.appendChild(form);
-    form.submit();
-    document.body.removeChild(form);
-    
-  } catch (error) {
-    console.error('Error viewing payslip:', error);
-    Swal.fire({
-      icon: 'error',
-      title: 'Error',
-      text: error.response?.data?.error || 'Failed to view payslip'
-    });
-  } finally {
-    hideLoading();
-  }
-}
+        
+        // Download payslip
+        async function downloadPayslip(payslipId) {
+            showLoading();
+            try {
+                const token = localStorage.getItem('authToken');
+                
+                const response = await fetch(`/api/payroll/${payslipId}/payslip?download=true`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `payslip_${payslipId}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
 
-// Download payslip - Updated function
-async function downloadPayslip(payslipId) {
-  showLoading();
-  try {
-    const token = localStorage.getItem('authToken');
-    
-    // Use fetch with proper headers
-    const response = await fetch(`/api/payroll/${payslipId}/payslip?download=true`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    });
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    
-    // Get the blob and create download link
-    const blob = await response.blob();
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `payslip_${payslipId}.pdf`;
-    document.body.appendChild(a);
-    a.click();
-    window.URL.revokeObjectURL(url);
-    document.body.removeChild(a);
-
-    Swal.fire({
-      icon: 'success',
-      title: 'Payslip Downloaded',
-      text: 'Your payslip has been downloaded successfully.',
-      timer: 2000,
-      showConfirmButton: false
-    });
-    
-  } catch (error) {
-    console.error('Error downloading payslip:', error);
-    Swal.fire({
-      icon: 'error',
-      title: 'Error',
-      text: error.response?.data?.error || 'Failed to download payslip'
-    });
-  } finally {
-    hideLoading();
-  }
-}
-            
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Payslip Downloaded',
+                    text: 'Your payslip has been downloaded successfully.',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+                
+            } catch (error) {
+                console.error('Error downloading payslip:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: error.response?.data?.error || 'Failed to download payslip'
+                });
+            } finally {
+                hideLoading();
+            }
+        }
+        
         // Generate payslip
         async function generatePayslip(payslipId) {
             showLoading();
@@ -642,6 +823,63 @@ async function downloadPayslip(payslipId) {
             });
             
             generateAllBtn.addEventListener('click', generateAllPayslips);
+        });
+    </script>
+    
+    <script>
+        document.getElementById('downloadBtn').addEventListener('click', async () => {
+            const token = localStorage.getItem('authToken');
+            const month = document.getElementById('monthPicker').value;
+
+            if (!month) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'No Month Selected',
+                    text: 'Please choose a month before downloading.'
+                });
+                return;
+            }
+
+            Swal.fire({
+                title: 'Downloading...',
+                text: 'Please wait while we generate your consolidated payslips.',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            try {
+                const response = await axios.get(
+                    `http://localhost:3000/api/payroll/consolidated-payslips/${month}`,
+                    {
+                        headers: { Authorization: `Bearer ${token}` },
+                        responseType: 'blob'
+                    }
+                );
+
+                // Trigger download
+                const blob = new Blob([response.data], { type: 'application/pdf' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `consolidated_payslips_${month}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Download Complete',
+                    text: `Payslips for ${month} downloaded successfully.`
+                });
+            } catch (err) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: err.response?.data?.error || 'Failed to download payslips.'
+                });
+            }
         });
     </script>
 </body>

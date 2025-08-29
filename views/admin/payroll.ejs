@@ -199,6 +199,12 @@
                 <li><a class="dropdown-item export-btn" data-type="excel" href="#"><i class="fa fa-file-excel text-success me-2"></i> Excel</a></li>
                 <li><a class="dropdown-item export-btn" data-type="csv" href="#"><i class="fa fa-file-csv text-info me-2"></i> CSV</a></li>
                 <li><a class="dropdown-item export-btn" data-type="pdf" href="#"><i class="fa fa-file-pdf text-danger me-2"></i> PDF</a></li>
+                <li>
+                  <a class="dropdown-item" id="downloadAllPayslipsBtn" href="#">
+                    <i class="fa fa-file-pdf text-danger me-2"></i> All Payslips (PDF)
+                  </a>
+                </li>
+
               </ul>
             </div>
           </div>
@@ -970,9 +976,33 @@
             payrollTable.button('.buttons-csv').trigger();
           } else if (type === 'pdf') {
             payrollTable.button('.buttons-pdf').trigger();
-          }
+          } 
         });
         
+        // Download all payslips as ZIP
+        $('#downloadAllPayslipsBtn').on('click', async function () {
+          try {
+            Swal.fire({ title: 'Generating...', didOpen: () => Swal.showLoading(), allowOutsideClick: false });
+            const response = await axios.get('/api/payroll/payslips/all', {
+              headers: authHeader(),
+              responseType: 'blob'
+            });
+            Swal.close();
+
+            const blob = new Blob([response.data], { type: 'application/pdf' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `all_payslips.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+          } catch (err) {
+            Swal.fire('Error', 'Failed to generate combined payslips', 'error');
+          }
+        });
+
         // Download bank instruction PDF
         $('#downloadBankPdfBtn').on('click', async function () {
           const month = $('#bankMonth').val();
@@ -1035,7 +1065,7 @@
       // This is a placeholder - you'll need to implement based on your auth system
       const userRole = 'admin'; // Replace with actual user role
 
-      // INIT
+      // INIT++++++++++++
       $(document).ready(async function () {
         initDateRangePicker();
         initTable();
