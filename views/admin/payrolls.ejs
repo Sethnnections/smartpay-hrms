@@ -189,7 +189,7 @@
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
       <!-- Sidebar -->
-  <%- include('./partials/sidebar', { currentPage: 'payroll' }) %>
+  <%- include('./partials/sidebar', { currentPage: 'payrolls' }) %>
 
   <!-- Main -->
   <div class="main-content" id="mainContent">
@@ -1144,11 +1144,10 @@
 
             try {
                 showLoading(true);
-                
-                const response = await axios.post('/payroll/payslips/consolidated', 
-                    { month }, 
-                    { responseType: 'blob' }
-                );
+
+                const response = await axios.get(`/payroll/consolidated-payslips/${month}`, {
+                    responseType: 'blob'
+                });
 
                 const blob = new Blob([response.data], { type: 'application/pdf' });
                 const url = window.URL.createObjectURL(blob);

@@ -86,6 +86,19 @@ router.get('/admin/payroll', (req, res) => {
     });
 });
 
+router.get('/admin/payrolls', (req, res) => {
+    res.render('admin/payrolls', {
+        title: 'Payrolls',
+        currentPage: 'payrolls',
+        layout:false,
+          user: {
+            name: 'Administrator',
+            email: 'admin@teampay.com',
+            avatar: 'AD'
+        }
+    });
+});
+
 router.get('/admin/payslips', (req, res) => {
     res.render('admin/payslips', {
         title: 'Payslips',

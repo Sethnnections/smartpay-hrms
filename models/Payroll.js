@@ -240,7 +240,8 @@ payrollSchema.statics.calculateProgressiveTax = async function(grossPay, country
     const taxBrackets = await TaxBracket.getCurrentBrackets(country, currency);
     
     if (taxBrackets.length === 0) {
-      throw new Error('No active tax brackets found for the specified country and currency');
+      // Use fallback if no active tax brackets found
+      return this.calculateProgressiveTaxFallback(grossPay);
     }
     
     let tax = 0;
@@ -301,9 +302,14 @@ payrollSchema.statics.calculateProgressiveTax = async function(grossPay, country
     return this.calculateProgressiveTaxFallback(grossPay);
   }
 };
-
 // Add fallback method with default Malawi tax brackets
+// Ensure the fallback method is robust
 payrollSchema.statics.calculateProgressiveTaxFallback = function(grossPay) {
+  // Handle invalid input
+  if (typeof grossPay !== 'number' || isNaN(grossPay) || grossPay < 0) {
+    return { amount: 0, rate: 0 };
+  }
+
   let tax = 0;
   let remainingIncome = grossPay;
   let effectiveRate = 0;
@@ -340,9 +346,6 @@ payrollSchema.statics.calculateProgressiveTaxFallback = function(grossPay) {
     rate: Math.round(effectiveRate * 100) / 100 
   };
 };
-
-
-
 // Pre-save calculations
 payrollSchema.pre('save', async function(next) {
   // Calculate prorated salary based on days worked
@@ -364,7 +367,6 @@ payrollSchema.pre('save', async function(next) {
   
   // Calculate progressive tax amount using the new method
     try {
-    // Calculate progressive tax amount using the new adjustable method
     const taxCalculation = await this.constructor.calculateProgressiveTax(
       this.grossPay, 
       'MW', // Default country
@@ -374,7 +376,7 @@ payrollSchema.pre('save', async function(next) {
     this.deductions.tax.rate = taxCalculation.rate;
   } catch (error) {
     console.error('Error calculating tax:', error);
-    // Fallback to default calculation
+    // Fallback to default calculation - no need to log error here since calculateProgressiveTax already handles it
     const taxCalculation = this.constructor.calculateProgressiveTaxFallback(this.grossPay);
     this.deductions.tax.amount = taxCalculation.amount;
     this.deductions.tax.rate = taxCalculation.rate;
@@ -405,6 +407,7 @@ payrollSchema.pre('save', async function(next) {
 });
 
 // Static method: Process payroll for all active employees
+// Update the processAllEmployees method to properly handle async tax calculation
 payrollSchema.statics.processAllEmployees = async function(month, processedBy) {
   const Employee = mongoose.model('Employee');
   
@@ -448,64 +451,74 @@ payrollSchema.statics.processAllEmployees = async function(month, processedBy) {
     // Calculate gross pay
     const grossPay = proratedSalary + allowancesTotal + overtimeAmount;
     
-    // Calculate progressive tax using the new method
-    const taxCalculation = this.calculateProgressiveTax(grossPay);
-    
-    // Calculate pension deduction
-    const pensionAmount = (grossPay * grade.payrollSettings.pensionPercent) / 100;
-    const totalDeductions = taxCalculation.amount + pensionAmount;
-    
-    // Calculate net pay
-    const netPay = Math.max(0, grossPay - totalDeductions);
-    
-    const payrollData = {
-      employeeId: employee._id,
-      payrollMonth: month,
-      payPeriod: {
-        startDate: startDate.toDate(),
-        endDate: endDate.toDate(),
-        workingDays,
-        daysWorked: workingDays // Default to full attendance
-      },
-      salary: {
-        base: baseSalary,
-        prorated: proratedSalary
-      },
-      allowances: {
-        ...grade.allowances,
-        total: allowancesTotal
-      },
-      overtime: {
-        hours: overtime.hours,
-        rate: overtime.rate,
-        amount: overtimeAmount
-      },
-      bonuses: { 
-        performance: 0, 
-        annual: 0, 
-        other: 0, 
-        total: 0 
-      },
-      deductions: {
-        tax: {
-          rate: taxCalculation.rate,
-          amount: taxCalculation.amount
+    try {
+      // Calculate progressive tax using the new async method
+      const taxCalculation = await this.calculateProgressiveTax(
+        grossPay, 
+        'MW', 
+        grade.currency || 'USD'
+      );
+      
+      // Calculate pension deduction
+      const pensionAmount = (grossPay * grade.payrollSettings.pensionPercent) / 100;
+      const totalDeductions = taxCalculation.amount + pensionAmount;
+      
+      // Calculate net pay
+      const netPay = Math.max(0, grossPay - totalDeductions);
+      
+      const payrollData = {
+        employeeId: employee._id,
+        payrollMonth: month,
+        payPeriod: {
+          startDate: startDate.toDate(),
+          endDate: endDate.toDate(),
+          workingDays,
+          daysWorked: workingDays // Default to full attendance
         },
-        pension: {
-          rate: grade.payrollSettings.pensionPercent,
-          amount: pensionAmount
+        salary: {
+          base: baseSalary,
+          prorated: proratedSalary
         },
-        loans: [],
-        other: [],
-        total: totalDeductions
-      },
-      grossPay,
-      netPay,
-      processedBy,
-      currency: grade.currency || 'USD'
-    };
-    
-    payrollRecords.push(new this(payrollData));
+        allowances: {
+          ...grade.allowances,
+          total: allowancesTotal
+        },
+        overtime: {
+          hours: overtime.hours,
+          rate: overtime.rate,
+          amount: overtimeAmount
+        },
+        bonuses: { 
+          performance: 0, 
+          annual: 0, 
+          other: 0, 
+          total: 0 
+        },
+        deductions: {
+          tax: {
+            rate: taxCalculation.rate,
+            amount: taxCalculation.amount
+          },
+          pension: {
+            rate: grade.payrollSettings.pensionPercent,
+            amount: pensionAmount
+          },
+          loans: [],
+          other: [],
+          total: totalDeductions
+        },
+        grossPay,
+        netPay,
+        processedBy,
+        currency: grade.currency || 'USD'
+      };
+      
+      payrollRecords.push(new this(payrollData));
+    } catch (error) {
+      console.error(`Failed to calculate tax for employee ${employee._id}:`, error);
+      // Skip this employee if tax calculation fails
+      continue;
+    }
   }
   
   // Save records one by one to ensure pre-save hooks run
@@ -521,7 +534,6 @@ payrollSchema.statics.processAllEmployees = async function(month, processedBy) {
   
   return savedRecords;
 };
-
 // Static method: Calculate working days
 payrollSchema.statics.calculateWorkingDays = function(startDate, endDate) {
   let count = 0;
