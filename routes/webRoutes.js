@@ -116,7 +116,7 @@ router.get('/admin/exports', (req, res) => {
     res.render('admin/exports', {
         title: 'Export Data',
         currentPage: 'exports',
-        //layout:false,
+        layout:false,
         user: {
             name: 'Administrator',
             email: 'admin@teampay.com',

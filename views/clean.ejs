@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TPS - Company Settings</title>
+    <title>TPS - Payrolls</title>
     
     <!-- Bootstrap CSS -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
@@ -23,125 +23,22 @@
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
     <!-- Sidebar -->
-    <%- include('./partials/sidebar', { currentPage: 'companysettings' }) %>
+    <%- include('./partials/sidebar', { currentPage: 'Payrolls' }) %>
 
     <!-- Main Content -->
     <div class="main-content" id="mainContent">
         <!-- Header -->
         <%- include('./partials/header', { 
-            title: 'Company Settings', 
+            title: 'Payrolls', 
             user: typeof user !== 'undefined' ? user : { name: 'User', email: '', avatar: 'U' } 
         }) %>
 
         <!-- Page Content -->
         <main class="dashboard-content">
              <div class="container-fluid px-4 py-4">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h4 class="mb-0">Company Settings</h4>
-            <div>
-                <button class="btn btn-outline-secondary me-2" id="loadDefaultsBtn">
-                    <i class="fas fa-undo me-1"></i> Load Defaults
-                </button>
-                <button class="btn btn-primary" id="saveSettingsBtn">
-                    <i class="fas fa-save me-1"></i> Save Settings
-                </button>
-            </div>
-        </div>
+       
 
-        <div class="card company-settings-card">
-            <div class="company-settings-header">
-                <h5 class="mb-0"><i class="fas fa-building me-2"></i>Company Information</h5>
             </div>
-            <div class="company-settings-body">
-                <form id="companySettingsForm">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="companyName" class="form-label">Company Name *</label>
-                                <input type="text" class="form-control" id="companyName" name="companyName" required>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="taxIdentificationNumber" class="form-label">Tax Identification Number</label>
-                                <input type="text" class="form-control" id="taxIdentificationNumber" name="taxIdentificationNumber">
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="companyAddress" class="form-label">Company Address *</label>
-                        <textarea class="form-control" id="companyAddress" name="companyAddress" rows="2" required></textarea>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="phone" class="form-label">Phone Number</label>
-                                <input type="tel" class="form-control" id="phone" name="phone">
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="email" class="form-label">Email Address</label>
-                                <input type="email" class="form-control" id="email" name="email">
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="currency" class="form-label">Currency *</label>
-                        <select class="form-select" id="currency" name="currency" required>
-                            <option value="MWK">MWK - Malawian Kwacha</option>
-                            <option value="USD">USD - US Dollar</option>
-                            <option value="GBP">GBP - British Pound</option>
-                            <option value="EUR">EUR - Euro</option>
-                            <option value="ZAR">ZAR - South African Rand</option>
-                        </select>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <div class="card company-settings-card">
-            <div class="company-settings-header">
-                <h5 class="mb-0"><i class="fas fa-university me-2"></i>Bank Information</h5>
-            </div>
-            <div class="company-settings-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label for="bankName" class="form-label">Bank Name *</label>
-                            <input type="text" class="form-control" id="bankName" name="bankName" required>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label for="companyAccount" class="form-label">Account Number *</label>
-                            <input type="text" class="form-control" id="companyAccount" name="companyAccount" required>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="card company-settings-card">
-            <div class="company-settings-header">
-                <h5 class="mb-0"><i class="fas fa-image me-2"></i>Company Logo</h5>
-            </div>
-            <div class="company-settings-body">
-                <div class="row">
-                    <div class="col-md-4">
-                        <div class="logo-preview" id="logoPreview">
-                            <span class="text-muted">No logo</span>
-                        </div>
-                        <input type="file" class="form-control" id="logoUpload" accept="image/*">
-                        <div class="form-text">Upload a company logo (max 2MB)</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 
         </main>
 
@@ -167,191 +64,13 @@
         // Get token from localStorage
         const authToken = localStorage.getItem('authToken');
         if (!authToken) {
-            window.location.href = '/login';
+            window.location.href = '/';
         }
 
         // Set up Axios defaults
         axios.defaults.baseURL = '/api';
         axios.defaults.headers.common['Authorization'] = `Bearer ${authToken}`;
-        
-        // DOM Elements
-        const companySettingsForm = document.getElementById('companySettingsForm');
-        const bankNameInput = document.getElementById('bankName');
-        const companyAccountInput = document.getElementById('companyAccount');
-        const logoUpload = document.getElementById('logoUpload');
-        const logoPreview = document.getElementById('logoPreview');
-        const saveSettingsBtn = document.getElementById('saveSettingsBtn');
-        const loadDefaultsBtn = document.getElementById('loadDefaultsBtn');
-        
-        // Load company settings
-        async function loadCompanySettings() {
-            try {
-                const response = await axios.get('/company-settings');
-                
-                if (response.data.success) {
-                    populateForm(response.data.data);
-                }
-            } catch (error) {
-                console.error('Error loading company settings:', error);
-                
-                // If settings don't exist yet, load defaults
-                if (error.response?.status === 404) {
-                    Swal.fire({
-                        icon: 'info',
-                        title: 'No Settings Found',
-                        text: 'Loading default company settings',
-                        timer: 2000,
-                        showConfirmButton: false
-                    });
-                    loadDefaultSettings();
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: error.response?.data?.error || 'Failed to load company settings'
-                    });
-                }
-            }
-        }
-        
-        // Load default settings
-        async function loadDefaultSettings() {
-            try {
-                const response = await axios.get('/company-settings/default');
-                
-                if (response.data.success) {
-                    populateForm(response.data.data);
-                }
-            } catch (error) {
-                console.error('Error loading default settings:', error);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: error.response?.data?.error || 'Failed to load default settings'
-                });
-            }
-        }
-        
-        // Populate form with data
-        function populateForm(data) {
-            document.getElementById('companyName').value = data.companyName || '';
-            document.getElementById('companyAddress').value = data.companyAddress || '';
-            document.getElementById('bankName').value = data.bankName || '';
-            document.getElementById('companyAccount').value = data.companyAccount || '';
-            document.getElementById('phone').value = data.phone || '';
-            document.getElementById('email').value = data.email || '';
-            document.getElementById('currency').value = data.currency || 'MWK';
-            document.getElementById('taxIdentificationNumber').value = data.taxIdentificationNumber || '';
-            
-            // Set logo preview if exists
-            if (data.logo) {
-                logoPreview.innerHTML = `<img src="${data.logo}" alt="Company Logo">`;
-            }
-        }
-        
-        // Save company settings
-        async function saveCompanySettings() {
-            const formData = {
-                companyName: document.getElementById('companyName').value,
-                companyAddress: document.getElementById('companyAddress').value,
-                bankName: document.getElementById('bankName').value,
-                companyAccount: document.getElementById('companyAccount').value,
-                phone: document.getElementById('phone').value,
-                email: document.getElementById('email').value,
-                currency: document.getElementById('currency').value,
-                taxIdentificationNumber: document.getElementById('taxIdentificationNumber').value
-            };
-            
-            // Basic validation
-            if (!formData.companyName || !formData.companyAddress || !formData.bankName || !formData.companyAccount) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Validation Error',
-                    text: 'Please fill in all required fields'
-                });
-                return;
-            }
-            
-            try {
-                const response = await axios.put('/company-settings', formData);
-                
-                if (response.data.success) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Success',
-                        text: response.data.message || 'Company settings saved successfully',
-                        timer: 2000,
-                        showConfirmButton: false
-                    });
-                }
-            } catch (error) {
-                console.error('Error saving company settings:', error);
-                
-                if (error.response?.data?.details) {
-                    // Show validation errors
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Validation Error',
-                        html: error.response.data.details.join('<br>')
-                    });
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: error.response?.data?.error || 'Failed to save company settings'
-                    });
-                }
-            }
-        }
-        
-        // Handle logo upload
-        logoUpload.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            
-            // Validate file size (max 2MB)
-            if (file.size > 2 * 1024 * 1024) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'File Too Large',
-                    text: 'Please select an image smaller than 2MB'
-                });
-                this.value = '';
-                return;
-            }
-            
-            // Validate file type
-            if (!file.type.startsWith('image/')) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Invalid File Type',
-                    text: 'Please select an image file'
-                });
-                this.value = '';
-                return;
-            }
-            
-            // Preview image
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                logoPreview.innerHTML = `<img src="${e.target.result}" alt="Logo Preview">`;
-            };
-            reader.readAsDataURL(file);
-            
-            // TODO: Implement actual upload to server
-            // This would typically involve sending the file to an upload endpoint
-            // and then storing the file path/URL in the company settings
-        });
-        
-        // Initialize the page
-        document.addEventListener('DOMContentLoaded', () => {
-            // Load company settings
-            loadCompanySettings();
-            
-            // Event listeners
-            saveSettingsBtn.addEventListener('click', saveCompanySettings);
-            loadDefaultsBtn.addEventListener('click', loadDefaultSettings);
-        });
+     
     </script>
     
 </body>
