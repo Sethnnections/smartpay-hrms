@@ -587,7 +587,7 @@ const payrollController = {
         deductionsY += 25;
 
         const deductions = [
-          { name: `PAYE Tax (${payroll.deductions?.tax?.rate || 0}%)`, amount: payroll.deductions?.tax?.amount || 0 },
+          { name: `PAYE Tax `, amount: payroll.deductions?.tax?.amount || 0 },
           { name: `Pension (${payroll.deductions?.pension?.rate || 0}%)`, amount: payroll.deductions?.pension?.amount || 0 },
           ...((payroll.deductions?.loans || []).map(loan => ({ name: `Loan: ${loan.name}`, amount: loan.amount }))),
           ...((payroll.deductions?.other || []).map(item => ({ name: item.name, amount: item.amount })))
@@ -1516,7 +1516,7 @@ generateConsolidatedPayslipsPDF: async function(res, options = {}, requestedBy =
         .text('DEDUCTIONS', rightCol + 10, sectionStartY + 6);
 
       const deductions = [
-        { name: `PAYE Tax (${payroll.deductions?.tax?.rate || 0}%)`, amount: payroll.deductions?.tax?.amount || 0 },
+        { name: `PAYE Tax `, amount: payroll.deductions?.tax?.amount || 0 },
         { name: `Pension (${payroll.deductions?.pension?.rate || 0}%)`, amount: payroll.deductions?.pension?.amount || 0 },
         ...((payroll.deductions?.loans || []).map(loan => ({ name: `Loan: ${loan.name}`, amount: loan.amount }))),
         ...((payroll.deductions?.other || []).map(item => ({ name: item.name, amount: item.amount })))
@@ -1758,7 +1758,7 @@ generateConsolidatedPayslipsPDF: async function(res, options = {}, requestedBy =
       deductionsY += 20;
 
       const deductions = [
-        { name: `PAYE Tax (${payroll.deductions.tax.rate}%)`, amount: payroll.deductions.tax.amount },
+        { name: `PAYE Tax `, amount: payroll.deductions.tax.amount },
         { name: `Pension (${payroll.deductions.pension.rate}%)`, amount: payroll.deductions.pension.amount },
         ...((payroll.deductions.loans || []).map(loan => ({ name: `Loan: ${loan.name}`, amount: loan.amount }))),
         ...((payroll.deductions.other || []).map(item => ({ name: item.name, amount: item.amount })))
@@ -1834,6 +1834,347 @@ generateConsolidatedPayslipsPDF: async function(res, options = {}, requestedBy =
       throw error;
     }
   }
+  ,// Add adjustment with duration options
+addAdjustment: async (payrollId, adjustmentData, userId) => {
+  try {
+    const payroll = await Payroll.findById(payrollId);
+
+    if (!payroll) {
+      const error = new Error('Payroll record not found');
+      error.statusCode = 404;
+      throw error;
+    }
+
+    if (payroll.payment.status === 'paid') {
+      const error = new Error('Cannot adjust paid payroll records');
+      error.statusCode = 400;
+      throw error;
+    }
+
+    // Validate duration details for permanent adjustments
+    if (adjustmentData.duration === 'permanent' && !adjustmentData.durationDetails) {
+      const error = new Error('Duration details required for permanent adjustments');
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const adjustment = {
+      ...adjustmentData,
+      appliedBy: userId,
+      appliedAt: new Date()
+    };
+
+    payroll.adjustments.push(adjustment);
+    
+    // Recalculate payroll with the new adjustment
+    await payroll.save();
+    
+    return payroll;
+  } catch (error) {
+    throw error;
+  }
+},
+
+// Edit existing adjustment
+editAdjustment: async (payrollId, adjustmentId, updateData, userId) => {
+  try {
+    const payroll = await Payroll.findById(payrollId);
+
+    if (!payroll) {
+      const error = new Error('Payroll record not found');
+      error.statusCode = 404;
+      throw error;
+    }
+
+    if (payroll.payment.status === 'paid') {
+      const error = new Error('Cannot edit adjustments on paid payroll records');
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const adjustment = payroll.adjustments.id(adjustmentId);
+    if (!adjustment) {
+      const error = new Error('Adjustment not found');
+      error.statusCode = 404;
+      throw error;
+    }
+
+    // Track changes
+    const changes = [];
+    Object.keys(updateData).forEach(key => {
+      if (adjustment[key] !== updateData[key]) {
+        changes.push({
+          field: key,
+          oldValue: adjustment[key],
+          newValue: updateData[key]
+        });
+      }
+    });
+
+    // Update adjustment
+    Object.assign(adjustment, updateData);
+    adjustment.appliedBy = userId;
+    adjustment.appliedAt = new Date();
+    adjustment.changes = adjustment.changes.concat(changes);
+
+    await payroll.save();
+    return payroll;
+  } catch (error) {
+    throw error;
+  }
+},
+
+// Remove adjustment
+removeAdjustment: async (payrollId, adjustmentId, userId) => {
+  try {
+    const payroll = await Payroll.findById(payrollId);
+
+    if (!payroll) {
+      const error = new Error('Payroll record not found');
+      error.statusCode = 404;
+      throw error;
+    }
+
+    if (payroll.payment.status === 'paid') {
+      const error = new Error('Cannot remove adjustments from paid payroll records');
+      error.statusCode = 400;
+      throw error;
+    }
+
+    payroll.adjustments.pull(adjustmentId);
+    await payroll.save();
+    
+    return payroll;
+  } catch (error) {
+    throw error;
+  }
+},
+
+// Apply permanent adjustments to future payrolls
+applyPermanentAdjustments: async (employeeId, month, userId) => {
+  try {
+    // Get all permanent adjustments for this employee
+    const payrolls = await Payroll.find({
+      employeeId,
+      'adjustments.duration': 'permanent',
+      'adjustments.durationDetails.endDate': { $gte: new Date() }
+    });
+
+    const permanentAdjustments = payrolls.flatMap(payroll => 
+      payroll.adjustments.filter(adj => 
+        adj.duration === 'permanent' && 
+        new Date(adj.durationDetails.endDate) >= new Date()
+      )
+    );
+
+    // Apply to current payroll
+    const currentPayroll = await Payroll.findOne({
+      employeeId,
+      payrollMonth: month
+    });
+
+    if (currentPayroll) {
+      permanentAdjustments.forEach(adjustment => {
+        // Check if this adjustment already exists in current payroll
+        const exists = currentPayroll.adjustments.some(adj => 
+          adj._id.toString() === adjustment._id.toString()
+        );
+        
+        if (!exists) {
+          currentPayroll.adjustments.push({
+            ...adjustment.toObject(),
+            appliedBy: userId,
+            appliedAt: new Date()
+          });
+        }
+      });
+
+      await currentPayroll.save();
+    }
+
+    return permanentAdjustments;
+  } catch (error) {
+    throw error;
+  }
+},
+// Update payroll field
+updatePayrollField: async (payrollId, fieldPath, newValue, userId) => {
+  try {
+    const payroll = await Payroll.findById(payrollId);
+    
+    if (!payroll) {
+      throw new Error('Payroll record not found');
+    }
+
+    if (payroll.payment.status === 'paid') {
+      throw new Error('Cannot update paid payroll records');
+    }
+
+    // Convert fieldPath string to object path (e.g., "salary.base" to payroll.salary.base)
+    const pathParts = fieldPath.split('.');
+    let current = payroll;
+    
+    // Navigate to the parent object
+    for (let i = 0; i < pathParts.length - 1; i++) {
+      current = current[pathParts[i]];
+      if (!current) {
+        throw new Error(`Invalid field path: ${fieldPath}`);
+      }
+    }
+    
+    const fieldName = pathParts[pathParts.length - 1];
+    const oldValue = current[fieldName];
+    
+    // Update the field
+    current[fieldName] = newValue;
+    
+    // Add adjustment record
+    payroll.adjustments.push({
+      type: newValue > oldValue ? 'addition' : 'deduction',
+      category: getCategoryFromField(fieldPath),
+      amount: Math.abs(newValue - oldValue),
+      reason: `Manual adjustment of ${fieldPath} from ${oldValue} to ${newValue}`,
+      appliedBy: userId,
+      appliedAt: new Date(),
+      changes: [{
+        field: fieldPath,
+        oldValue: oldValue,
+        newValue: newValue
+      }]
+    });
+    
+    await payroll.save();
+    return payroll;
+  } catch (error) {
+    throw error;
+  }
+},
+
+// Helper function to determine category from field path
+getCategoryFromField: (fieldPath) => {
+  if (fieldPath.startsWith('salary.')) return 'salary';
+  if (fieldPath.startsWith('allowances.')) return 'allowance';
+  if (fieldPath.startsWith('bonuses.')) return 'bonus';
+  if (fieldPath.startsWith('deductions.tax.')) return 'tax';
+  if (fieldPath.startsWith('deductions.pension.')) return 'pension';
+  if (fieldPath.startsWith('deductions.loans.')) return 'loan';
+  if (fieldPath.startsWith('deductions.other.')) return 'other';
+  return 'other';
+},
+
+// Add custom deduction
+addCustomDeduction: async (payrollId, deductionData, userId) => {
+  try {
+    const payroll = await Payroll.findById(payrollId);
+    
+    if (!payroll) {
+      throw new Error('Payroll record not found');
+    }
+
+    if (payroll.payment.status === 'paid') {
+      throw new Error('Cannot add deductions to paid payroll records');
+    }
+
+    payroll.deductions.other.push({
+      name: deductionData.name,
+      amount: deductionData.amount,
+      description: deductionData.description || ''
+    });
+    
+    // Add adjustment record
+    payroll.adjustments.push({
+      type: 'deduction',
+      category: 'other',
+      amount: deductionData.amount,
+      reason: `Added custom deduction: ${deductionData.name}`,
+      appliedBy: userId,
+      appliedAt: new Date()
+    });
+    
+    await payroll.save();
+    return payroll;
+  } catch (error) {
+    throw error;
+  }
+},
+
+// Remove custom deduction
+removeCustomDeduction: async (payrollId, deductionIndex, userId) => {
+  try {
+    const payroll = await Payroll.findById(payrollId);
+    
+    if (!payroll) {
+      throw new Error('Payroll record not found');
+    }
+
+    if (payroll.payment.status === 'paid') {
+      throw new Error('Cannot remove deductions from paid payroll records');
+    }
+
+    if (!payroll.deductions.other[deductionIndex]) {
+      throw new Error('Deduction not found');
+    }
+    
+    const removedDeduction = payroll.deductions.other[deductionIndex];
+    
+    // Add adjustment record
+    payroll.adjustments.push({
+      type: 'addition', // Opposite of deduction
+      category: 'other',
+      amount: removedDeduction.amount,
+      reason: `Removed custom deduction: ${removedDeduction.name}`,
+      appliedBy: userId,
+      appliedAt: new Date()
+    });
+    
+    // Remove the deduction
+    payroll.deductions.other.splice(deductionIndex, 1);
+    
+    await payroll.save();
+    return payroll;
+  } catch (error) {
+    throw error;
+  }
+},
+
+// Add custom earning
+addCustomEarning: async (payrollId, earningData, userId) => {
+  try {
+    const payroll = await Payroll.findById(payrollId);
+    
+    if (!payroll) {
+      throw new Error('Payroll record not found');
+    }
+
+    if (payroll.payment.status === 'paid') {
+      throw new Error('Cannot add earnings to paid payroll records');
+    }
+
+    // Add to other allowances
+    const oldOtherAllowances = payroll.allowances.other || 0;
+    payroll.allowances.other = oldOtherAllowances + earningData.amount;
+    
+    // Add adjustment record
+    payroll.adjustments.push({
+      type: 'addition',
+      category: 'allowance',
+      amount: earningData.amount,
+      reason: `Added custom earning: ${earningData.name}`,
+      appliedBy: userId,
+      appliedAt: new Date(),
+      changes: [{
+        field: 'allowances.other',
+        oldValue: oldOtherAllowances,
+        newValue: payroll.allowances.other
+      }]
+    });
+    
+    await payroll.save();
+    return payroll;
+  } catch (error) {
+    throw error;
+  }
+}
 };
 
 module.exports = payrollController;

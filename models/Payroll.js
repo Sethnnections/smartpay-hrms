@@ -35,27 +35,62 @@ const payrollSchema = new mongoose.Schema({
   },
   // Salary calculations
   salary: {
-    base: {
-      type: Number,
-      required: [true, 'Base salary is required'],
-      min: [0, 'Base salary cannot be negative']
-    },
-    prorated: {
-      type: Number,
-      required: [true, 'Prorated salary is required'],
-      min: [0, 'Prorated salary cannot be negative']
-    }
+  base: {
+    type: Number,
+    required: [true, 'Base salary is required'],
+    min: [0, 'Base salary cannot be negative'],
+    editable: true // Add this
   },
-  // Allowances from grade
+  prorated: {
+    type: Number,
+    required: [true, 'Prorated salary is required'],
+    min: [0, 'Prorated salary cannot be negative'],
+    editable: true // Add this
+  }
+},
   allowances: {
-    transport: { type: Number, default: 0, min: [0, 'Cannot be negative'] },
-    housing: { type: Number, default: 0, min: [0, 'Cannot be negative'] },
-    medical: { type: Number, default: 0, min: [0, 'Cannot be negative'] },
-    meals: { type: Number, default: 0, min: [0, 'Cannot be negative'] },
-    communication: { type: Number, default: 0, min: [0, 'Cannot be negative'] },
-    other: { type: Number, default: 0, min: [0, 'Cannot be negative'] },
-    total: { type: Number, default: 0, min: [0, 'Cannot be negative'] }
+  transport: { 
+    type: Number, 
+    default: 0, 
+    min: [0, 'Cannot be negative'],
+    editable: true // Add this
   },
+  housing: { 
+    type: Number, 
+    default: 0, 
+    min: [0, 'Cannot be negative'],
+    editable: true 
+  },
+  medical: { 
+    type: Number, 
+    default: 0, 
+    min: [0, 'Cannot be negative'],
+    editable: true 
+  },
+  meals: { 
+    type: Number, 
+    default: 0, 
+    min: [0, 'Cannot be negative'],
+    editable: true 
+  },
+  communication: { 
+    type: Number, 
+    default: 0, 
+    min: [0, 'Cannot be negative'],
+    editable: true 
+  },
+  other: { 
+    type: Number, 
+    default: 0, 
+    min: [0, 'Cannot be negative'],
+    editable: true 
+  },
+  total: { 
+    type: Number, 
+    default: 0, 
+    min: [0, 'Cannot be negative'] 
+  }
+},
   // Overtime from employee overtime records
   overtime: {
     hours: { type: Number, default: 0, min: [0, 'Cannot be negative'] },
@@ -64,11 +99,30 @@ const payrollSchema = new mongoose.Schema({
   },
   // Bonuses
   bonuses: {
-    performance: { type: Number, default: 0, min: [0, 'Cannot be negative'] },
-    annual: { type: Number, default: 0, min: [0, 'Cannot be negative'] },
-    other: { type: Number, default: 0, min: [0, 'Cannot be negative'] },
-    total: { type: Number, default: 0, min: [0, 'Cannot be negative'] }
+  performance: { 
+    type: Number, 
+    default: 0, 
+    min: [0, 'Cannot be negative'],
+    editable: true 
   },
+  annual: { 
+    type: Number, 
+    default: 0, 
+    min: [0, 'Cannot be negative'],
+    editable: true 
+  },
+  other: { 
+    type: Number, 
+    default: 0, 
+    min: [0, 'Cannot be negative'],
+    editable: true 
+  },
+  total: { 
+    type: Number, 
+    default: 0, 
+    min: [0, 'Cannot be negative'] 
+  }
+},
   // Gross pay calculation
   grossPay: {
     type: Number,
@@ -76,43 +130,50 @@ const payrollSchema = new mongoose.Schema({
     min: [0, 'Gross pay cannot be negative']
   },
   // Statutory deductions
-  deductions: {
-    // Tax (PAYE)
+    deductions: {
     tax: {
-      rate: { type: Number, required: true, min: [0, 'Tax rate cannot be negative'] },
-      amount: { type: Number, required: true, min: [0, 'Tax amount cannot be negative'] }
+      rate: { 
+        type: Number, 
+        required: true, 
+        min: [0, 'Tax rate cannot be negative'],
+        editable: true 
+      },
+      amount: { 
+        type: Number, 
+        required: true, 
+        min: [0, 'Tax amount cannot be negative'] 
+      }
     },
-    // Pension contribution
     pension: {
-      rate: { type: Number, required: true, min: [0, 'Pension rate cannot be negative'] },
-      amount: { type: Number, required: true, min: [0, 'Pension amount cannot be negative'] }
+      rate: { 
+        type: Number, 
+        required: true, 
+        min: [0, 'Pension rate cannot be negative'],
+        editable: true 
+      },
+      amount: { 
+        type: Number, 
+        required: true, 
+        min: [0, 'Pension amount cannot be negative'] 
+      }
     },
-    // Loans (from employee loan records)
     loans: [{
-      loanId: { type: mongoose.Schema.Types.ObjectId, required: true },
-      name: { type: String, required: true, trim: true },
       amount: { type: Number, required: true, min: [0, 'Loan amount cannot be negative'] },
-      balance: { type: Number, min: [0, 'Loan balance cannot be negative'] }
-    }],
-    // Other deductions
-    other: [{
-      name: { type: String, required: true, trim: true },
-      amount: { type: Number, required: true, min: [0, 'Amount cannot be negative'] },
       description: { type: String, trim: true }
     }],
-    total: {
+    other: [{
+      amount: { type: Number, required: true, min: [0, 'Other deduction amount cannot be negative'] },
+      description: { type: String, trim: true }
+    }],
+    total: { type: Number, default: 0, min: [0, 'Total deductions cannot be negative'] }
+  },
+    // Final net pay
+    netPay: {
       type: Number,
-      required: [true, 'Total deductions is required'],
-      min: [0, 'Total deductions cannot be negative']
-    }
-  },
-  // Final net pay
-  netPay: {
-    type: Number,
-    required: [true, 'Net pay is required'],
-    min: [0, 'Net pay cannot be negative']
-  },
-  // Payment processing
+      required: [true, 'Net pay is required'],
+      min: [0, 'Net pay cannot be negative']
+    },
+    // Payment processing
   payment: {
     status: {
       type: String,
@@ -163,16 +224,27 @@ const payrollSchema = new mongoose.Schema({
   exchangeRate: { type: Number, default: 1, min: [0, 'Exchange rate cannot be negative'] },
   
   // Adjustments for corrections
+// In the adjustments array schema, add:
 adjustments: [{
   type: { 
     type: String, 
-    enum: ['addition', 'deduction', 'adjustment'], // Added 'adjustment'
+    enum: ['addition', 'deduction', 'adjustment'],
     required: true 
   },
   category: { 
     type: String, 
-    enum: ['salary', 'allowance', 'bonus', 'tax', 'other', 'edit'], // Added 'edit'
+    enum: ['salary', 'allowance', 'bonus', 'tax', 'other', 'edit'],
     required: true 
+  },
+  duration: {
+    type: String,
+    enum: ['temporary', 'permanent'],
+    default: 'temporary'
+  },
+  durationDetails: {
+    startDate: Date,
+    endDate: Date,
+    numberOfMonths: Number
   },
   amount: { type: Number, required: true },
   reason: { type: String, required: true, trim: true },
@@ -395,11 +467,16 @@ payrollSchema.pre('save', async function(next) {
   this.netPay = Math.max(0, this.grossPay - this.deductions.total);
   
   // Apply adjustments
-  this.adjustments.forEach(adjustment => {
-    if (adjustment.type === 'addition') {
-      this.netPay += adjustment.amount;
-    } else {
-      this.netPay = Math.max(0, this.netPay - adjustment.amount);
+   this.adjustments.forEach(adjustment => {
+    if (adjustment.duration === 'temporary' || 
+        (adjustment.duration === 'permanent' && 
+         new Date(adjustment.durationDetails.startDate) <= new Date() &&
+         new Date(adjustment.durationDetails.endDate) >= new Date())) {
+      if (adjustment.type === 'addition') {
+        this.netPay += adjustment.amount;
+      } else {
+        this.netPay = Math.max(0, this.netPay - adjustment.amount);
+      }
     }
   });
   

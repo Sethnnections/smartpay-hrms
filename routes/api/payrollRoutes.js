@@ -591,4 +591,114 @@ router.patch('/:id/deactivate', requireAdmin, async (req, res) => {
 });
 // Debug route to check payroll data
 
+// Edit existing adjustment
+router.patch('/:id/adjustments/:adjustmentId', requireHROrAdmin, async (req, res) => {
+  try {
+    const payroll = await payrollController.editAdjustment(
+      req.params.id,
+      req.params.adjustmentId,
+      req.body,
+      req.user.id
+    );
+    res.json(payroll);
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ error: error.message });
+  }
+});
+
+// Remove adjustment
+router.delete('/:id/adjustments/:adjustmentId', requireHROrAdmin, async (req, res) => {
+  try {
+    const payroll = await payrollController.removeAdjustment(
+      req.params.id,
+      req.params.adjustmentId,
+      req.user.id
+    );
+    res.json(payroll);
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ error: error.message });
+  }
+});
+
+// Apply permanent adjustments
+router.post('/:id/apply-permanent-adjustments', requireHROrAdmin, async (req, res) => {
+  try {
+    const payroll = await Payroll.findById(req.params.id);
+    const adjustments = await payrollController.applyPermanentAdjustments(
+      payroll.employeeId,
+      payroll.payrollMonth,
+      req.user.id
+    );
+    res.json({ success: true, adjustments: adjustments.length });
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ error: error.message });
+  }
+});
+
+// Update payroll field
+router.patch('/:id/field', requireHROrAdmin, async (req, res) => {
+  try {
+    const { fieldPath, value } = req.body;
+    
+    const payroll = await payrollController.updatePayrollField(
+      req.params.id,
+      fieldPath,
+      parseFloat(value),
+      req.user.id
+    );
+    
+    res.json(payroll);
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ error: error.message });
+  }
+});
+
+// Add custom deduction
+router.post('/:id/deductions/custom', requireHROrAdmin, async (req, res) => {
+  try {
+    const { name, amount, description } = req.body;
+    
+    const payroll = await payrollController.addCustomDeduction(
+      req.params.id,
+      { name, amount: parseFloat(amount), description },
+      req.user.id
+    );
+    
+    res.json(payroll);
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ error: error.message });
+  }
+});
+
+// Remove custom deduction
+router.delete('/:id/deductions/custom/:index', requireHROrAdmin, async (req, res) => {
+  try {
+    const payroll = await payrollController.removeCustomDeduction(
+      req.params.id,
+      parseInt(req.params.index),
+      req.user.id
+    );
+    
+    res.json(payroll);
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ error: error.message });
+  }
+});
+
+// Add custom earning
+router.post('/:id/earnings/custom', requireHROrAdmin, async (req, res) => {
+  try {
+    const { name, amount } = req.body;
+    
+    const payroll = await payrollController.addCustomEarning(
+      req.params.id,
+      { name, amount: parseFloat(amount) },
+      req.user.id
+    );
+    
+    res.json(payroll);
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ error: error.message });
+  }
+});
 module.exports = router;
