@@ -1716,6 +1716,7 @@ generateConsolidatedPayslipsPDF: async function(res, options = {}, requestedBy =
 
       currentY += 20;
 
+      // Gather earnings including adjustments of type 'addition'
       const earnings = [
         { name: 'Basic Salary', amount: payroll.salary.prorated },
         { name: 'Transport Allowance', amount: payroll.allowances.transport },
@@ -1728,7 +1729,22 @@ generateConsolidatedPayslipsPDF: async function(res, options = {}, requestedBy =
         { name: 'Performance Bonus', amount: payroll.bonuses.performance },
         { name: 'Annual Bonus', amount: payroll.bonuses.annual },
         { name: 'Other Bonuses', amount: payroll.bonuses.other }
-      ].filter(item => item.amount > 0);
+      ];
+
+      // Add adjustments of type 'addition' to earnings
+      if (Array.isArray(payroll.adjustments)) {
+        payroll.adjustments
+          .filter(adj => adj.type === 'addition' && adj.amount > 0)
+          .forEach(adj => {
+        earnings.push({
+          name: adj.category ? `Adjustment (${adj.category})` : 'Adjustment',
+          amount: adj.amount
+        });
+          });
+      }
+
+      // Only show earnings with amount > 0
+      const filteredEarnings = earnings.filter(item => item.amount > 0);
 
       let earningsY = currentY;
       doc.fontSize(8)

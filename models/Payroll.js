@@ -162,7 +162,7 @@ const payrollSchema = new mongoose.Schema({
       description: { type: String, trim: true }
     }],
     other: [{
-      name: { type: String, required: true, trim: true },
+      name: { type: String, required: false, trim: true },
       amount: { type: Number, required: true, min: [0, 'Other deduction amount cannot be negative'] },
       description: { type: String, trim: true }
     }],
@@ -224,8 +224,6 @@ const payrollSchema = new mongoose.Schema({
   },
   exchangeRate: { type: Number, default: 1, min: [0, 'Exchange rate cannot be negative'] },
   
-  // Adjustments for corrections
-// In the adjustments array schema, add:
 adjustments: [{
   type: { 
     type: String, 

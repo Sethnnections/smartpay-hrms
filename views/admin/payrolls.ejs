@@ -1086,51 +1086,7 @@
                 </div>
 
                 <!-- Payment and Approval Information -->
-                <div class="row mt-3">
-                    <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-header bg-secondary text-white">
-                                <h6 class="mb-0"><i class="fas fa-credit-card me-2"></i>Payment Information</h6>
-                            </div>
-                            <div class="card-body">
-                                <div class="row g-2">
-                                    <div class="col-6"><strong>Status:</strong></div>
-                                    <div class="col-6">${getStatusBadge(payroll.payment?.status || 'pending')}</div>
-                                    <div class="col-6"><strong>Method:</strong></div>
-                                    <div class="col-6">${payroll.payment?.method || 'Bank Transfer'}</div>
-                                    <div class="col-6"><strong>Reference:</strong></div>
-                                    <div class="col-6">${payroll.payment?.reference || 'N/A'}</div>
-                                    <div class="col-6"><strong>Paid At:</strong></div>
-                                    <div class="col-6">${payroll.payment?.paidAt ? new Date(payroll.payment.paidAt).toLocaleDateString() : 'Not Paid'}</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Approval Information -->
-                    <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-header bg-warning text-white">
-                                <h6 class="mb-0"><i class="fas fa-check-circle me-2"></i>Approval Status</h6>
-                            </div>
-                            <div class="card-body">
-                                <div class="row g-2">
-                                    <div class="col-6"><strong>HR Approval:</strong></div>
-                                    <div class="col-6">${getStatusBadge(payroll.approvals?.hr?.status || 'pending')}</div>
-                                    <div class="col-6"><strong>Finance Approval:</strong></div>
-                                    <div class="col-6">${getStatusBadge(payroll.approvals?.finance?.status || 'pending')}</div>
-                                    ${payroll.approvals?.hr?.at ? `
-                                    <div class="col-6"><strong>HR Approved At:</strong></div>
-                                    <div class="col-6">${new Date(payroll.approvals.hr.at).toLocaleDateString()}</div>` : ''}
-                                    ${payroll.approvals?.finance?.at ? `
-                                    <div class="col-6"><strong>Finance Approved At:</strong></div>
-                                    <div class="col-6">${new Date(payroll.approvals.finance.at).toLocaleDateString()}</div>` : ''}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
+                
                 ${generateAdjustmentsSection(payroll)}
             `;
             
