@@ -1308,6 +1308,7 @@
         // Generate other deduction items
         function generateOtherDeductionItems(payroll) {
             if (!payroll.deductions?.other || payroll.deductions.other.length === 0) return '';
+            console.log('Generating other deductions:', payroll.deductions.other);
             
             const currency = payroll.currency || 'MWK';
             return payroll.deductions.other.map((item, index) => `

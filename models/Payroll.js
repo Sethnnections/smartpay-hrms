@@ -162,6 +162,7 @@ const payrollSchema = new mongoose.Schema({
       description: { type: String, trim: true }
     }],
     other: [{
+      name: { type: String, required: true, trim: true },
       amount: { type: Number, required: true, min: [0, 'Other deduction amount cannot be negative'] },
       description: { type: String, trim: true }
     }],
