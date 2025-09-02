@@ -12,11 +12,8 @@
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/admin.css">
-  <!-- Page-specific CSS -->
-  <link rel="stylesheet" href="/css/departments.css">
+    <link rel="stylesheet" href="/css/departments.css">
     <style>
-        
-
         .btn-sm {
             padding: 0.25rem 0.5rem;
             font-size: 0.875rem;
@@ -97,6 +94,7 @@
         .breakdown-item {
             display: flex;
             justify-content: space-between;
+            align-items: center;
             padding: 0.5rem 0;
             border-bottom: 1px solid #e5e7eb;
         }
@@ -115,7 +113,6 @@
             gap: 1rem;
             margin-top: 1.5rem;
         }
-        
 
         .report-card {
             background: white;
@@ -156,20 +153,99 @@
             padding: 4px 8px;
             border-radius: 4px;
             transition: background-color 0.2s;
-            }
+            position: relative;
+        }
 
-            .editable-amount:hover {
+        .editable-amount:hover {
             background-color: #f0f9ff;
-            }
+        }
 
-            .editable-amount i {
+        .editable-amount i {
             opacity: 0.5;
             transition: opacity 0.2s;
-            }
+        }
 
-            .editable-amount:hover i {
+        .editable-amount:hover i {
             opacity: 1;
-            }
+        }
+
+        .inline-edit-form {
+            display: none;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .inline-edit-form.active {
+            display: flex;
+        }
+
+        .inline-edit-input {
+            width: 120px;
+            padding: 0.25rem 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.875rem;
+        }
+
+        .btn-inline {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            line-height: 1;
+        }
+
+        .earnings-list, .deductions-list {
+            margin-bottom: 1rem;
+        }
+
+        .list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border: 1px solid #e9ecef;
+        }
+
+        .list-item-content {
+            flex-grow: 1;
+        }
+
+        .list-item-name {
+            font-weight: 500;
+            color: #333;
+        }
+
+        .list-item-description {
+            font-size: 0.875rem;
+            color: #666;
+            margin-top: 0.25rem;
+        }
+
+        .list-item-amount {
+            font-weight: 600;
+            margin-right: 1rem;
+        }
+
+        .list-item-actions {
+            display: flex;
+            gap: 0.25rem;
+        }
+
+        .add-item-form {
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 6px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+
+        .add-item-form.active {
+            border-style: solid;
+            border-color: var(--primary-color);
+            background: white;
+        }
 
         @media (max-width: 768px) {
             .sidebar {
@@ -209,12 +285,12 @@
     <!-- Sidebar Overlay for Mobile -->
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-      <!-- Sidebar -->
-  <%- include('./partials/sidebar', { currentPage: 'payrolls' }) %>
+    <!-- Sidebar -->
+    <%- include('./partials/sidebar', { currentPage: 'payrolls' }) %>
 
-  <!-- Main -->
-  <div class="main-content" id="mainContent">
-    <%- include('./partials/header', { title: 'Payroll Management', user: typeof user !== 'undefined' ? user : { name: 'User' } }) %>
+    <!-- Main -->
+    <div class="main-content" id="mainContent">
+        <%- include('./partials/header', { title: 'Payroll Management', user: typeof user !== 'undefined' ? user : { name: 'User' } }) %>
 
         <!-- Page Content -->
         <main class="dashboard-content">
@@ -528,70 +604,6 @@
         </div>
     </div>
 
-    <div class="modal fade" id="addAdjustmentModal" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Add Adjustment</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <form id="adjustmentForm">
-          <div class="mb-3">
-            <label class="form-label">Adjustment Type</label>
-            <select class="form-select" id="adjustmentType" required>
-              <option value="addition">Addition</option>
-              <option value="deduction">Deduction</option>
-            </select>
-          </div>
-          
-          <div class="mb-3">
-            <label class="form-label">Category</label>
-            <select class="form-select" id="adjustmentCategory" required>
-              <option value="salary">Salary</option>
-              <option value="allowance">Allowance</option>
-              <option value="bonus">Bonus</option>
-              <option value="tax">Tax</option>
-              <option value="other">Other</option>
-            </select>
-          </div>
-          
-          <div class="mb-3">
-            <label class="form-label">Duration</label>
-            <select class="form-select" id="adjustmentDuration" onchange="toggleDurationDetails()" required>
-              <option value="temporary">Temporary (This month only)</option>
-              <option value="permanent">Permanent (Multiple months)</option>
-            </select>
-          </div>
-          
-          <div id="durationDetails" style="display: none;">
-            <div class="mb-3">
-              <label class="form-label">Number of Months</label>
-              <input type="number" class="form-control" id="numberOfMonths" min="1" value="1" required>
-            </div>
-          </div>
-          
-          <div class="mb-3">
-            <label class="form-label">Amount</label>
-            <input type="number" class="form-control" id="adjustmentAmount" step="0.01" min="0" required>
-          </div>
-          
-          <div class="mb-3">
-            <label class="form-label">Reason</label>
-            <textarea class="form-control" id="adjustmentReason" rows="3" required></textarea>
-          </div>
-        </form>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-        <button type="button" class="btn btn-primary" onclick="submitAdjustment()">Add Adjustment</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-
-
     <!-- Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.2/axios.min.js"></script>
@@ -734,7 +746,7 @@
                         </td>
                         <td>${department.name || 'N/A'}</td>
                         <td>
-                            <span class="badge ${payroll.payPeriod?.daysWorked === payroll.payPeriod?.workingDays ? 'bg-success' : 'bg-warning'}"">
+                            <span class="badge ${payroll.payPeriod?.daysWorked === payroll.payPeriod?.workingDays ? 'bg-success' : 'bg-warning'}">
                                 ${daysWorked}
                             </span>
                         </td>
@@ -848,530 +860,849 @@
                 showLoading(false, 'payrollDetailsContent');
             }
         }
-        // Replace your showAddAdjustmentModal function with this corrected version:
-        function showAddAdjustmentModal(payrollId) {
-  selectedPayrollId = payrollId;
-  
-  // Reset form
-  document.getElementById('adjustmentForm').reset();
-  document.getElementById('durationDetails').style.display = 'none';
-  
-  // Show modal
-  const modal = new bootstrap.Modal(document.getElementById('addAdjustmentModal'));
-  modal.show();
-}
 
-// Add this function to handle form submission:
-function submitAdjustment() {
-  const form = document.getElementById('adjustmentForm');
-  
-  if (!form.checkValidity()) {
-    form.reportValidity();
-    return;
-  }
-  
-  const adjustmentData = {
-    type: document.getElementById('adjustmentType').value,
-    category: document.getElementById('adjustmentCategory').value,
-    duration: document.getElementById('adjustmentDuration').value,
-    durationDetails: document.getElementById('adjustmentDuration').value === 'permanent' ? {
-      numberOfMonths: parseInt(document.getElementById('numberOfMonths').value),
-      startDate: new Date(),
-      endDate: new Date(new Date().setMonth(new Date().getMonth() + parseInt(document.getElementById('numberOfMonths').value)))
-    } : null,
-    amount: parseFloat(document.getElementById('adjustmentAmount').value),
-    reason: document.getElementById('adjustmentReason').value
-  };
-  
-  addAdjustment(adjustmentData);
-  
-  // Close modal
-  bootstrap.Modal.getInstance(document.getElementById('addAdjustmentModal')).hide();
-}
-        
+        // Display payroll details with inline editing
+        function displayPayrollDetails(payroll) {
+            const employee = payroll.employeeId || {};
+            const personal = employee.personalInfo || {};
+            const employment = employee.employmentInfo || {};
+            const department = employment.departmentId || {};
+            const position = employment.positionId || {};
+            const grade = employment.gradeId || {};
+            
+            const fullName = `${personal.firstName || ''} ${personal.lastName || ''}`.trim();
+            
+            const content = `
+                <div class="row">
+                    <!-- Employee Information -->
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-header bg-primary text-white">
+                                <h6 class="mb-0"><i class="fas fa-user me-2"></i>Employee Information</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-2">
+                                    <div class="col-6"><strong>Name:</strong></div>
+                                    <div class="col-6">${fullName || 'N/A'}</div>
+                                    <div class="col-6"><strong>Employee ID:</strong></div>
+                                    <div class="col-6">${employee.employeeId || 'N/A'}</div>
+                                    <div class="col-6"><strong>Department:</strong></div>
+                                    <div class="col-6">${department.name || 'N/A'}</div>
+                                    <div class="col-6"><strong>Position:</strong></div>
+                                    <div class="col-6">${position.name || 'N/A'}</div>
+                                    <div class="col-6"><strong>Grade:</strong></div>
+                                    <div class="col-6">${grade.name || 'N/A'} (Level ${grade.level || 'N/A'})</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-async function addAdjustment(adjustmentData) {
-            try {
-            const response = await axios.post(`/payroll/${selectedPayrollId}/adjustments`, adjustmentData);
+                    <!-- Pay Period Information -->
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-header bg-info text-white">
+                                <h6 class="mb-0"><i class="fas fa-calendar me-2"></i>Pay Period</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-2">
+                                    <div class="col-6"><strong>Month:</strong></div>
+                                    <div class="col-6">${payroll.payrollMonth || 'N/A'}</div>
+                                    <div class="col-6"><strong>Start Date:</strong></div>
+                                    <div class="col-6">${payroll.payPeriod?.startDate ? new Date(payroll.payPeriod.startDate).toLocaleDateString() : 'N/A'}</div>
+                                    <div class="col-6"><strong>End Date:</strong></div>
+                                    <div class="col-6">${payroll.payPeriod?.endDate ? new Date(payroll.payPeriod.endDate).toLocaleDateString() : 'N/A'}</div>
+                                    <div class="col-6"><strong>Working Days:</strong></div>
+                                    <div class="col-6">${payroll.payPeriod?.workingDays || 0}</div>
+                                    <div class="col-6"><strong>Days Worked:</strong></div>
+                                    <div class="col-6">${payroll.payPeriod?.daysWorked || 0}</div>
+                                    <div class="col-6"><strong>Attendance:</strong></div>
+                                    <div class="col-6">
+                                        <span class="badge ${payroll.attendanceRate >= 90 ? 'bg-success' : payroll.attendanceRate >= 75 ? 'bg-warning' : 'bg-danger'}">
+                                            ${payroll.attendanceRate || 0}%
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-            Swal.fire({
-                icon: 'success',
-                title: 'Success',
-                text: 'Adjustment added successfully'
-            });
+                <div class="row">
+                    <!-- Earnings Section -->
+                    <div class="col-md-6">
+                        <div class="earnings-section">
+                            <h6 class="text-success mb-3">
+                                <i class="fas fa-plus-circle me-2"></i>
+                                Earnings Breakdown
+                            </h6>
+                            
+                            <div class="earnings-list">
+                                <!-- Basic Salary -->
+                                <div class="list-item">
+                                    <div class="list-item-content">
+                                        <div class="list-item-name">Basic Salary</div>
+                                    </div>
+                                    <div class="list-item-amount" id="salary-base-display">
+                                        ${payroll.currency || 'MWK'} ${(payroll.salary?.base || 0).toLocaleString()}
+                                    </div>
+                                    <div class="list-item-actions">
+                                        <button class="btn btn-sm btn-outline-primary btn-inline" onclick="editInline('salary.base', ${payroll.salary?.base || 0}, 'salary-base')">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                    </div>
+                                </div>
 
-            // Reload payroll details
-            viewPayrollDetails(selectedPayrollId);
+                                <!-- Prorated Salary -->
+                                <div class="list-item">
+                                    <div class="list-item-content">
+                                        <div class="list-item-name">Prorated Salary</div>
+                                    </div>
+                                    <div class="list-item-amount" id="salary-prorated-display">
+                                        ${payroll.currency || 'MWK'} ${(payroll.salary?.prorated || 0).toLocaleString()}
+                                    </div>
+                                    <div class="list-item-actions">
+                                        <button class="btn btn-sm btn-outline-primary btn-inline" onclick="editInline('salary.prorated', ${payroll.salary?.prorated || 0}, 'salary-prorated')">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                    </div>
+                                </div>
 
-            } catch (error) {
-            console.error('Error adding adjustment:', error);
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: error.response?.data?.error || 'Failed to add adjustment'
-            });
-            }
+                                ${generateAllowanceItems(payroll)}
+                                ${generateOvertimeItem(payroll)}
+                                ${generateBonusItems(payroll)}
+                            </div>
+
+                            <!-- Add Custom Earning Form -->
+                            <div class="add-item-form" id="add-earning-form">
+                                <div class="row g-2">
+                                    <div class="col-md-5">
+                                        <input type="text" class="form-control form-control-sm" id="new-earning-name" placeholder="Earning name">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <input type="number" class="form-control form-control-sm" id="new-earning-amount" placeholder="Amount" step="0.01" min="0">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="btn-group w-100">
+                                            <button class="btn btn-sm btn-success" onclick="addCustomEarning()">
+                                                <i class="fas fa-plus"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-secondary" onclick="toggleAddEarningForm()">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mt-2">
+                                <button class="btn btn-sm btn-success" onclick="toggleAddEarningForm()">
+                                    <i class="fas fa-plus me-1"></i>
+                                    Add Custom Earning
+                                </button>
+                            </div>
+
+                            <div class="list-item mt-3" style="background: #e8f5e8; font-weight: bold;">
+                                <div class="list-item-content">
+                                    <div class="list-item-name text-success">GROSS PAY</div>
+                                </div>
+                                <div class="list-item-amount text-success">
+                                    ${payroll.currency || 'MWK'} ${(payroll.grossPay || 0).toLocaleString()}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Deductions Section -->
+                    <div class="col-md-6">
+                        <div class="deductions-section">
+                            <h6 class="text-danger mb-3">
+                                <i class="fas fa-minus-circle me-2"></i>
+                                Deductions Breakdown
+                            </h6>
+                            
+                            <div class="deductions-list">
+                                ${generateTaxItem(payroll)}
+                                ${generatePensionItem(payroll)}
+                                ${generateLoanItems(payroll)}
+                                ${generateOtherDeductionItems(payroll)}
+                            </div>
+
+                            <!-- Add Custom Deduction Form -->
+                            <div class="add-item-form" id="add-deduction-form">
+                                <div class="row g-2">
+                                    <div class="col-md-4">
+                                        <input type="text" class="form-control form-control-sm" id="new-deduction-name" placeholder="Deduction name">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <input type="number" class="form-control form-control-sm" id="new-deduction-amount" placeholder="Amount" step="0.01" min="0">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <input type="text" class="form-control form-control-sm" id="new-deduction-desc" placeholder="Description">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="btn-group w-100">
+                                            <button class="btn btn-sm btn-danger" onclick="addCustomDeduction()">
+                                                <i class="fas fa-plus"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-secondary" onclick="toggleAddDeductionForm()">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mt-2">
+                                <button class="btn btn-sm btn-danger" onclick="toggleAddDeductionForm()">
+                                    <i class="fas fa-plus me-1"></i>
+                                    Add Custom Deduction
+                                </button>
+                            </div>
+
+                            <div class="list-item mt-3" style="background: #fee; font-weight: bold;">
+                                <div class="list-item-content">
+                                    <div class="list-item-name text-danger">TOTAL DEDUCTIONS</div>
+                                </div>
+                                <div class="list-item-amount text-danger">
+                                    ${payroll.currency || 'MWK'} ${(payroll.deductions?.total || 0).toLocaleString()}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Net Pay -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card bg-success text-white">
+                            <div class="card-body text-center">
+                                <h4 class="mb-0">
+                                    <i class="fas fa-hand-holding-usd me-2"></i>
+                                    NET PAY: ${payroll.currency || 'MWK'} ${(payroll.netPay || 0).toLocaleString()}
+                                </h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payment and Approval Information -->
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header bg-secondary text-white">
+                                <h6 class="mb-0"><i class="fas fa-credit-card me-2"></i>Payment Information</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-2">
+                                    <div class="col-6"><strong>Status:</strong></div>
+                                    <div class="col-6">${getStatusBadge(payroll.payment?.status || 'pending')}</div>
+                                    <div class="col-6"><strong>Method:</strong></div>
+                                    <div class="col-6">${payroll.payment?.method || 'Bank Transfer'}</div>
+                                    <div class="col-6"><strong>Reference:</strong></div>
+                                    <div class="col-6">${payroll.payment?.reference || 'N/A'}</div>
+                                    <div class="col-6"><strong>Paid At:</strong></div>
+                                    <div class="col-6">${payroll.payment?.paidAt ? new Date(payroll.payment.paidAt).toLocaleDateString() : 'Not Paid'}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Approval Information -->
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header bg-warning text-white">
+                                <h6 class="mb-0"><i class="fas fa-check-circle me-2"></i>Approval Status</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-2">
+                                    <div class="col-6"><strong>HR Approval:</strong></div>
+                                    <div class="col-6">${getStatusBadge(payroll.approvals?.hr?.status || 'pending')}</div>
+                                    <div class="col-6"><strong>Finance Approval:</strong></div>
+                                    <div class="col-6">${getStatusBadge(payroll.approvals?.finance?.status || 'pending')}</div>
+                                    ${payroll.approvals?.hr?.at ? `
+                                    <div class="col-6"><strong>HR Approved At:</strong></div>
+                                    <div class="col-6">${new Date(payroll.approvals.hr.at).toLocaleDateString()}</div>` : ''}
+                                    ${payroll.approvals?.finance?.at ? `
+                                    <div class="col-6"><strong>Finance Approved At:</strong></div>
+                                    <div class="col-6">${new Date(payroll.approvals.finance.at).toLocaleDateString()}</div>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                ${generateAdjustmentsSection(payroll)}
+            `;
+            
+            document.getElementById('payrollDetailsContent').innerHTML = content;
+            
+            // Hide add forms initially
+            document.getElementById('add-earning-form').style.display = 'none';
+            document.getElementById('add-deduction-form').style.display = 'none';
         }
 
-        // Edit adjustment
-        async function editAdjustment(payrollId, adjustmentId) {
-            try {
-            // Fetch adjustment details
-            const response = await axios.get(`/payroll/${payrollId}/adjustments/${adjustmentId}`);
-            const adj = response.data;
+        // Generate allowance items
+        function generateAllowanceItems(payroll) {
+            const allowances = payroll.allowances || {};
+            const currency = payroll.currency || 'MWK';
+            let html = '';
+            
+            const allowanceTypes = [
+                { key: 'transport', label: 'Transport Allowance' },
+                { key: 'housing', label: 'Housing Allowance' },
+                { key: 'medical', label: 'Medical Allowance' },
+                { key: 'meals', label: 'Meal Allowance' },
+                { key: 'communication', label: 'Communication Allowance' },
+                { key: 'other', label: 'Other Allowances' }
+            ];
+            
+            allowanceTypes.forEach(type => {
+                if (allowances[type.key] > 0) {
+                    html += `
+                        <div class="list-item">
+                            <div class="list-item-content">
+                                <div class="list-item-name">${type.label}</div>
+                            </div>
+                            <div class="list-item-amount" id="allowances-${type.key}-display">
+                                ${currency} ${allowances[type.key].toLocaleString()}
+                            </div>
+                            <div class="list-item-actions">
+                                <button class="btn btn-sm btn-outline-primary btn-inline" onclick="editInline('allowances.${type.key}', ${allowances[type.key]}, 'allowances-${type.key}')">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+            
+            return html;
+        }
 
-            const modalContent = `
-                <div class="mb-3">
-                <label class="form-label">Amount</label>
-                <input type="number" class="form-control" id="editAdjustmentAmount" step="0.01" min="0" value="${adj.amount}" required>
-                </div>
-                <div class="mb-3">
-                <label class="form-label">Reason</label>
-                <textarea class="form-control" id="editAdjustmentReason" rows="3" required>${adj.reason}</textarea>
+        // Generate overtime item
+        function generateOvertimeItem(payroll) {
+            if (!payroll.overtime?.amount || payroll.overtime.amount <= 0) return '';
+            
+            const currency = payroll.currency || 'MWK';
+            return `
+                <div class="list-item">
+                    <div class="list-item-content">
+                        <div class="list-item-name">Overtime</div>
+                        <div class="list-item-description">${payroll.overtime.hours}h @ ${currency} ${payroll.overtime.rate}</div>
+                    </div>
+                    <div class="list-item-amount" id="overtime-amount-display">
+                        ${currency} ${payroll.overtime.amount.toLocaleString()}
+                    </div>
+                    <div class="list-item-actions">
+                        <button class="btn btn-sm btn-outline-primary btn-inline" onclick="editInline('overtime.amount', ${payroll.overtime.amount}, 'overtime-amount')">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                    </div>
                 </div>
             `;
+        }
 
-            Swal.fire({
-                title: 'Edit Adjustment',
-                html: modalContent,
-                showCancelButton: true,
-                confirmButtonText: 'Save Changes',
-                preConfirm: () => {
-                const amount = parseFloat(document.getElementById('editAdjustmentAmount').value);
-                const reason = document.getElementById('editAdjustmentReason').value;
-                if (!amount || amount <= 0) {
-                    Swal.showValidationMessage('Please enter a valid amount');
-                    return false;
-                }
-                if (!reason.trim()) {
-                    Swal.showValidationMessage('Please enter a reason');
-                    return false;
-                }
-                return { amount, reason };
-                }
-            }).then(async result => {
-                if (result.isConfirmed) {
-                try {
-                    await axios.patch(`/payroll/${payrollId}/adjustments/${adjustmentId}`, result.value);
-                    Swal.fire({
-                    icon: 'success',
-                    title: 'Success',
-                    text: 'Adjustment updated successfully'
-                    });
-                    viewPayrollDetails(payrollId);
-                } catch (error) {
-                    Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: error.response?.data?.error || 'Failed to update adjustment'
-                    });
-                }
+        // Generate bonus items
+        function generateBonusItems(payroll) {
+            const bonuses = payroll.bonuses || {};
+            const currency = payroll.currency || 'MWK';
+            let html = '';
+            
+            const bonusTypes = [
+                { key: 'performance', label: 'Performance Bonus' },
+                { key: 'annual', label: 'Annual Bonus' },
+                { key: 'other', label: 'Other Bonuses' }
+            ];
+            
+            bonusTypes.forEach(type => {
+                if (bonuses[type.key] > 0) {
+                    html += `
+                        <div class="list-item">
+                            <div class="list-item-content">
+                                <div class="list-item-name">${type.label}</div>
+                            </div>
+                            <div class="list-item-amount" id="bonuses-${type.key}-display">
+                                ${currency} ${bonuses[type.key].toLocaleString()}
+                            </div>
+                            <div class="list-item-actions">
+                                <button class="btn btn-sm btn-outline-primary btn-inline" onclick="editInline('bonuses.${type.key}', ${bonuses[type.key]}, 'bonuses-${type.key}')">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
                 }
             });
-            } catch (error) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: error.response?.data?.error || 'Failed to load adjustment'
-            });
+            
+            return html;
+        }
+
+        // Generate tax item
+        function generateTaxItem(payroll) {
+            if (!payroll.deductions?.tax?.amount || payroll.deductions.tax.amount <= 0) return '';
+            
+            const currency = payroll.currency || 'MWK';
+            return `
+                <div class="list-item">
+                    <div class="list-item-content">
+                        <div class="list-item-name">PAYE Tax</div>
+                        <div class="list-item-description">Rate: ${payroll.deductions.tax.rate}%</div>
+                    </div>
+                    <div class="list-item-amount" id="tax-rate-display">
+                        ${currency} ${payroll.deductions.tax.amount.toLocaleString()}
+                    </div>
+                    <div class="list-item-actions">
+                        <button class="btn btn-sm btn-outline-primary btn-inline" onclick="editInline('deductions.tax.rate', ${payroll.deductions.tax.rate}, 'tax-rate')">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Generate pension item
+        function generatePensionItem(payroll) {
+            if (!payroll.deductions?.pension?.amount || payroll.deductions.pension.amount <= 0) return '';
+            
+            const currency = payroll.currency || 'MWK';
+            return `
+                <div class="list-item">
+                    <div class="list-item-content">
+                        <div class="list-item-name">Pension</div>
+                        <div class="list-item-description">Rate: ${payroll.deductions.pension.rate}%</div>
+                    </div>
+                    <div class="list-item-amount" id="pension-rate-display">
+                        ${currency} ${payroll.deductions.pension.amount.toLocaleString()}
+                    </div>
+                    <div class="list-item-actions">
+                        <button class="btn btn-sm btn-outline-primary btn-inline" onclick="editInline('deductions.pension.rate', ${payroll.deductions.pension.rate}, 'pension-rate')">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Generate loan items
+        function generateLoanItems(payroll) {
+            if (!payroll.deductions?.loans || payroll.deductions.loans.length === 0) return '';
+            
+            const currency = payroll.currency || 'MWK';
+            return payroll.deductions.loans.map((loan, index) => `
+                <div class="list-item">
+                    <div class="list-item-content">
+                        <div class="list-item-name">Loan: ${loan.description || 'Loan'}</div>
+                    </div>
+                    <div class="list-item-amount">
+                        ${currency} ${loan.amount.toLocaleString()}
+                    </div>
+                    <div class="list-item-actions">
+                        <button class="btn btn-sm btn-outline-danger btn-inline" onclick="removeLoanDeduction(${index})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Generate other deduction items
+        function generateOtherDeductionItems(payroll) {
+            if (!payroll.deductions?.other || payroll.deductions.other.length === 0) return '';
+            
+            const currency = payroll.currency || 'MWK';
+            return payroll.deductions.other.map((item, index) => `
+                <div class="list-item">
+                    <div class="list-item-content">
+                        <div class="list-item-name">${item.name || item.description || 'Deduction'}</div>
+                        ${item.description ? `<div class="list-item-description">${item.description}</div>` : ''}
+                    </div>
+                    <div class="list-item-amount">
+                        ${currency} ${item.amount.toLocaleString()}
+                    </div>
+                    <div class="list-item-actions">
+                        <button class="btn btn-sm btn-outline-danger btn-inline" onclick="removeCustomDeduction(${index})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Generate adjustments section
+        function generateAdjustmentsSection(payroll) {
+            if (!payroll.adjustments || payroll.adjustments.length === 0) return '';
+            
+            return `
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header bg-warning text-white">
+                                <h6 class="mb-0"><i class="fas fa-edit me-2"></i>Adjustments History</h6>
+                            </div>
+                            <div class="card-body">
+                                ${payroll.adjustments.map(adj => `
+                                    <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2">
+                                        <div>
+                                            <strong>${adj.reason}</strong>
+                                            <br>
+                                            <small class="text-muted">${adj.category} - ${adj.type}</small>
+                                            ${adj.duration === 'permanent' ? `
+                                                <br>
+                                                <small class="text-info">
+                                                    <i class="fas fa-calendar me-1"></i>
+                                                    Permanent (${adj.durationDetails?.numberOfMonths || 0} months)
+                                                </small>
+                                            ` : `
+                                                <br>
+                                                <small class="text-muted">
+                                                    <i class="fas fa-calendar me-1"></i>
+                                                    Temporary
+                                                </small>
+                                            `}
+                                        </div>
+                                        <div class="text-end">
+                                            <span class="fw-bold ${adj.type === 'addition' ? 'text-success' : 'text-danger'}">
+                                                ${adj.type === 'addition' ? '+' : '-'}${payroll.currency || 'MWK'} ${Math.abs(adj.amount).toLocaleString()}
+                                            </span>
+                                            <br>
+                                            <small class="text-muted">${adj.appliedAt ? new Date(adj.appliedAt).toLocaleDateString() : 'N/A'}</small>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Toggle add earning form
+        function toggleAddEarningForm() {
+            const form = document.getElementById('add-earning-form');
+            const isVisible = form.style.display !== 'none';
+            
+            if (isVisible) {
+                form.style.display = 'none';
+                form.classList.remove('active');
+                // Clear form
+                document.getElementById('new-earning-name').value = '';
+                document.getElementById('new-earning-amount').value = '';
+            } else {
+                form.style.display = 'block';
+                form.classList.add('active');
+                document.getElementById('new-earning-name').focus();
             }
         }
 
-        // Remove adjustment
-        async function removeAdjustment(payrollId, adjustmentId) {
-            try {
-            const result = await Swal.fire({
-                title: 'Remove Adjustment',
-                text: 'Are you sure you want to remove this adjustment?',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#ef4444',
-                cancelButtonColor: '#6b7280',
-                confirmButtonText: 'Yes, remove it!'
-            });
+        // Toggle add deduction form
+        function toggleAddDeductionForm() {
+            const form = document.getElementById('add-deduction-form');
+            const isVisible = form.style.display !== 'none';
+            
+            if (isVisible) {
+                form.style.display = 'none';
+                form.classList.remove('active');
+                // Clear form
+                document.getElementById('new-deduction-name').value = '';
+                document.getElementById('new-deduction-amount').value = '';
+                document.getElementById('new-deduction-desc').value = '';
+            } else {
+                form.style.display = 'block';
+                form.classList.add('active');
+                document.getElementById('new-deduction-name').focus();
+            }
+        }
 
-            if (result.isConfirmed) {
-                await axios.delete(`/payroll/${payrollId}/adjustments/${adjustmentId}`);
+        // Edit inline functionality
+        function editInline(fieldPath, currentValue, elementId) {
+            const displayElement = document.getElementById(`${elementId}-display`);
+            if (!displayElement) return;
 
+            // Create inline edit form
+            const currency = getCurrentCurrency();
+            const editForm = document.createElement('div');
+            editForm.className = 'inline-edit-form active d-flex align-items-center gap-2';
+            editForm.innerHTML = `
+                <input type="number" class="inline-edit-input" value="${currentValue}" step="0.01" min="0" id="${elementId}-input">
+                <button class="btn btn-sm btn-success btn-inline" onclick="saveInlineEdit('${fieldPath}', '${elementId}')">
+                    <i class="fas fa-check"></i>
+                </button>
+                <button class="btn btn-sm btn-secondary btn-inline" onclick="cancelInlineEdit('${elementId}')">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+
+            // Store original content
+            displayElement.dataset.originalContent = displayElement.innerHTML;
+            
+            // Replace display with edit form
+            displayElement.innerHTML = '';
+            displayElement.appendChild(editForm);
+            
+            // Focus input and select text
+            const input = document.getElementById(`${elementId}-input`);
+            input.focus();
+            input.select();
+        }
+
+        // Save inline edit
+        async function saveInlineEdit(fieldPath, elementId) {
+            const input = document.getElementById(`${elementId}-input`);
+            const newValue = parseFloat(input.value);
+            
+            if (isNaN(newValue) || newValue < 0) {
                 Swal.fire({
-                icon: 'success',
-                title: 'Removed',
-                text: 'Adjustment removed successfully'
+                    icon: 'error',
+                    title: 'Invalid Value',
+                    text: 'Please enter a valid positive number'
+                });
+                return;
+            }
+
+            try {
+                showLoading(true);
+                
+                await axios.patch(`/payroll/${selectedPayrollId}/field`, {
+                    fieldPath: fieldPath,
+                    value: newValue
+                });
+
+                // Success message
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Updated',
+                    text: 'Field updated successfully',
+                    timer: 1500,
+                    showConfirmButton: false
                 });
 
                 // Reload payroll details
-                viewPayrollDetails(payrollId);
-            }
+                await viewPayrollDetails(selectedPayrollId);
+
             } catch (error) {
-            console.error('Error removing adjustment:', error);
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: error.response?.data?.error || 'Failed to remove adjustment'
-            });
+                console.error('Error updating field:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: error.response?.data?.error || 'Failed to update field'
+                });
+                
+                // Restore original content on error
+                cancelInlineEdit(elementId);
+            } finally {
+                showLoading(false);
             }
         }
 
-       function displayPayrollDetails(payroll) {
-    const employee = payroll.employeeId || {};
-    const personal = employee.personalInfo || {};
-    const employment = employee.employmentInfo || {};
-    const department = employment.departmentId || {};
-    const position = employment.positionId || {};
-    const grade = employment.gradeId || {};
-    
-    const fullName = `${personal.firstName || ''} ${personal.lastName || ''}`.trim();
-    
-    const content = `
-        <div class="row">
-            <!-- Employee Information -->
-            <div class="col-md-6">
-                <div class="card mb-3">
-                    <div class="card-header bg-primary text-white">
-                        <h6 class="mb-0"><i class="fas fa-user me-2"></i>Employee Information</h6>
-                    </div>
-                    <div class="card-body">
-                        <div class="row g-2">
-                            <div class="col-6"><strong>Name:</strong></div>
-                            <div class="col-6">${fullName || 'N/A'}</div>
-                            <div class="col-6"><strong>Employee ID:</strong></div>
-                            <div class="col-6">${employee.employeeId || 'N/A'}</div>
-                            <div class="col-6"><strong>Department:</strong></div>
-                            <div class="col-6">${department.name || 'N/A'}</div>
-                            <div class="col-6"><strong>Position:</strong></div>
-                            <div class="col-6">${position.name || 'N/A'}</div>
-                            <div class="col-6"><strong>Grade:</strong></div>
-                            <div class="col-6">${grade.name || 'N/A'} (Level ${grade.level || 'N/A'})</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        // Cancel inline edit
+        function cancelInlineEdit(elementId) {
+            const displayElement = document.getElementById(`${elementId}-display`);
+            if (!displayElement || !displayElement.dataset.originalContent) return;
+            
+            displayElement.innerHTML = displayElement.dataset.originalContent;
+            delete displayElement.dataset.originalContent;
+        }
 
-            <!-- Pay Period Information -->
-            <div class="col-md-6">
-                <div class="card mb-3">
-                    <div class="card-header bg-info text-white">
-                        <h6 class="mb-0"><i class="fas fa-calendar me-2"></i>Pay Period</h6>
-                    </div>
-                    <div class="card-body">
-                        <div class="row g-2">
-                            <div class="col-6"><strong>Month:</strong></div>
-                            <div class="col-6">${payroll.payrollMonth || 'N/A'}</div>
-                            <div class="col-6"><strong>Start Date:</strong></div>
-                            <div class="col-6">${payroll.payPeriod?.startDate ? new Date(payroll.payPeriod.startDate).toLocaleDateString() : 'N/A'}</div>
-                            <div class="col-6"><strong>End Date:</strong></div>
-                            <div class="col-6">${payroll.payPeriod?.endDate ? new Date(payroll.payPeriod.endDate).toLocaleDateString() : 'N/A'}</div>
-                            <div class="col-6"><strong>Working Days:</strong></div>
-                            <div class="col-6">${payroll.payPeriod?.workingDays || 0}</div>
-                            <div class="col-6"><strong>Days Worked:</strong></div>
-                            <div class="col-6">${payroll.payPeriod?.daysWorked || 0}</div>
-                            <div class="col-6"><strong>Attendance:</strong></div>
-                            <div class="col-6">
-                                <span class="badge ${payroll.attendanceRate >= 90 ? 'bg-success' : payroll.attendanceRate >= 75 ? 'bg-warning' : 'bg-danger'}">
-                                    ${payroll.attendanceRate || 0}%
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        // Add custom earning
+        async function addCustomEarning() {
+            const name = document.getElementById('new-earning-name').value.trim();
+            const amount = parseFloat(document.getElementById('new-earning-amount').value);
+            
+            if (!name) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Missing Information',
+                    text: 'Please enter an earning name'
+                });
+                return;
+            }
+            
+            if (isNaN(amount) || amount <= 0) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Invalid Amount',
+                    text: 'Please enter a valid amount greater than 0'
+                });
+                return;
+            }
 
-        <div class="row">
-            <!-- Earnings Breakdown -->
-            <div class="col-md-6">
-                <div class="earnings-section">
-                    <h6 class="text-success mb-3">
-                        <i class="fas fa-plus-circle me-2"></i>
-                        Earnings Breakdown
-                    </h6>
-                    <div class="breakdown-item">
-                        <span>Basic Salary:</span>
-                        <span class="fw-bold editable-amount" onclick="editField('${payroll._id}', 'salary.base', ${payroll.salary?.base || 0}, 'Basic Salary')">
-                            ${payroll.currency || 'MWK'} ${(payroll.salary?.base || 0).toLocaleString()}
-                            <i class="fas fa-edit ms-2 text-muted small"></i>
-                        </span>
-                    </div>
-                    <div class="breakdown-item">
-                        <span>Prorated Salary:</span>
-                        <span class="fw-bold editable-amount" onclick="editField('${payroll._id}', 'salary.prorated', ${payroll.salary?.prorated || 0}, 'Prorated Salary')">
-                            ${payroll.currency || 'MWK'} ${(payroll.salary?.prorated || 0).toLocaleString()}
-                            <i class="fas fa-edit ms-2 text-muted small"></i>
-                        </span>
-                    </div>
-                    ${payroll.allowances?.transport > 0 ? `
-                    <div class="breakdown-item">
-                        <span>Transport Allowance:</span>
-                        <span class="editable-amount" onclick="editField('${payroll._id}', 'allowances.transport', ${payroll.allowances.transport}, 'Transport Allowance')">
-                            ${payroll.currency || 'MWK'} ${payroll.allowances.transport.toLocaleString()}
-                            <i class="fas fa-edit ms-2 text-muted small"></i>
-                        </span>
-                    </div>` : ''}
-                    ${payroll.allowances?.housing > 0 ? `
-                    <div class="breakdown-item">
-                        <span>Housing Allowance:</span>
-                        <span class="editable-amount" onclick="editField('${payroll._id}', 'allowances.housing', ${payroll.allowances.housing}, 'Housing Allowance')">
-                            ${payroll.currency || 'MWK'} ${payroll.allowances.housing.toLocaleString()}
-                            <i class="fas fa-edit ms-2 text-muted small"></i>
-                        </span>
-                    </div>` : ''}
-                    ${payroll.allowances?.medical > 0 ? `
-                    <div class="breakdown-item">
-                        <span>Medical Allowance:</span>
-                        <span class="editable-amount" onclick="editField('${payroll._id}', 'allowances.medical', ${payroll.allowances.medical}, 'Medical Allowance')">
-                            ${payroll.currency || 'MWK'} ${payroll.allowances.medical.toLocaleString()}
-                            <i class="fas fa-edit ms-2 text-muted small"></i>
-                        </span>
-                    </div>` : ''}
-                    ${payroll.allowances?.meals > 0 ? `
-                    <div class="breakdown-item">
-                        <span>Meal Allowance:</span>
-                        <span class="editable-amount" onclick="editField('${payroll._id}', 'allowances.meals', ${payroll.allowances.meals}, 'Meal Allowance')">
-                            ${payroll.currency || 'MWK'} ${payroll.allowances.meals.toLocaleString()}
-                            <i class="fas fa-edit ms-2 text-muted small"></i>
-                        </span>
-                    </div>` : ''}
-                    ${payroll.allowances?.communication > 0 ? `
-                    <div class="breakdown-item">
-                        <span>Communication Allowance:</span>
-                        <span class="editable-amount" onclick="editField('${payroll._id}', 'allowances.communication', ${payroll.allowances.communication}, 'Communication Allowance')">
-                            ${payroll.currency || 'MWK'} ${payroll.allowances.communication.toLocaleString()}
-                            <i class="fas fa-edit ms-2 text-muted small"></i>
-                        </span>
-                    </div>` : ''}
-                    ${payroll.allowances?.other > 0 ? `
-                    <div class="breakdown-item">
-                        <span>Other Allowances:</span>
-                        <span class="editable-amount" onclick="editField('${payroll._id}', 'allowances.other', ${payroll.allowances.other}, 'Other Allowances')">
-                            ${payroll.currency || 'MWK'} ${payroll.allowances.other.toLocaleString()}
-                            <i class="fas fa-edit ms-2 text-muted small"></i>
-                        </span>
-                    </div>` : ''}
-                    ${payroll.overtime?.amount > 0 ? `
-                    <div class="breakdown-item">
-                        <span>Overtime (${payroll.overtime.hours}h @ ${payroll.currency || 'MWK'} ${payroll.overtime.rate}):</span>
-                        <span class="editable-amount" onclick="editField('${payroll._id}', 'overtime.amount', ${payroll.overtime.amount}, 'Overtime Amount')">
-                            ${payroll.currency || 'MWK'} ${payroll.overtime.amount.toLocaleString()}
-                            <i class="fas fa-edit ms-2 text-muted small"></i>
-                        </span>
-                    </div>` : ''}
-                    ${payroll.bonuses?.performance > 0 ? `
-                    <div class="breakdown-item">
-                        <span>Performance Bonus:</span>
-                        <span class="editable-amount" onclick="editField('${payroll._id}', 'bonuses.performance', ${payroll.bonuses.performance}, 'Performance Bonus')">
-                            ${payroll.currency || 'MWK'} ${payroll.bonuses.performance.toLocaleString()}
-                            <i class="fas fa-edit ms-2 text-muted small"></i>
-                        </span>
-                    </div>` : ''}
-                    ${payroll.bonuses?.annual > 0 ? `
-                    <div class="breakdown-item">
-                        <span>Annual Bonus:</span>
-                        <span class="editable-amount" onclick="editField('${payroll._id}', 'bonuses.annual', ${payroll.bonuses.annual}, 'Annual Bonus')">
-                            ${payroll.currency || 'MWK'} ${payroll.bonuses.annual.toLocaleString()}
-                            <i class="fas fa-edit ms-2 text-muted small"></i>
-                        </span>
-                    </div>` : ''}
-                    ${payroll.bonuses?.other > 0 ? `
-                    <div class="breakdown-item">
-                        <span>Other Bonuses:</span>
-                        <span class="editable-amount" onclick="editField('${payroll._id}', 'bonuses.other', ${payroll.bonuses.other}, 'Other Bonuses')">
-                            ${payroll.currency || 'MWK'} ${payroll.bonuses.other.toLocaleString()}
-                            <i class="fas fa-edit ms-2 text-muted small"></i>
-                        </span>
-                    </div>` : ''}
-                    <div class="breakdown-item">
-                        <span class="fw-bold text-success">GROSS PAY:</span>
-                        <span class="fw-bold text-success">${payroll.currency || 'MWK'} ${(payroll.grossPay || 0).toLocaleString()}</span>
-                    </div>
-                </div>
-            </div>
+            try {
+                showLoading(true);
+                
+                await axios.post(`/payroll/${selectedPayrollId}/earnings/custom`, {
+                    name: name,
+                    amount: amount
+                });
 
-            <!-- Deductions Breakdown -->
-            <div class="col-md-6">
-                <div class="deductions-section">
-                    <h6 class="text-danger mb-3">
-                        <i class="fas fa-minus-circle me-2"></i>
-                        Deductions Breakdown
-                    </h6>
-                    ${payroll.deductions?.tax?.amount > 0 ? `
-                    <div class="breakdown-item">
-                        <span>PAYE Tax Rate:</span>
-                        <span class="editable-amount" onclick="editField('${payroll._id}', 'deductions.tax.rate', ${payroll.deductions.tax.rate}, 'PAYE Tax Rate')">
-                            ${payroll.deductions.tax.rate}%
-                            <i class="fas fa-edit ms-2 text-muted small"></i>
-                        </span>
-                    </div>
-                    <div class="breakdown-item">
-                        <span>PAYE Tax Amount:</span>
-                        <span class="fw-bold">${payroll.currency || 'MWK'} ${payroll.deductions.tax.amount.toLocaleString()}</span>
-                    </div>` : ''}
-                    ${payroll.deductions?.pension?.amount > 0 ? `
-                    <div class="breakdown-item">
-                        <span>Pension Rate:</span>
-                        <span class="editable-amount" onclick="editField('${payroll._id}', 'deductions.pension.rate', ${payroll.deductions.pension.rate}, 'Pension Rate')">
-                            ${payroll.deductions.pension.rate}%
-                            <i class="fas fa-edit ms-2 text-muted small"></i>
-                        </span>
-                    </div>
-                    <div class="breakdown-item">
-                        <span>Pension Amount:</span>
-                        <span class="fw-bold">${payroll.currency || 'MWK'} ${payroll.deductions.pension.amount.toLocaleString()}</span>
-                    </div>` : ''}
-                    ${(payroll.deductions?.loans || []).map(loan => `
-                    <div class="breakdown-item">
-                        <span>Loan: ${loan.name}:</span>
-                        <span>${payroll.currency || 'MWK'} ${loan.amount.toLocaleString()}</span>
-                    </div>`).join('')}
-                    ${(payroll.deductions?.other || []).map((item, index) => `
-                    <div class="breakdown-item">
-                        <span>${item.name}:</span>
-                        <span>
-                            ${payroll.currency || 'MWK'} ${item.amount.toLocaleString()}
-                            <button class="btn btn-outline-danger btn-sm ms-2" onclick="removeCustomDeduction('${payroll._id}', ${index}, '${item.name.replace(/'/g, "\\'")}')">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </span>
-                    </div>`).join('')}
-                    <div class="breakdown-item">
-                        <span class="fw-bold text-danger">TOTAL DEDUCTIONS:</span>
-                        <span class="fw-bold text-danger">${payroll.currency || 'MWK'} ${(payroll.deductions?.total || 0).toLocaleString()}</span>
-                    </div>
-                </div>
-            </div>
-        </div>
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success',
+                    text: 'Custom earning added successfully',
+                    timer: 1500,
+                    showConfirmButton: false
+                });
 
-        <!-- Net Pay -->
-        <div class="row">
-            <div class="col-12">
-                <div class="card bg-success text-white">
-                    <div class="card-body text-center">
-                        <h4 class="mb-0">
-                            <i class="fas fa-hand-holding-usd me-2"></i>
-                            NET PAY: ${payroll.currency || 'MWK'} ${(payroll.netPay || 0).toLocaleString()}
-                        </h4>
-                    </div>
-                </div>
-            </div>
-        </div>
+                // Hide form and reload details
+                toggleAddEarningForm();
+                await viewPayrollDetails(selectedPayrollId);
 
-        <!-- Add Custom Earnings/Deductions Buttons -->
-        <div class="row mt-3">
-            <div class="col-md-6">
-                <button class="btn btn-success btn-sm me-2" onclick="addCustomEarning('${payroll._id}')">
-                    <i class="fas fa-plus me-1"></i>
-                    Add Custom Earning
-                </button>
-            </div>
-            <div class="col-md-6">
-                <button class="btn btn-danger btn-sm" onclick="addCustomDeduction('${payroll._id}')">
-                    <i class="fas fa-minus me-1"></i>
-                    Add Custom Deduction
-                </button>
-            </div>
-        </div>
+            } catch (error) {
+                console.error('Error adding custom earning:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: error.response?.data?.error || 'Failed to add custom earning'
+                });
+            } finally {
+                showLoading(false);
+            }
+        }
 
-        <!-- Payment Information -->
-        <div class="row mt-3">
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header bg-secondary text-white">
-                        <h6 class="mb-0"><i class="fas fa-credit-card me-2"></i>Payment Information</h6>
-                    </div>
-                    <div class="card-body">
-                        <div class="row g-2">
-                            <div class="col-6"><strong>Status:</strong></div>
-                            <div class="col-6">${getStatusBadge(payroll.payment?.status || 'pending')}</div>
-                            <div class="col-6"><strong>Method:</strong></div>
-                            <div class="col-6">${payroll.payment?.method || 'Bank Transfer'}</div>
-                            <div class="col-6"><strong>Reference:</strong></div>
-                            <div class="col-6">${payroll.payment?.reference || 'N/A'}</div>
-                            <div class="col-6"><strong>Paid At:</strong></div>
-                            <div class="col-6">${payroll.payment?.paidAt ? new Date(payroll.payment.paidAt).toLocaleDateString() : 'Not Paid'}</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        // Add custom deduction
+        async function addCustomDeduction() {
+            const name = document.getElementById('new-deduction-name').value.trim();
+            const amount = parseFloat(document.getElementById('new-deduction-amount').value);
+            const description = document.getElementById('new-deduction-desc').value.trim();
+            
+            if (!name) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Missing Information',
+                    text: 'Please enter a deduction name'
+                });
+                return;
+            }
+            
+            if (isNaN(amount) || amount <= 0) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Invalid Amount',
+                    text: 'Please enter a valid amount greater than 0'
+                });
+                return;
+            }
 
-            <!-- Approval Information -->
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header bg-warning text-white">
-                        <h6 class="mb-0"><i class="fas fa-check-circle me-2"></i>Approval Status</h6>
-                    </div>
-                    <div class="card-body">
-                        <div class="row g-2">
-                            <div class="col-6"><strong>HR Approval:</strong></div>
-                            <div class="col-6">${getStatusBadge(payroll.approvals?.hr?.status || 'pending')}</div>
-                            <div class="col-6"><strong>Finance Approval:</strong></div>
-                            <div class="col-6">${getStatusBadge(payroll.approvals?.finance?.status || 'pending')}</div>
-                            ${payroll.approvals?.hr?.at ? `
-                            <div class="col-6"><strong>HR Approved At:</strong></div>
-                            <div class="col-6">${new Date(payroll.approvals.hr.at).toLocaleDateString()}</div>` : ''}
-                            ${payroll.approvals?.finance?.at ? `
-                            <div class="col-6"><strong>Finance Approved At:</strong></div>
-                            <div class="col-6">${new Date(payroll.approvals.finance.at).toLocaleDateString()}</div>` : ''}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+            try {
+                showLoading(true);
+                
+                await axios.post(`/payroll/${selectedPayrollId}/deductions/custom`, {
+                    name: name,
+                    amount: amount,
+                    description: description
+                });
 
-        ${payroll.adjustments && payroll.adjustments.length > 0 ? `
-        <!-- Adjustments -->
-        <div class="row mt-3">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header bg-warning text-white">
-                        <h6 class="mb-0"><i class="fas fa-edit me-2"></i>Adjustments History</h6>
-                    </div>
-                    <div class="card-body">
-                        ${payroll.adjustments.map(adj => `
-                            <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2">
-                                <div>
-                                    <strong>${adj.reason}</strong>
-                                    <br>
-                                    <small class="text-muted">${adj.category} - ${adj.type}</small>
-                                    ${adj.duration === 'permanent' ? `
-                                        <br>
-                                        <small class="text-info">
-                                            <i class="fas fa-calendar me-1"></i>
-                                            Permanent (${adj.durationDetails.numberOfMonths} months)
-                                        </small>
-                                    ` : `
-                                        <br>
-                                        <small class="text-muted">
-                                            <i class="fas fa-calendar me-1"></i>
-                                            Temporary
-                                        </small>
-                                    `}
-                                </div>
-                                <div class="text-end">
-                                    <span class="fw-bold ${adj.type === 'addition' ? 'text-success' : 'text-danger'}">
-                                        ${adj.type === 'addition' ? '+' : '-'}${payroll.currency || 'MWK'} ${Math.abs(adj.amount).toLocaleString()}
-                                    </span>
-                                    <br>
-                                    <small class="text-muted">${adj.appliedAt ? new Date(adj.appliedAt).toLocaleDateString() : 'N/A'}</small>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-            </div>
-        </div>` : ''}
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success',
+                    text: 'Custom deduction added successfully',
+                    timer: 1500,
+                    showConfirmButton: false
+                });
 
-        <!-- Add Adjustment Button -->
-        <div class="row mt-3">
-            <div class="col-12">
-                <button class="btn btn-warning btn-sm" onclick="showAddAdjustmentModal('${payroll._id}')">
-                    <i class="fas fa-edit me-1"></i>
-                    Add Adjustment
-                </button>
-            </div>
-        </div>
-    `;
-    
-    document.getElementById('payrollDetailsContent').innerHTML = content;
-}
+                // Hide form and reload details
+                toggleAddDeductionForm();
+                await viewPayrollDetails(selectedPayrollId);
+
+            } catch (error) {
+                console.error('Error adding custom deduction:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: error.response?.data?.error || 'Failed to add custom deduction'
+                });
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Remove custom deduction
+        async function removeCustomDeduction(deductionIndex) {
+            try {
+                const result = await Swal.fire({
+                    title: 'Remove Deduction',
+                    text: 'Are you sure you want to remove this deduction?',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#ef4444',
+                    cancelButtonColor: '#6b7280',
+                    confirmButtonText: 'Yes, remove it!',
+                    cancelButtonText: 'Cancel'
+                });
+
+                if (result.isConfirmed) {
+                    showLoading(true);
+                    
+                    await axios.delete(`/payroll/${selectedPayrollId}/deductions/custom/${deductionIndex}`);
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Removed',
+                        text: 'Deduction removed successfully',
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+
+                    await viewPayrollDetails(selectedPayrollId);
+                }
+            } catch (error) {
+                console.error('Error removing deduction:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: error.response?.data?.error || 'Failed to remove deduction'
+                });
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Remove loan deduction
+        async function removeLoanDeduction(loanIndex) {
+            try {
+                const result = await Swal.fire({
+                    title: 'Remove Loan Deduction',
+                    text: 'Are you sure you want to remove this loan deduction?',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#ef4444',
+                    cancelButtonColor: '#6b7280',
+                    confirmButtonText: 'Yes, remove it!',
+                    cancelButtonText: 'Cancel'
+                });
+
+                if (result.isConfirmed) {
+                    showLoading(true);
+                    
+                    // This would need a separate endpoint for loan deductions
+                    await axios.delete(`/payroll/${selectedPayrollId}/deductions/loans/${loanIndex}`);
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Removed',
+                        text: 'Loan deduction removed successfully',
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+
+                    await viewPayrollDetails(selectedPayrollId);
+                }
+            } catch (error) {
+                console.error('Error removing loan deduction:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: error.response?.data?.error || 'Failed to remove loan deduction'
+                });
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Get current currency
+        function getCurrentCurrency() {
+            return filteredPayrolls.length > 0 ? (filteredPayrolls[0].currency || 'MWK') : 'MWK';
+        }
+
         // Download individual payslip
         async function downloadPayslip(payrollId = null) {
             const id = payrollId || selectedPayrollId;
@@ -1704,155 +2035,6 @@ async function addAdjustment(adjustmentData) {
             }
         }
 
-        // Approve payroll
-        async function approvePayroll(payrollId, type) {
-            try {
-                const { value: notes } = await Swal.fire({
-                    title: `${type.toUpperCase()} Approval`,
-                    input: 'textarea',
-                    inputLabel: 'Approval Notes (optional)',
-                    inputPlaceholder: 'Enter any notes...',
-                    showCancelButton: true,
-                    confirmButtonText: 'Approve',
-                    confirmButtonColor: '#10b981'
-                });
-
-                if (notes !== undefined) {
-                    showLoading(true);
-                    
-                    await axios.patch(`/payroll/${payrollId}/approve`, {
-                        type,
-                        notes
-                    });
-
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Success',
-                        text: `Payroll ${type.toUpperCase()} approved successfully`
-                    });
-
-                    loadPayrollData();
-                }
-            } catch (error) {
-                console.error('Error approving payroll:', error);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: error.response?.data?.error || 'Failed to approve payroll'
-                });
-            } finally {
-                showLoading(false);
-            }
-        }
-
-        // Reject payroll
-        async function rejectPayroll(payrollId, type) {
-            try {
-                const { value: notes } = await Swal.fire({
-                    title: `${type.toUpperCase()} Rejection`,
-                    input: 'textarea',
-                    inputLabel: 'Rejection Reason (required)',
-                    inputPlaceholder: 'Please provide a reason for rejection...',
-                    inputValidator: (value) => {
-                        if (!value.trim()) {
-                            return 'Rejection reason is required'
-                        }
-                    },
-                    showCancelButton: true,
-                    confirmButtonText: 'Reject',
-                    confirmButtonColor: '#ef4444'
-                });
-
-                if (notes !== undefined) {
-                    showLoading(true);
-                    
-                    await axios.patch(`/payroll/${payrollId}/reject`, {
-                        type,
-                        notes
-                    });
-
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Success',
-                        text: `Payroll ${type.toUpperCase()} rejected`
-                    });
-
-                    loadPayrollData();
-                }
-            } catch (error) {
-                console.error('Error rejecting payroll:', error);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: error.response?.data?.error || 'Failed to reject payroll'
-                });
-            } finally {
-                showLoading(false);
-            }
-        }
-
-        // Mark payroll as paid
-        async function markAsPaid(payrollId) {
-            try {
-                const { value: formValues } = await Swal.fire({
-                    title: 'Mark as Paid',
-                    html: `
-                        <div class="mb-3">
-                            <label class="form-label">Payment Reference</label>
-                            <input type="text" id="paymentRef" class="swal2-input" placeholder="Enter payment reference">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Payment Method</label>
-                            <select id="paymentMethod" class="swal2-select">
-                                <option value="bank_transfer">Bank Transfer</option>
-                                <option value="mobile_money">Mobile Money</option>
-                                <option value="cash">Cash</option>
-                                <option value="cheque">Cheque</option>
-                            </select>
-                        </div>
-                    `,
-                    focusConfirm: false,
-                    showCancelButton: true,
-                    confirmButtonText: 'Mark as Paid',
-                    confirmButtonColor: '#10b981',
-                    preConfirm: () => {
-                        const reference = document.getElementById('paymentRef').value;
-                        const method = document.getElementById('paymentMethod').value;
-                        
-                        if (!reference.trim()) {
-                            Swal.showValidationMessage('Payment reference is required');
-                            return false;
-                        }
-                        
-                        return { reference, method };
-                    }
-                });
-
-                if (formValues) {
-                    showLoading(true);
-                    
-                    await axios.patch(`/payroll/${payrollId}/mark-paid`, formValues);
-
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Success',
-                        text: 'Payroll marked as paid successfully'
-                    });
-
-                    loadPayrollData();
-                }
-            } catch (error) {
-                console.error('Error marking as paid:', error);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: error.response?.data?.error || 'Failed to mark as paid'
-                });
-            } finally {
-                showLoading(false);
-            }
-        }
-
         // Show/hide loading spinner
         function showLoading(show, targetId = null) {
             if (targetId) {
@@ -1881,263 +2063,6 @@ async function addAdjustment(adjustmentData) {
             }
         }
 
-        // Edit field value
-        async function editField(payrollId, fieldPath, currentValue, fieldName) {
-    try {
-        const { value: newValue } = await Swal.fire({
-            title: `Edit ${fieldName}`,
-            input: 'number',
-            inputValue: currentValue,
-            inputAttributes: {
-                step: '0.01',
-                min: '0'
-            },
-            inputLabel: `Enter new value for ${fieldName}:`,
-            showCancelButton: true,
-            confirmButtonText: 'Update',
-            cancelButtonText: 'Cancel',
-            inputValidator: (value) => {
-                if (!value || isNaN(value) || parseFloat(value) < 0) {
-                    return 'Please enter a valid positive number';
-                }
-            }
-        });
-
-        if (newValue !== undefined && parseFloat(newValue) !== currentValue) {
-            showLoading(true);
-            
-            await axios.patch(`/payroll/${payrollId}/field`, {
-                fieldPath: fieldPath,
-                value: parseFloat(newValue)
-            });
-
-            Swal.fire({
-                icon: 'success',
-                title: 'Success',
-                text: `${fieldName} updated successfully`,
-                timer: 2000,
-                showConfirmButton: false
-            });
-
-            // Reload payroll details
-            viewPayrollDetails(payrollId);
-        }
-    } catch (error) {
-        console.error('Error editing field:', error);
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: error.response?.data?.error || 'Failed to update field'
-        });
-    } finally {
-        showLoading(false);
-    }
-}
-
-// Fixed Add custom deduction function
-async function addCustomDeduction(payrollId) {
-    try {
-        const { value: result } = await Swal.fire({
-            title: 'Add Custom Deduction',
-            html: `
-                <div style="text-align: left;">
-                    <label for="deduction-name" style="display: block; margin-bottom: 5px; font-weight: bold;">Deduction Name:</label>
-                    <input type="text" id="deduction-name" class="swal2-input" placeholder="Enter deduction name" style="margin-bottom: 15px;">
-                    
-                    <label for="deduction-amount" style="display: block; margin-bottom: 5px; font-weight: bold;">Amount:</label>
-                    <input type="number" id="deduction-amount" class="swal2-input" placeholder="Enter amount" step="0.01" min="0" style="margin-bottom: 15px;">
-                    
-                    <label for="deduction-desc" style="display: block; margin-bottom: 5px; font-weight: bold;">Description (optional):</label>
-                    <textarea id="deduction-desc" class="swal2-textarea" placeholder="Enter description" style="height: 80px; resize: vertical;"></textarea>
-                </div>
-            `,
-            focusConfirm: false,
-            showCancelButton: true,
-            confirmButtonText: 'Add Deduction',
-            cancelButtonText: 'Cancel',
-            preConfirm: () => {
-                const name = document.getElementById('deduction-name').value.trim();
-                const amount = document.getElementById('deduction-amount').value;
-                const description = document.getElementById('deduction-desc').value.trim();
-                
-                if (!name) {
-                    Swal.showValidationMessage('Deduction name is required');
-                    return false;
-                }
-                
-                if (!amount || parseFloat(amount) <= 0) {
-                    Swal.showValidationMessage('Please enter a valid amount greater than 0');
-                    return false;
-                }
-                
-                return { 
-                    name, 
-                    amount: parseFloat(amount), 
-                    description: description || '' 
-                };
-            },
-            didOpen: () => {
-                // Focus on the first input and ensure it's properly initialized
-                const nameInput = document.getElementById('deduction-name');
-                if (nameInput) {
-                    setTimeout(() => nameInput.focus(), 100);
-                }
-            }
-        });
-
-        if (result) {
-            showLoading(true);
-            
-            await axios.post(`/payroll/${payrollId}/deductions/custom`, result);
-
-            Swal.fire({
-                icon: 'success',
-                title: 'Success',
-                text: 'Custom deduction added successfully',
-                timer: 2000,
-                showConfirmButton: false
-            });
-
-            viewPayrollDetails(payrollId);
-        }
-    } catch (error) {
-        console.error('Error adding custom deduction:', error);
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: error.response?.data?.error || 'Failed to add custom deduction'
-        });
-    } finally {
-        showLoading(false);
-    }
-}
-
-// Fixed Add custom earning function
-async function addCustomEarning(payrollId) {
-    try {
-        const { value: result } = await Swal.fire({
-            title: 'Add Custom Earning',
-            html: `
-                <div style="text-align: left;">
-                    <label for="earning-name" style="display: block; margin-bottom: 5px; font-weight: bold;">Earning Name:</label>
-                    <input type="text" id="earning-name" class="swal2-input" placeholder="Enter earning name" style="margin-bottom: 15px;">
-                    
-                    <label for="earning-amount" style="display: block; margin-bottom: 5px; font-weight: bold;">Amount:</label>
-                    <input type="number" id="earning-amount" class="swal2-input" placeholder="Enter amount" step="0.01" min="0">
-                </div>
-            `,
-            focusConfirm: false,
-            showCancelButton: true,
-            confirmButtonText: 'Add Earning',
-            cancelButtonText: 'Cancel',
-            preConfirm: () => {
-                const name = document.getElementById('earning-name').value.trim();
-                const amount = document.getElementById('earning-amount').value;
-                
-                if (!name) {
-                    Swal.showValidationMessage('Earning name is required');
-                    return false;
-                }
-                
-                if (!amount || parseFloat(amount) <= 0) {
-                    Swal.showValidationMessage('Please enter a valid amount greater than 0');
-                    return false;
-                }
-                
-                return { 
-                    name, 
-                    amount: parseFloat(amount)
-                };
-            },
-            didOpen: () => {
-                // Focus on the first input
-                const nameInput = document.getElementById('earning-name');
-                if (nameInput) {
-                    setTimeout(() => nameInput.focus(), 100);
-                }
-            }
-        });
-
-        if (result) {
-            showLoading(true);
-            
-            await axios.post(`/payroll/${payrollId}/earnings/custom`, result);
-
-            Swal.fire({
-                icon: 'success',
-                title: 'Success',
-                text: 'Custom earning added successfully',
-                timer: 2000,
-                showConfirmButton: false
-            });
-
-            viewPayrollDetails(payrollId);
-        }
-    } catch (error) {
-        console.error('Error adding custom earning:', error);
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: error.response?.data?.error || 'Failed to add custom earning'
-        });
-    } finally {
-        showLoading(false);
-    }
-}
-
-// Fixed Remove custom deduction function
-async function removeCustomDeduction(payrollId, deductionIndex, deductionName) {
-    try {
-        const result = await Swal.fire({
-            title: 'Remove Deduction',
-            html: `Are you sure you want to remove <strong>"${deductionName}"</strong>?<br><br>This action cannot be undone.`,
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#ef4444',
-            cancelButtonColor: '#6b7280',
-            confirmButtonText: 'Yes, remove it!',
-            cancelButtonText: 'Cancel'
-        });
-
-        if (result.isConfirmed) {
-            showLoading(true);
-            
-            await axios.delete(`/payroll/${payrollId}/deductions/custom/${deductionIndex}`);
-
-            Swal.fire({
-                icon: 'success',
-                title: 'Removed',
-                text: 'Deduction removed successfully',
-                timer: 2000,
-                showConfirmButton: false
-            });
-
-            viewPayrollDetails(payrollId);
-        }
-    } catch (error) {
-        console.error('Error removing deduction:', error);
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: error.response?.data?.error || 'Failed to remove deduction'
-        });
-    } finally {
-        showLoading(false);
-    }
-}
-function toggleDurationDetails() {
-    const duration = document.getElementById('adjustmentDuration').value;
-    const durationDetails = document.getElementById('durationDetails');
-    
-    if (duration === 'permanent') {
-        durationDetails.style.display = 'block';
-        document.getElementById('numberOfMonths').required = true;
-    } else {
-        durationDetails.style.display = 'none';
-        document.getElementById('numberOfMonths').required = false;
-    }
-}
-
         // Utility function to format currency
         function formatCurrency(amount, currency = 'MWK') {
             return `${currency} ${(amount || 0).toLocaleString()}`;
@@ -2148,27 +2073,6 @@ function toggleDurationDetails() {
             if (!dateString) return 'N/A';
             return new Date(dateString).toLocaleDateString();
         }
-
-        // Export functions for debugging
-        window.payrollFunctions = {
-            loadPayrollData,
-            viewPayrollDetails,
-            downloadPayslip,
-            processPayroll,
-            generateConsolidatedPayslips,
-            generateBankInstruction,
-            generateSpecificReport,
-            createFromPrevious,
-            approvePayroll,
-            rejectPayroll,
-            markAsPaid,
-            editField,
-            addCustomDeduction,
-            removeCustomDeduction,
-            addCustomEarning,
-            formatCurrency,
-            formatDate
-        };
     </script>
     <script src="/js/admin.js"></script>
 </body>
