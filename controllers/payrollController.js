@@ -4,16 +4,56 @@ const path = require('path');
 const Payroll = require('../models/Payroll');
 const Employee = require('../models/Employee');
 const Grade = require('../models/Grade');
+const CompanySettings = require('../models/CompanySettings');
 const moment = require('moment');
 const { v4: uuidv4 } = require('uuid');
 
-// Configuration
-const COMPANY_NAME = process.env.COMPANY_NAME || 'Norah Tech Supplies Ltd.';
-const COMPANY_ADDRESS = process.env.COMPANY_ADDRESS || 'Umoyo Building, Blantyre, Malawi';
-const COMPANY_LOGO = process.env.COMPANY_LOGO_PATH || path.join(process.cwd(), 'public', 'logo.png');
-const BANK_NAME = process.env.BANK_NAME || 'National Bank of Malawi';
-const COMPANY_ACCOUNT = process.env.COMPANY_ACCOUNT || '123456789';
+let COMPANY_NAME = '';
+let COMPANY_ADDRESS = '';
+let BANK_NAME = '';
+let COMPANY_ACCOUNT = '';
+let COMPANY_PHONE = '';
+let COMPANY_EMAIL = '';
+let COMPANY_CURRENCY = '';
+let COMPANY_TIN = '';
+
+
+// Initialize global company details
+async function loadCompanySettings() {
+  try {
+    const settings = await CompanySettings.getCompanySettings();
+    if (!settings) throw new Error('No company settings found!');
+
+    COMPANY_NAME = settings.companyName;
+    COMPANY_ADDRESS = settings.companyAddress;// fallback
+    BANK_NAME = settings.bankName;
+    COMPANY_ACCOUNT = settings.companyAccount;
+    COMPANY_PHONE = settings.phone || '';
+    COMPANY_EMAIL = settings.email || '';
+    COMPANY_CURRENCY = settings.currency || 'MWK';
+    COMPANY_TIN = settings.taxIdentificationNumber || '';
+
+    console.log('✅ Company settings loaded successfully');
+  } catch (err) {
+    console.error('❌ Error loading company settings:', err.message);
+    // Provide safe defaults to avoid breaking
+    COMPANY_NAME = 'Norah Tech Supplies Ltd.';
+    COMPANY_ADDRESS = 'Umoyo Building, Blantyre, Malawi';
+    COMPANY_LOGO = path.join(process.cwd(), 'public', 'logo.png');
+    BANK_NAME = 'National Bank of Malawi';
+    COMPANY_ACCOUNT = '123456789';
+    COMPANY_CURRENCY = 'MWK';
+  }
+}
+
+// Directory for storing generated payslips
 const PAYSLIP_DIR = process.env.PAYSLIP_DIR || path.join('/tmp', 'payslips');
+const COMPANY_LOGO = path.join(process.cwd(), 'public', 'logo.png');
+
+
+(async () => {
+  await loadCompanySettings();
+})();
 
 // Ensure directory exists
 try {
