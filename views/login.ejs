@@ -3,19 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TeamPay - Payment Required</title>
+    <title>TPS - Login</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
     <style>
         :root {
             --sidebar-dark-blue: #0a1f3a;
             --sidebar-dark-blue-hover: #0f2a4d;
             --golden-yellow: #e86029;
-            --golden-yellow-light: #f7d7b3;
+            --golden-yellow-light: #ffea99;
             --bg-white: #ffffff;
             --text-primary: #1e293b;
             --text-secondary: #64748b;
             --border-color: #e2e8f0;
-            --red-warning: #dc2626;
-            --red-light: #fee2e2;
+            --success-green: #28a745;
+            --danger-red: #dc3545;
+            --warning-orange: #fd7e14;
         }
 
         * {
@@ -25,7 +33,7 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Inter', sans-serif;
             background: linear-gradient(135deg, var(--sidebar-dark-blue) 0%, var(--sidebar-dark-blue-hover) 100%);
             min-height: 100vh;
             display: flex;
@@ -34,413 +42,604 @@
             padding: 20px;
         }
 
-        .container {
+        .main-container {
             background: var(--bg-white);
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(10, 31, 58, 0.3);
-            padding: 50px 40px;
-            max-width: 650px;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            max-width: 1000px;
             width: 100%;
+            min-height: 650px;
+            display: grid;
+            grid-template-columns: 45% 55%;
+        }
+
+        /* Left Sidebar */
+        .brand-section {
+            background: linear-gradient(135deg, var(--sidebar-dark-blue) 0%, var(--sidebar-dark-blue-hover) 100%);
+            padding: 60px 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
             text-align: center;
             position: relative;
             overflow: hidden;
         }
 
-        .container::before {
+        .brand-section::before {
             content: '';
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 6px;
-            background: linear-gradient(90deg, var(--red-warning) 0%, var(--golden-yellow) 100%);
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(232, 96, 41, 0.1) 0%, transparent 70%);
+            top: -100px;
+            left: -100px;
         }
 
-        .alert-icon {
-            width: 90px;
-            height: 90px;
-            background: linear-gradient(135deg, var(--red-warning) 0%, #ef4444 100%);
+        .brand-section::after {
+            content: '';
+            position: absolute;
+            width: 200px;
+            height: 200px;
             border-radius: 50%;
+            background: radial-gradient(circle, rgba(232, 96, 41, 0.05) 0%, transparent 70%);
+            bottom: -50px;
+            right: -50px;
+        }
+
+        .brand-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        .brand-logo {
+            width: 200px;
+            height: 250px;
+            border-radius: 24px;
             display: flex;
             align-items: center;
             justify-content: center;
             margin: 0 auto 30px;
-            animation: urgentPulse 1.5s infinite;
-            border: 4px solid var(--red-light);
+            overflow: hidden;
         }
 
-        @keyframes urgentPulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); box-shadow: 0 0 30px rgba(220, 38, 38, 0.5); }
-        }
-
-        .alert-icon::before {
-            content: '⚠';
-            font-size: 45px;
-            color: white;
-            font-weight: bold;
-        }
-
-        .status-badge {
-            display: inline-block;
-            background: var(--red-warning);
-            color: white;
-            padding: 12px 25px;
-            border-radius: 25px;
-            font-weight: 700;
-            font-size: 1rem;
-            margin-bottom: 25px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            animation: flash 2s infinite;
-        }
-
-        @keyframes flash {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
+        .brand-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
         }
 
         .brand-title {
-            font-size: 2.5rem;
+            color: var(--bg-white);
+            font-size: 2.8rem;
             font-weight: 700;
-            color: var(--sidebar-dark-blue);
-            margin-bottom: 10px;
+            margin-bottom: 15px;
+            letter-spacing: -0.02em;
         }
 
         .brand-subtitle {
+            color: var(--golden-yellow-light);
             font-size: 1.2rem;
-            color: var(--text-secondary);
-            margin-bottom: 30px;
-            font-weight: 500;
+            font-weight: 400;
+            opacity: 0.9;
+            margin-bottom: 40px;
         }
 
-        .main-heading {
-            font-size: 2.2rem;
-            color: var(--red-warning);
-            margin-bottom: 25px;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-
-        .urgent-message {
-            background: var(--red-light);
-            border: 2px solid var(--red-warning);
-            border-radius: 15px;
-            padding: 25px;
-            margin: 30px 0;
-            color: var(--text-primary);
-        }
-
-        .urgent-message h3 {
-            color: var(--red-warning);
-            font-size: 1.4rem;
-            margin-bottom: 15px;
-            font-weight: 700;
-        }
-
-        .message {
-            color: var(--text-primary);
-            font-size: 1.1rem;
-            line-height: 1.7;
-            margin-bottom: 20px;
-            font-weight: 500;
-        }
-
-        .highlight {
-            color: var(--red-warning);
-            font-weight: 700;
-            background: var(--red-light);
-            padding: 2px 6px;
-            border-radius: 4px;
-        }
-
-        .payment-details {
-            background: linear-gradient(135deg, #f8fafc 0%, var(--golden-yellow-light) 100%);
-            padding: 30px;
-            border-radius: 15px;
-            margin: 30px 0;
-            border: 2px solid var(--golden-yellow);
-        }
-
-        .payment-details h3 {
-            color: var(--sidebar-dark-blue);
-            font-size: 1.4rem;
-            margin-bottom: 20px;
-            font-weight: 700;
-        }
-
-        .payment-info {
+        .brand-features {
+            list-style: none;
             text-align: left;
-            max-width: 400px;
-            margin: 0 auto;
         }
 
-        .payment-info p {
-            margin-bottom: 10px;
-            color: var(--text-primary);
-            font-weight: 500;
-        }
-
-        .amount {
-            font-size: 1.3rem;
-            color: var(--red-warning);
-            font-weight: 800;
-        }
-
-        .action-buttons {
+        .brand-features li {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 1rem;
+            margin-bottom: 16px;
+            padding-left: 35px;
+            position: relative;
             display: flex;
-            gap: 15px;
-            justify-content: center;
-            flex-wrap: wrap;
-            margin: 40px 0;
+            align-items: center;
         }
 
-        .btn {
-            padding: 18px 35px;
-            border: none;
-            border-radius: 50px;
-            font-size: 1.1rem;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            display: inline-block;
-            min-width: 180px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .btn-urgent {
-            background: linear-gradient(135deg, var(--red-warning) 0%, #ef4444 100%);
-            color: white;
-            box-shadow: 0 8px 25px rgba(220, 38, 38, 0.4);
-            animation: buttonPulse 3s infinite;
-        }
-
-        @keyframes buttonPulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-        }
-
-        .btn-urgent:hover {
-            transform: translateY(-3px) scale(1.05);
-            box-shadow: 0 15px 40px rgba(220, 38, 38, 0.6);
-        }
-
-        .btn-contact {
-            background: transparent;
-            color: var(--sidebar-dark-blue);
-            border: 3px solid var(--sidebar-dark-blue);
-        }
-
-        .btn-contact:hover {
-            background: var(--sidebar-dark-blue);
-            color: white;
-            transform: translateY(-3px);
-        }
-
-        .developer-section {
-            background: var(--sidebar-dark-blue);
-            color: white;
-            padding: 30px;
-            border-radius: 15px;
-            margin-top: 30px;
-        }
-
-        .developer-title {
-            font-size: 1.4rem;
-            margin-bottom: 15px;
-            font-weight: 700;
-            color: var(--golden-yellow);
-        }
-
-        .contact-info {
+        .brand-features li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            width: 24px;
+            height: 24px;
+            background: var(--golden-yellow);
+            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 15px;
-            margin: 15px 0;
-            flex-wrap: wrap;
         }
 
-        .phone-number {
-            color: var(--golden-yellow);
-            font-weight: 800;
-            font-size: 1.3rem;
-            padding: 8px 15px;
-            background: rgba(232, 96, 41, 0.2);
-            border-radius: 25px;
-            border: 2px solid var(--golden-yellow);
+        .brand-features li::after {
+            content: '\2713';
+            position: absolute;
+            left: 6px;
+            color: white;
+            font-weight: bold;
+            font-size: 0.9rem;
         }
 
-        .consequences {
-            background: #fef2f2;
-            border: 2px solid var(--red-warning);
-            border-radius: 10px;
-            padding: 20px;
-            margin: 20px 0;
+        /* Right Form Section */
+        .form-section {
+            padding: 60px 50px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
 
-        .consequences h4 {
-            color: var(--red-warning);
-            font-size: 1.2rem;
-            margin-bottom: 10px;
-            font-weight: 700;
+        .form-header {
+            margin-bottom: 2px;
         }
 
-        .consequences ul {
-            text-align: left;
+        .form-header h2 {
             color: var(--text-primary);
+            font-size: 2.2rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+            letter-spacing: -0.01em;
+        }
+
+        .form-header p {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            font-weight: 400;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-label {
+            display: block;
+            color: var(--text-primary);
+            font-weight: 500;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 16px 20px;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 400;
+            color: var(--text-primary);
+            background: var(--bg-white);
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--golden-yellow);
+            box-shadow: 0 0 0 4px rgba(232, 96, 41, 0.1);
+        }
+
+        .form-control.is-invalid {
+            border-color: var(--danger-red);
+        }
+
+        .form-control::placeholder {
+            color: var(--text-secondary);
+            opacity: 0.7;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .password-toggle:hover {
+            color: var(--golden-yellow);
+            background: rgba(232, 96, 41, 0.1);
+        }
+
+        .form-options {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 32px 0;
+            font-size: 0.95rem;
+        }
+
+        .form-check {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-check-input {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border-color);
+            border-radius: 6px;
+            background: var(--bg-white);
+            cursor: pointer;
+        }
+
+        .form-check-input:checked {
+            background-color: var(--golden-yellow);
+            border-color: var(--golden-yellow);
+        }
+
+        .form-check-input:focus {
+            box-shadow: 0 0 0 4px rgba(232, 96, 41, 0.1);
+        }
+
+        .form-check-label {
+            color: var(--text-secondary);
+            cursor: pointer;
             font-weight: 500;
         }
 
-        .consequences li {
-            margin-bottom: 8px;
-            list-style-type: none;
-            position: relative;
-            padding-left: 25px;
+        .forgot-link {
+            color: var(--golden-yellow);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
         }
 
-        .consequences li::before {
-            content: '⚠';
-            position: absolute;
-            left: 0;
-            color: var(--red-warning);
-            font-weight: bold;
+        .forgot-link:hover {
+            color: var(--warning-orange);
+            text-decoration: underline;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, var(--golden-yellow) 0%, var(--warning-orange) 100%);
+            border: none;
+            border-radius: 12px;
+            color: var(--bg-white);
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(232, 96, 41, 0.3);
+        }
+
+        .login-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(232, 96, 41, 0.4);
+        }
+
+        .login-btn:active {
+            transform: translateY(0);
+        }
+
+        .login-btn:disabled {
+            opacity: 0.8;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .loading-spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top: 2px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            display: none;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .alert {
+            padding: 16px 20px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            border: none;
+            font-size: 0.95rem;
+            font-weight: 500;
+            border-left: 4px solid;
+        }
+
+        .alert-success {
+            background: rgba(40, 167, 69, 0.1);
+            color: var(--success-green);
+            border-left-color: var(--success-green);
+        }
+
+        .alert-danger {
+            background: rgba(220, 53, 69, 0.1);
+            color: var(--danger-red);
+            border-left-color: var(--danger-red);
+        }
+
+        .invalid-feedback {
+            color: var(--danger-red);
+            font-size: 0.875rem;
+            margin-top: 6px;
+            font-weight: 500;
+        }
+
+        @media (max-width: 992px) {
+            .main-container {
+                grid-template-columns: 1fr;
+                max-width: 500px;
+            }
+            
+            .brand-section {
+                padding: 40px 30px;
+                min-height: auto;
+            }
+            
+            .brand-title {
+                font-size: 2.2rem;
+            }
+            
+            .brand-features {
+                display: none;
+            }
+            
+            .form-section {
+                padding: 40px 35px;
+            }
         }
 
         @media (max-width: 768px) {
-            .container {
-                padding: 30px 20px;
-                margin: 10px;
+            body {
+                padding: 15px;
             }
-
-            .brand-title {
-                font-size: 2rem;
+            
+            .brand-section {
+                padding: 35px 25px;
             }
-
-            .main-heading {
+            
+            .form-section {
+                padding: 35px 25px;
+            }
+            
+            .form-header h2 {
                 font-size: 1.8rem;
             }
-
-            .action-buttons {
-                flex-direction: column;
-                align-items: center;
-            }
-
-            .btn {
-                width: 100%;
-                max-width: 280px;
-            }
-
-            .contact-info {
-                flex-direction: column;
-                gap: 10px;
+            
+            .brand-logo {
+                width: 100px;
+                height: 100px;
             }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="alert-icon"></div>
-        
-        <div class="status-badge">
-            Payment Overdue
-        </div>
-
-        <h1 class="brand-title">TeamPay</h1>
-        <p class="brand-subtitle">Payroll Management System</p>
-
-        <h2 class="main-heading">Payment Required</h2>
-
-        <div class="urgent-message">
-            <h3>IMMEDIATE ACTION REQUIRED</h3>
-            <p class="message">
-                Your trial period has <span class="highlight">EXPIRED</span> and payment for the TeamPay system development is now <span class="highlight">OVERDUE</span>.
-            </p>
-        </div>
-
-        <p class="message">
-            This system was custom developed for your organization by <strong>Sethnnections</strong>. The agreed trial period has ended, and <span class="highlight">immediate payment is required</span> to continue system access and avoid service disruption.
-        </p>
-
-        <div class="consequences">
-            <h4>Consequences of Non-Payment:</h4>
-            <ul>
-                <li>Immediate system access suspension</li>
-                <li>Loss of payroll processing capabilities</li>
-                <li>Potential data access restrictions</li>
-                <li>Additional late payment fees may apply</li>
-            </ul>
-        </div>
-
-        <div class="payment-details">
-            <h3>Settlement Required</h3>
-            <div class="payment-info">
-                <p><strong>System:</strong> TeamPay Payroll Management</p>
-                <p><strong>Developer:</strong> Sethnnections</p>
-                <p><strong>Status:</strong> <span class="highlight">Payment Overdue</span></p>
-                <p><strong>Action:</strong> <span class="amount">Pay immediately to restore access</span></p>
+    <div class="main-container">
+        <!-- Brand Section -->
+        <div class="brand-section">
+            <div class="brand-content">
+               
+                <h1 class="brand-title">TeamPay</h1>
+                <p class="brand-subtitle">Payroll Management System</p>
+                
+                <ul class="brand-features">
+                    <li>Secure employee data management</li>
+                    <li>Automated payroll processing</li>
+                    <li>Comprehensive reporting tools</li>
+                </ul>
             </div>
         </div>
 
-        <div class="action-buttons">
-            <a href="#" class="btn btn-urgent">Make Payment Now</a>
-            <a href="#" class="btn btn-contact">Contact Developer</a>
-        </div>
-
-        <div class="developer-section">
-            <h3 class="developer-title">Contact Sethnnections</h3>
-            <p>To settle your account and restore system access:</p>
-            <div class="contact-info">
-                <span class="phone-number">0992279994</span>
+        <!-- Form Section -->
+        <div class="form-section">
+            <div class="form-header">
+               <div class="brand-logo">
+                    <img src="/assets/logo.png" alt="TeamPay Logo" />
+                </div>
             </div>
-            <p style="margin-top: 15px; font-size: 0.95rem; opacity: 0.9;">
-                Professional development services require timely payment.<br>
-                Contact us immediately to resolve this matter.
-            </p>
+
+            <div id="alertContainer"></div>
+
+            <form id="loginForm" novalidate>
+                <div class="form-group">
+                    <label for="email" class="form-label">Email Address</label>
+                    <div class="input-wrapper">
+                        <input type="email" class="form-control" id="email" placeholder="Enter your email address" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="password" class="form-label">Password</label>
+                    <div class="input-wrapper">
+                        <input type="password" class="form-control" id="password" placeholder="Enter your password" required>
+                        <button type="button" class="password-toggle" id="togglePassword">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-options">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="rememberMe">
+                        <label class="form-check-label" for="rememberMe">
+                            Remember me
+                        </label>
+                    </div>
+                    <a href="#" class="forgot-link" id="forgotPassword">Forgot Password?</a>
+                </div>
+
+                <button type="submit" class="login-btn" id="loginBtn">
+                    <div class="btn-content">
+                        <div class="loading-spinner" id="loadingSpinner"></div>
+                        <span class="button-text">Sign In to Account</span>
+                    </div>
+                </button>
+            </form>
         </div>
     </div>
 
-    <!-- SweetAlert2 CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const urgentBtn = document.querySelector('.btn-urgent');
-            
-            // Add extra attention to the payment button
-            setInterval(() => {
-                urgentBtn.style.transform = 'scale(1.02)';
-                setTimeout(() => {
-                    urgentBtn.style.transform = 'scale(1)';
-                }, 200);
-            }, 4000);
+            const loginForm = document.getElementById('loginForm');
+            const emailInput = document.getElementById('email');
+            const passwordInput = document.getElementById('password');
+            const togglePassword = document.getElementById('togglePassword');
+            const rememberMe = document.getElementById('rememberMe');
+            const loginBtn = document.getElementById('loginBtn');
+            const alertContainer = document.getElementById('alertContainer');
+            const loadingSpinner = document.getElementById('loadingSpinner');
+            const buttonText = document.querySelector('.button-text');
 
-            // Button interactions
-            const buttons = document.querySelectorAll('.btn');
-            buttons.forEach(button => {
-                button.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    if (this.classList.contains('btn-urgent')) {
-                        Swal.fire({
-                            icon: 'warning',
-                            title: 'Payment Required',
-                            html: 'Please contact <b>Sethnnections</b> at <b>0992279994</b> to process your payment and restore system access.',
-                            confirmButtonText: 'OK',
-                            confirmButtonColor: '#e86029'
-                        });
-                    } else {
-                        Swal.fire({
-                            icon: 'info',
-                            title: 'Contact Developer',
-                            html: 'Contact <b>Sethnnections</b> at <b>0992279994</b> to discuss payment options.',
-                            confirmButtonText: 'OK',
-                            confirmButtonColor: '#0a1f3a'
-                        });
-                    }
-                });
+            // Toggle password visibility
+            togglePassword.addEventListener('click', function() {
+                const type = passwordInput.type === 'password' ? 'text' : 'password';
+                passwordInput.type = type;
+                this.querySelector('i').className = type === 'password' ? 'fas fa-eye' : 'fas fa-eye-slash';
             });
+
+            // Load remembered email if exists
+            const rememberedEmail = localStorage.getItem('rememberedEmail');
+            if (rememberedEmail) {
+                emailInput.value = rememberedEmail;
+                rememberMe.checked = true;
+            }
+
+            // Form submission
+            loginForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                // Validate form
+                if (!emailInput.value || !passwordInput.value) {
+                    if (!emailInput.value) {
+                        emailInput.classList.add('is-invalid');
+                    }
+                    if (!passwordInput.value) {
+                        passwordInput.classList.add('is-invalid');
+                    }
+                    return;
+                }
+
+                // Clear previous errors
+                emailInput.classList.remove('is-invalid');
+                passwordInput.classList.remove('is-invalid');
+                clearAlerts();
+
+                // Show loading state
+                setLoading(true);
+
+                try {
+                    const response = await fetch('/api/auth/login', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            email: emailInput.value,
+                            password: passwordInput.value
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        // Handle successful login
+                        if (rememberMe.checked) {
+                            localStorage.setItem('rememberedEmail', emailInput.value);
+                        } else {
+                            localStorage.removeItem('rememberedEmail');
+                        }
+
+                        // Store user data and token
+                        localStorage.setItem('authToken', data.token);
+                        localStorage.setItem('user', JSON.stringify(data.user));
+
+                        // showAlert('Login successful! Redirecting...', 'success');
+
+                        // Redirect based on role
+                        setTimeout(() => {
+                            switch(data.user.role) {
+                                case 'admin':
+                                    window.location.href = '/admin';
+                                    break;
+                                case 'hr':
+                                    window.location.href = '/hr';
+                                    break;
+                                case 'employee':
+                                    window.location.href = '/employee';
+                                    break;
+                                default:
+                                    window.location.href = '/';
+                            }
+                        }, 1500);
+                    } else {
+                        // Handle login error
+                        throw new Error(data.message || 'Login failed. Please try again.');
+                    }
+                } catch (error) {
+                    showAlert(error.message, 'danger');
+                } finally {
+                    setLoading(false);
+                }
+            });
+
+            // Helper functions
+            function setLoading(isLoading) {
+                if (isLoading) {
+                    loginBtn.disabled = true;
+                    loadingSpinner.style.display = 'block';
+                    buttonText.textContent = 'Authenticating...';
+                } else {
+                    loginBtn.disabled = false;
+                    loadingSpinner.style.display = 'none';
+                    buttonText.textContent = 'Sign In to Account';
+                }
+            }
+
+            function showAlert(message, type) {
+                const alertDiv = document.createElement('div');
+                alertDiv.className = `alert alert-${type}`;
+                alertDiv.textContent = message;
+                alertContainer.innerHTML = '';
+                alertContainer.appendChild(alertDiv);
+                
+                // Auto-dismiss success alerts
+                if (type === 'success') {
+                    setTimeout(() => {
+                        if (alertDiv.parentNode) {
+                            alertDiv.remove();
+                        }
+                    }, 3000);
+                }
+            }
+
+            function clearAlerts() {
+                alertContainer.innerHTML = '';
+            }
+
+            // Auto-focus email field
+            emailInput.focus();
         });
     </script>
 </body>
