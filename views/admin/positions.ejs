@@ -461,23 +461,30 @@
         // API functions
         async function apiRequest(url, options = {}) {
             try {
-                const response = await fetch(url, {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        ...options.headers
-                    },
-                    ...options
-                });
+            // Get token from localStorage or other source
+            const token = localStorage.getItem('authToken');
+            const headers = {
+                'Content-Type': 'application/json',
+                ...options.headers
+            };
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
 
-                if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-                    throw new Error(errorData.error || `HTTP ${response.status}`);
-                }
+            const response = await fetch(url, {
+                headers,
+                ...options
+            });
 
-                return await response.json();
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+                throw new Error(errorData.error || `HTTP ${response.status}`);
+            }
+
+            return await response.json();
             } catch (error) {
-                console.error('API request failed:', error);
-                throw error;
+            console.error('API request failed:', error);
+            throw error;
             }
         }
 

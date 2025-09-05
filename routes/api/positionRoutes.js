@@ -5,7 +5,10 @@ const { requireAdmin, requireHROrAdmin } = require('../../utils/auth');
 
 // Create new position (Admin/HR only)
 router.post('/', requireHROrAdmin, async (req, res) => {
+
   try {
+    console.log('Request Body:', req.body);
+    console.log('User Info:', req.user);
     const position = await positionController.createPosition(req.body, req.user.id);
     res.status(201).json(position);
   } catch (error) {
