@@ -385,13 +385,15 @@ payrollSchema.statics.calculateProgressiveTaxFallback = function(grossPay) {
   let remainingIncome = grossPay;
   let effectiveRate = 0;
 
-  // Default Malawi tax brackets (fallback)
+  // Default Malawi tax brackets (fallback old)
   const defaultBrackets = [
-    { min: 0, max: 150000, rate: 0 },
-    { min: 150001, max: 500000, rate: 25 },
-    { min: 500001, max: 2550000, rate: 30 },
-    { min: 2550001, max: null, rate: 35 }
+    { min: 0, max: 100000, rate: 0 },           // 0% for first 100k
+    { min: 100001, max: 330000, rate: 25 },     // 25% from 100,001 to 330,000
+    { min: 330001, max: 3000000, rate: 30 },    // 30% from 330,001 to 3,000,000
+    { min: 3000001, max: 6000000, rate: 35 },   // 35% from 3,000,001 to 6,000,000
+    { min: 6000001, max: null, rate: 40 }       // 40% for income above 6,000,000
   ];
+
 
   for (const bracket of defaultBrackets) {
     if (remainingIncome <= 0) break;
