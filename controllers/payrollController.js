@@ -21,7 +21,10 @@ let COMPANY_TIN = '';
 // Initialize global company details
 async function loadCompanySettings() {
   try {
-    const settings = await CompanySettings.getCompanySettings();
+
+    let settings = await CompanySettings.getCompanySettings();
+    settings = settings || {};
+
     if (!settings) throw new Error('No company settings found!');
 
     COMPANY_NAME = settings.companyName;
@@ -46,9 +49,10 @@ async function loadCompanySettings() {
   }
 }
 
+
 // Directory for storing generated payslips
 const PAYSLIP_DIR = process.env.PAYSLIP_DIR || path.join('/tmp', 'payslips');
-const COMPANY_LOGO = path.join(process.cwd(), 'public', 'logo.png');
+let COMPANY_LOGO = path.join(process.cwd(), 'public', 'logo.png');
 
 
 (async () => {

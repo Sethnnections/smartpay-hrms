@@ -1,3 +1,4 @@
+// server.js
 require('dotenv').config();
 const http = require('http');
 const logger = require('./utils/logger');
@@ -6,44 +7,34 @@ const app = require('./app');
 
 const port = process.env.PORT || 3000;
 
-// For Vercel serverless environment
-if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
-  // Initialize database connection for serverless
-  connectDB().catch(error => {
-    console.error('Database connection failed:', error);
-  });
-  
-  // Export the app for Vercel
-  module.exports = app;
-} else {
-  // Local development server
-  const server = http.createServer(app);
-  
-  const startServer = async () => {
-    try {
-      await connectDB();
-      server.listen(port, () => {
-        logger.info(`🚀 Server running on port ${port}`);
-        logger.info(`📁 Views: ${app.get('views')}`);
-        logger.info(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
-      });
-    } catch (error) {
-      logger.error('Failed to start server:', error);
-      process.exit(1);
-    }
-  };
+// Local development server only
+const server = http.createServer(app);
 
-  // Graceful shutdown
-  const shutdown = () => {
-    logger.info('🛑 Server is shutting down...');
-    server.close(() => {
-      logger.info('⛔ Server closed');
-      process.exit(0);
+const startServer = async () => {
+  try {
+    await connectDB();
+    server.listen(port, () => {
+      logger.info(` Server running on port ${port}`);
+      logger.info(` Views: ${app.get('views')}`);
+      logger.info(` Environment: ${process.env.NODE_ENV || 'development'}`);
+      logger.info(` MongoDB: Connected to local database`);
     });
-  };
+  } catch (error) {
+    logger.error('Failed to start server:', error);
+    process.exit(1);
+  }
+};
 
-  process.on('SIGTERM', shutdown);
-  process.on('SIGINT', shutdown);
+// Graceful shutdown
+const shutdown = () => {
+  logger.info(' Server is shutting down...');
+  server.close(() => {
+    logger.info(' Server closed');
+    process.exit(0);
+  });
+};
 
-  startServer();
-}
+process.on('SIGTERM', shutdown);
+process.on('SIGINT', shutdown);
+
+startServer();

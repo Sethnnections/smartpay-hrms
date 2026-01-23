@@ -3,7 +3,6 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const logger = require('../utils/logger');
 
-// Initialize default users (run once at startup)
 const initializeDefaultUsers = async () => {
   try {
     // Check if any users exist
@@ -12,8 +11,8 @@ const initializeDefaultUsers = async () => {
     if (userCount === 0) {
       // Create default admin
       const admin = new User({
-        email: process.env.ADMIN_EMAIL || 'admin@smartpay.com',
-        password: process.env.ADMIN_PASSWORD || 'SmartPay@2025',
+        email: 'admin@smartpay.com',
+        password: 'SmartPay@2025',
         role: 'admin',
         isActive: true
       });
@@ -21,8 +20,8 @@ const initializeDefaultUsers = async () => {
 
       // Create default HR user
       const hr = new User({
-        email: process.env.HR_EMAIL || 'hr@smartpay.com',
-        password: process.env.HR_PASSWORD || 'Hr@12345',
+        email: 'hr@smartpay.com',
+        password: 'Hr@12345',
         role: 'hr',
         isActive: true
       });
@@ -30,20 +29,23 @@ const initializeDefaultUsers = async () => {
 
       // Create default employee user
       const employee = new User({
-        email: process.env.EMPLOYEE_EMAIL || 'employee@smartpay.com',
-        password: process.env.EMPLOYEE_PASSWORD || 'Employee@123',
+        email: 'employee@smartpay.com',
+        password: 'Employee@123',
         role: 'employee',
         isActive: true
       });
       await employee.save();
 
       logger.info('Default users created successfully');
+      return true;
     }
+    return false;
   } catch (error) {
     logger.error('Error creating default users:', error);
     throw error;
   }
 };
+
 
 // User login for all roles
 const login = async (email, password) => {

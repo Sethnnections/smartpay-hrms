@@ -1,3 +1,4 @@
+// app.js
 require('dotenv').config();
 const express = require('express');
 const path = require('path');
@@ -7,28 +8,8 @@ const expressLayouts = require('express-ejs-layouts');
 const passport = require('./config/passport');
 const MongoStore = require('connect-mongo');
 const flash = require('connect-flash');
-const helmet = require('helmet');
-const compression = require('compression');
 
 const app = express();
-
-// Production optimizations
-if (process.env.NODE_ENV === 'production') {
-  app.set('trust proxy', 1);
-  app.use(compression());
-  app.use(helmet({
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        styleSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com"],
-        scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com"],
-        imgSrc: ["'self'", "data:", "https:", "blob:"],
-        fontSrc: ["'self'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com"],
-        connectSrc: ["'self'"]
-      },
-    },
-  }));
-}
 
 // View engine setup (EJS)
 app.set('views', path.join(__dirname, 'views'));
@@ -43,32 +24,24 @@ app.set('layout extractStyles', true);
 // Logging
 app.use(logger('dev'));
 
-// Body parsing middleware (only once)
+// Body parsing middleware
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// Static files configuration - FIXED FOR VERCEL
+// Static files configuration
 app.use(express.static(path.join(__dirname, 'public')));
-app.use('/public', express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Additional static file routes for better Vercel compatibility
-app.use('/css', express.static(path.join(__dirname, 'public/css')));
-app.use('/js', express.static(path.join(__dirname, 'public/js')));
-app.use('/images', express.static(path.join(__dirname, 'public/images')));
-app.use('/assets', express.static(path.join(__dirname, 'public/assets')));
-
-// Session configuration (only once, with MongoStore)
+// Session configuration with hardcoded MongoDB
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'your-secret-key',
+  secret: 'your-super-secret-session-key-here-change-this',
   resave: false,
   saveUninitialized: false,
   store: MongoStore.create({
-    mongoUrl: process.env.MONGODB_URI,
+    mongoUrl: 'mongodb://127.0.0.1:27017/smartpay-hrms',
     touchAfter: 24 * 3600 // lazy session update
   }),
   cookie: {
-    secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
     maxAge: 1000 * 60 * 60 * 24 * 7 // 1 week
   }
@@ -108,32 +81,8 @@ app.get('/health', (req, res) => {
   res.json({ 
     status: 'OK', 
     timestamp: new Date(),
-    environment: process.env.NODE_ENV 
+    environment: process.env.NODE_ENV || 'development'
   });
-});
-
-// Debug endpoint for static files (remove after fixing)
-app.get('/debug/static', (req, res) => {
-  const fs = require('fs');
-  try {
-    const publicPath = path.join(__dirname, 'public');
-    const publicExists = fs.existsSync(publicPath);
-    
-    let files = [];
-    if (publicExists) {
-      files = fs.readdirSync(publicPath, { recursive: true });
-    }
-    
-    res.json({
-      publicPath,
-      publicExists,
-      files: files.slice(0, 20), // First 20 files
-      nodeEnv: process.env.NODE_ENV,
-      isVercel: !!process.env.VERCEL
-    });
-  } catch (error) {
-    res.json({ error: error.message });
-  }
 });
 
 // Error handling

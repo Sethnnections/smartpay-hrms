@@ -85,7 +85,7 @@ const positionSchema = new mongoose.Schema({
     preferred: {
       type: String,
       enum: ['high_school', 'diploma', 'bachelor', 'master', 'phd'],
-      default: null // Change from empty string to null
+      required: false // Explicitly set as not required
     },
       field: {
         type: String,

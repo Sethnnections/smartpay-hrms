@@ -1508,7 +1508,10 @@ function editEmployee(employeeId) {
         // Emergency contact
         $('#edit-emergency-contact-name').val(employee.emergencyContact?.name || '');
         $('#edit-emergency-contact-relationship').val(employee.emergencyContact?.relationship || '');
-        $('#edit-ememergency-contact-phone').val(employee.emergencyContact?.phoneNumber || '');
+
+        $('#edit-emergency-contact-phone').val(employee.emergencyContact?.phoneNumber || '');
+
+
 
         // Populate dropdowns
         populateEditDropdowns();
