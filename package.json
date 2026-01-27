@@ -56,7 +56,8 @@
     "pdfkit": "^0.13.0",
     "puppeteer": "^19.11.1",
     "uuid": "^9.0.0",
-    "winston": "^3.8.2"
+    "winston": "^3.8.2",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@types/jest": "^29.5.1",
