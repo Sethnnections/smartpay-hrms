@@ -70,9 +70,9 @@ try {
 
 // Updated Color scheme - lighter, more professional
 const COLORS = {
-  primary: '#0b1f3a',      // Blue
-  secondary: '#64748b',    // Slate
-  accent: '#f59e0b',       // Amber
+  primary: '#6c0c0d',      // Blue
+  secondary: '#f1d5d1',    // Slate
+  accent: '#f19789',       // Amber
   text: '#374151',         // Gray-700
   textLight: '#6b7280',    // Gray-500
   success: '#10b981',      // Emerald

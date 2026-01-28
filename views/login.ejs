@@ -13,10 +13,11 @@
     
     <style>
         :root {
-            --sidebar-dark-blue: #0a1f3a;
-            --sidebar-dark-blue-hover: #0f2a4d;
-            --golden-yellow: #e86029;
-            --golden-yellow-light: #ffea99;
+       
+            --sidebar-dark-blue: #6c0c0d;
+            --sidebar-dark-blue-hover: #6c0c0d;
+            --golden-yellow: #f1d5d1;
+            --golden-yellow-light: #f19789;
             --bg-white: #ffffff;
             --text-primary: #1e293b;
             --text-secondary: #64748b;
@@ -120,7 +121,7 @@
         }
 
         .brand-subtitle {
-            color: var(--golden-yellow-light);
+            color: var(--bg-white);
             font-size: 1.2rem;
             font-weight: 400;
             opacity: 0.9;
@@ -305,7 +306,7 @@
         .login-btn {
             width: 100%;
             padding: 18px;
-            background: linear-gradient(135deg, var(--golden-yellow) 0%, var(--warning-orange) 100%);
+            background: linear-gradient(135deg, var(--sidebar-dark-blue) 0%, var(--sidebar-dark-blue-hover) 100%);
             border: none;
             border-radius: 12px;
             color: var(--bg-white);
@@ -438,7 +439,9 @@
         <div class="brand-section">
             <div class="brand-content">
                
-                <h1 class="brand-title">TeamPay</h1>
+                <div class="brand-logo">
+                    <img src="/simamalogo.png" alt="TeamPay Logo" />
+                </div>
                 <p class="brand-subtitle">Payroll Management System</p>
                 
                 <ul class="brand-features">
@@ -452,9 +455,8 @@
         <!-- Form Section -->
         <div class="form-section">
             <div class="form-header">
-               <div class="brand-logo">
-                    <img src="/assets/logo.png" alt="TeamPay Logo" />
-                </div>
+                <h2>Welcome Back!</h2>
+                <p>Please sign in to your account</p>
             </div>
 
             <div id="alertContainer"></div>

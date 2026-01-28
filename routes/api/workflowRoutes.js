@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const WorkflowController = require('../controllers/WorkflowController');
+const WorkflowController = require('../../controllers/WorkflowController');
 
 // Check current month workflow status
 router.get('/status', async (req, res) => {

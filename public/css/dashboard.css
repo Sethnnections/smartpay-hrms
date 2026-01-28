@@ -1,3 +1,21 @@
+  
+   :root{  
+
+            --sidebar-dark-blue: #6c0c0d;
+            --sidebar-dark-blue-hover: #f19789;
+            --golden-yellow: #f1d5d1;
+            --golden-yellow-light: #f7f2f2;
+            --bg-white: #ffffff;
+            --text-primary: #181f2b;
+            --text-secondary: #64748b;
+            --border-color: #e2e8f0;
+            --success-green: #28a745;
+            --danger-red: #dc3545;
+            --warning-orange: #fd7e14;
+            --sidebar-width: 280px; 
+            --header-height: 70px;
+   }
+
 /* Loading Spinner */
 .loading-spinner {
     position: fixed;
@@ -21,14 +39,14 @@
 .card {
     border: none;
     border-radius: 10px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    box-shadow: var(--sidebar-dark-blue);
     transition: all 0.3s ease;
     background-color: var(--bg-white);
     border: 1px solid var(--border-color);
 }
 
 .card:hover {
-    box-shadow: 0 10px 15px rgba(10, 31, 58, 0.1);
+    box-shadow: 0 10px 15px var(--d);
 }
 
 .card-title {
@@ -47,12 +65,21 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: rgba(10, 31, 58, 0.1) !important;
+    background-color: var(--sidebar-dark-blue);
 }
 
 .avatar-title {
     font-size: 1rem;
-    color: var(--text-primary);
+    color: var(--bg-white); 
+    background-color: var(--sidebar-dark-blue); 
+    border-radius: 0.375rem;
+}
+
+.avatar-title2 {
+    font-size: 1rem;
+    color: var(--bg-white); 
+    border-radius: 0.375rem;
+    background-color: var(--golden-yellow-light);
 }
 
 /* Chart Containers */
@@ -67,14 +94,14 @@
 }
 
 .period-btn:hover {
-    background-color: rgba(10, 31, 58, 0.1);
+    background-color: var(--sidebar-dark-blue);
     border-color: var(--border-color);
 }
 
 .period-btn.active {
-    background-color: #0a1f3a;
+    background-color:var(--sidebar-dark-blue);
     color: white;
-    border-color: #0a1f3a;
+    border-color:var(--sidebar-dark-blue);
 }
 
 /* Dropdowns */
@@ -84,14 +111,14 @@
 }
 
 .btn-outline-secondary:hover {
-    background-color: rgba(10, 31, 58, 0.1);
+    background-color: var(--sidebar-dark-blue);
     border-color: var(--border-color);
     color: var(--text-primary);
 }
 
 .dropdown-menu {
     border: 1px solid var(--border-color);
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 4px 6px var(--sidebar-dark-blue);
 }
 
 .dropdown-item {
@@ -99,12 +126,12 @@
 }
 
 .dropdown-item:hover, .dropdown-item:focus {
-    background-color: rgba(10, 31, 58, 0.1);
+    background-color: var(--sidebar-dark-blue);
     color: var(--text-primary);
 }
 
 .dropdown-item.active {
-    background-color: #0a1f3a;
+    background-color:var(--sidebar-dark-blue);
     color: white;
 }
 
@@ -114,7 +141,7 @@
 }
 
 .text-primary {
-    color: #0a1f3a !important;
+    color:var(--sidebar-dark-blue) !important;
 }
 
 .text-success {
@@ -122,21 +149,21 @@
 }
 
 .text-danger {
-    color: #e86029 !important;
+    color: #f19789 !important;
 }
 
 .text-warning {
-    color: #e86029 !important;
+    color: #f19789 !important;
 }
 
 .text-info {
-    color: #0a1f3a !important;
+    color:var(--sidebar-dark-blue) !important;
 }
 
 /* Chart Colors */
 :root {
-    --chart-blue: #0a1f3a;
-    --chart-orange: #e86029;
+    --chart-blue:var(--sidebar-dark-blue);
+    --chart-orange: #f19789;
     --chart-orange-light: #f7d7b3;
     --chart-green: #28a745;
     --chart-gray: #e2e8f0;
@@ -156,27 +183,27 @@
 
 /* Summary Cards Styling */
 .summary-card-employees {
-    background-color: #0a1f3a;
+    background-color:var(--sidebar-dark-blue);
     color: white;
-    border-left: 4px solid #e86029;
+    border-left: 4px solid #f19789;
 }
 
 .summary-card-departments {
     background-color: #ffffff;
-    color: #0a1f3a;
+    color:var(--sidebar-dark-blue);
     border-left: 4px solid #28a745;
 }
 
 .summary-card-payroll {
     background-color: #ffffff;
-    color: #0a1f3a;
+    color:var(--sidebar-dark-blue);
     border-left: 4px solid #0d6efd;
 }
 
 .summary-card-turnover {
     background-color: #ffffff;
-    color: #0a1f3a;
-    border-left: 4px solid #e86029;
+    color:var(--sidebar-dark-blue);
+    border-left: 4px solid #f19789;
 }
 
 /* Card Content Styling */
@@ -196,8 +223,8 @@
 .summary-card-departments .avatar-title,
 .summary-card-payroll .avatar-title,
 .summary-card-turnover .avatar-title {
-    background-color: rgba(10, 31, 58, 0.1) !important;
-    color: #0a1f3a !important;
+    background-color: var(--sidebar-dark-blue) !important;
+    color:var(--sidebar-dark-blue) !important;
 }
 
 /* Money Amount Styling */
@@ -218,7 +245,7 @@
 
 .card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 10px 20px rgba(10, 31, 58, 0.15);
+    box-shadow: 0 10px 20px var(--sidebar-dark-blue);
 }
 
 /* Responsive Adjustments */

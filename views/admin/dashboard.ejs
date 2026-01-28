@@ -115,7 +115,7 @@
                                         <small class="text-muted">Avg. Salary: <span id="avgSalary">--</span></small>
                                     </div>
                                     <div class="avatar-sm">
-                                        <span class="avatar-title rounded-circle">
+                                        <span class="avatar-title2 rounded-circle">
                                             <i class="fas fa-money-bill-wave"></i>
                                         </span>
                                     </div>
@@ -135,7 +135,7 @@
                                         <small class="text-danger" id="terminations"><i class="fas fa-caret-down me-1"></i> -- terminations</small>
                                     </div>
                                     <div class="avatar-sm">
-                                        <span class="avatar-title rounded-circle">
+                                        <span class="avatar-title2 rounded-circle">
                                             <i class="fas fa-exchange-alt"></i>
                                         </span>
                                     </div>
@@ -537,9 +537,9 @@
                 datasets: [{
                     label: label,
                     data: data,
-                    borderColor: '#0a1f3a',
+                    borderColor: '#6c0c0d',
                     backgroundColor: 'rgba(10, 31, 58, 0.1)',
-                    pointBackgroundColor: '#0a1f3a',
+                    pointBackgroundColor: '#6c0c0d',
                     borderWidth: 2,
                     tension: 0.4,
                     fill: true,
@@ -656,7 +656,7 @@
                 labels: ['Active Employees', 'Inactive Employees'],
                 datasets: [{
                     data: [activeCount, inactiveCount],
-                    backgroundColor: ['#0a1f3a', '#e86029'],
+                    backgroundColor: ['#6c0c0d', '#e86029'],
                     borderWidth: 1
                 }]
             },
@@ -733,7 +733,7 @@
     }
     
     function generateColors(count) {
-        const baseColors = ['#0a1f3a', '#e86029', '#f7d7b3', '#0f2a4d'];
+        const baseColors = ['#6c0c0d', '#e86029', '#f7d7b3', '#0f2a4d'];
         const colors = [];
         
         for (let i = 0; i < count; i++) {
