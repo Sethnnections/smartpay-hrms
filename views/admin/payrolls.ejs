@@ -1807,53 +1807,72 @@
         }
 
         // Generate bank instruction
-        async function generateBankInstruction() {
-            const month = document.getElementById('selectedMonth').value;
-            if (!month) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Warning',
-                    text: 'Please select a month first'
-                });
-                return;
+            async function generateBankInstruction() {
+    const month = document.getElementById('selectedMonth').value;
+    if (!month) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Warning',
+            text: 'Please select a month first'
+        });
+        return;
+    }
+
+    try {
+        showLoading(true);
+        
+        // Since you already have axios.defaults.headers.common['Authorization'] set globally,
+        // you don't need to add it again here
+        const response = await axios.post('/payroll/export/bank-instruction/excel', 
+            { month }, 
+            { 
+                responseType: 'blob'
+                // Removed headers since axios defaults are already set
             }
+        );
 
-            try {
-                showLoading(true);
-                
-                const response = await axios.post('/payroll/bank-instruction', 
-                    { month }, 
-                    { responseType: 'blob' }
-                );
+        const blob = new Blob([response.data], { 
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+        });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `bank_instruction_${month}.xlsx`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
 
-                const blob = new Blob([response.data], { type: 'application/pdf' });
-                const url = window.URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = `bank_instruction_${month}.pdf`;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                window.URL.revokeObjectURL(url);
-
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Success',
-                    text: 'Bank instruction generated successfully',
-                    timer: 2000,
-                    showConfirmButton: false
-                });
-            } catch (error) {
-                console.error('Error generating bank instruction:', error);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'Failed to generate bank instruction'
-                });
-            } finally {
-                showLoading(false);
+        Swal.fire({
+            icon: 'success',
+            title: 'Success',
+            text: 'Bank instruction Excel file generated successfully',
+            timer: 2000,
+            showConfirmButton: false
+        });
+    } catch (error) {
+        console.error('Error generating bank instruction:', error);
+        
+        let errorMessage = 'Failed to generate bank instruction Excel file';
+        if (error.response) {
+            if (error.response.status === 403) {
+                errorMessage = 'Access denied. Finance/Admin role required.';
+            } else if (error.response.status === 404) {
+                errorMessage = 'No payroll data found for the selected month';
+            } else if (error.response.status === 500) {
+                errorMessage = 'Server error occurred';
             }
         }
+
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: errorMessage
+        });
+    } finally {
+        showLoading(false);
+    }
+}
 
         // Show reports modal
         function showReportsModal() {

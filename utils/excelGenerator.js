@@ -9,7 +9,7 @@ const excelGenerator = {
     
     // Set company details
     worksheet.mergeCells('A1:E1');
-    worksheet.getCell('A1').value = companyDetails.name;
+    worksheet.getCell('A1').value = companyDetails?.name || 'Company Name';
     worksheet.getCell('A1').font = { size: 16, bold: true };
     worksheet.getCell('A1').alignment = { horizontal: 'center' };
     
@@ -21,6 +21,9 @@ const excelGenerator = {
     worksheet.mergeCells('A3:E3');
     worksheet.getCell('A3').value = `Generated: ${moment().format('DD MMM YYYY HH:mm')}`;
     worksheet.getCell('A3').alignment = { horizontal: 'center' };
+    
+    // Add empty row
+    worksheet.addRow([]);
     
     // Add headers
     const headers = ['#', 'Employee Name', 'Bank Name', 'Account Number', 'Net Pay', 'Currency'];
@@ -36,27 +39,47 @@ const excelGenerator = {
     };
     headerRow.font.color = { argb: 'FFFFFFFF' };
     
+    // Check if payrolls exists and has data
+    if (!payrolls || !Array.isArray(payrolls) || payrolls.length === 0) {
+      worksheet.addRow(['No payroll data found for the selected period']);
+      return workbook;
+    }
+    
     // Add data
     let totalAmount = 0;
+    let rowNumber = 1;
+    
     payrolls.forEach((payroll, index) => {
-      const emp = payroll.employeeId || {};
-      const personal = emp.personalInfo || {};
-      const bankInfo = emp.bankInfo || {};
+      // Add null/undefined checks
+      const emp = payroll?.employeeId || {};
+      const personal = emp?.personalInfo || {};
+      const bankInfo = emp?.bankInfo || {};
+      
+      const firstName = personal?.firstName || '';
+      const lastName = personal?.lastName || '';
+      const employeeName = `${firstName} ${lastName}`.trim() || 'N/A';
+      const bankName = bankInfo?.bankName || 'N/A';
+      const accountNumber = bankInfo?.accountNumber || 'N/A';
+      const netPay = payroll?.netPay || 0;
+      const currency = payroll?.currency || 'MWK';
       
       const row = worksheet.addRow([
-        index + 1,
-        `${personal.firstName || ''} ${personal.lastName || ''}`,
-        bankInfo.bankName || 'N/A',
-        bankInfo.accountNumber || 'N/A',
-        payroll.netPay || 0,
-        payroll.currency || 'MWK'
+        rowNumber,
+        employeeName,
+        bankName,
+        accountNumber,
+        netPay,
+        currency
       ]);
       
-      totalAmount += payroll.netPay || 0;
+      totalAmount += netPay;
+      rowNumber++;
     });
     
-    // Add total row
+    // Add empty row
     worksheet.addRow([]);
+    
+    // Add total row
     const totalRow = worksheet.addRow(['', '', '', 'TOTAL:', totalAmount, payrolls[0]?.currency || 'MWK']);
     totalRow.font = { bold: true };
     totalRow.fill = {
@@ -67,7 +90,11 @@ const excelGenerator = {
     
     // Auto-fit columns
     worksheet.columns.forEach(column => {
-      column.width = column.header.length < 12 ? 12 : column.header.length;
+      if (column.header && column.header.length) {
+        column.width = Math.max(column.header.length, 12);
+      } else {
+        column.width = 12;
+      }
     });
     
     return workbook;
