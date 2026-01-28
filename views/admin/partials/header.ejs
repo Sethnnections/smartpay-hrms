@@ -1,22 +1,111 @@
+<style>
+:root {
+  --sidebar-dark-blue: #6c0c0d;
+}
+
+/* HEADER */
+.top-header {
+  background: #ffffff;
+  padding: 10px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #eee;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.sidebar-toggle {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: var(--sidebar-dark-blue);
+  cursor: pointer;
+}
+
+.page-title {
+  margin: 0;
+  font-size: 18px;
+  color: var(--sidebar-dark-blue);
+}
+
+/* USER SECTION */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.user-details h6,
+.user-details small {
+  margin: 0;
+  color: var(--sidebar-dark-blue);
+  text-align: right;
+}
+
+.logout-btn {
+  background: none;
+  border: none;
+  color: var(--sidebar-dark-blue);
+  font-size: 14px;
+  cursor: pointer;
+}
+</style>
+
 <header class="top-header">
-    <div class="header-left">
-        <button class="sidebar-toggle" id="sidebarToggle">
-            <i class="fas fa-bars"></i>
-        </button>
-        <h1 class="page-title"><%= title %></h1>
-    </div>
-    <div class="header-right">
-        <div class="user-info">
-            <div class="user-details">
-                <h6><%= user.name %></h6>
-                <small><%= user.email %></small>
-            </div>
-            <div class="user-avatar"><%= user.avatar %></div>
-        </div>
-        <form method="POST" action="/admin/logout" style="display: inline;">
-            <button type="submit" class="btn logout-btn" onclick="return confirm('Are you sure you want to logout?')">
-                <i class="fas fa-sign-out-alt me-1"></i>Logout
-            </button>
-        </form>
-    </div>
+  <div class="header-left">
+    <button class="sidebar-toggle" id="sidebarToggle">
+      <i class="fas fa-bars"></i>
+    </button>
+    <h1 class="page-title">Dashboard</h1>
+  </div>
+
+  <div class="header-right" id="headerUserSection"></div>
 </header>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const userData = localStorage.getItem("user");
+  const headerSection = document.getElementById("headerUserSection");
+
+  if (userData) {
+    const user = JSON.parse(userData);
+
+    headerSection.innerHTML = `
+      <div class="user-details">
+        <h6>${user.role}</h6>
+        <small>${user.email}</small>
+      </div>
+      <button class="logout-btn" id="logoutBtn">
+        <i class="fas fa-sign-out-alt"></i> Logout
+      </button>
+    `;
+
+    document.getElementById("logoutBtn").addEventListener("click", () => {
+      Swal.fire({
+        title: "Logout?",
+        text: "You will be logged out.",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#6c0c0d",
+        cancelButtonColor: "#999",
+        confirmButtonText: "Logout"
+      }).then((result) => {
+        if (result.isConfirmed) {
+          localStorage.removeItem("user");
+          localStorage.removeItem("token");
+          window.location.href = "/";
+        }
+      });
+    });
+
+  } else {
+    window.location.href = "/";
+  }
+});
+</script>
