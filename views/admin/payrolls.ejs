@@ -290,7 +290,7 @@
 
     <!-- Main -->
     <div class="main-content" id="mainContent">
-        <%- include('./partials/header', { title: 'Payroll Management', user: typeof user !== 'undefined' ? user : { name: 'User' } }) %>
+        <%- include('./partials/header', { title: 'Processed payrolls and reports generation', user: typeof user !== 'undefined' ? user : { name: 'User' } }) %>
 
         <!-- Page Content -->
         <main class="dashboard-content">
@@ -1886,56 +1886,150 @@
         }
 
         // Generate specific report from report card click
-        async function generateSpecificReport(reportType) {
-            const month = document.getElementById('reportMonth').value || document.getElementById('selectedMonth').value;
-            if (!month) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Warning',
-                    text: 'Please select a month first'
-                });
-                return;
+            // Generate specific report from report card click
+async function generateSpecificReport(reportType) {
+    const month = document.getElementById('reportMonth').value || document.getElementById('selectedMonth').value;
+    if (!month) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Warning',
+            text: 'Please select a month first'
+        });
+        return;
+    }
+
+    try {
+        // Show format selection for PAYE and Pension reports
+        if (reportType === 'paye' || reportType === 'pension') {
+            const { value: format } = await Swal.fire({
+                title: 'Select Export Format',
+                text: 'Choose the format for your report',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Continue',
+                cancelButtonText: 'Cancel',
+                input: 'select',
+                inputOptions: {
+                    'pdf': 'PDF Document',
+                    'excel': 'Excel Spreadsheet'
+                },
+                inputPlaceholder: 'Select format',
+                inputValidator: (value) => {
+                    if (!value) {
+                        return 'Please select a format';
+                    }
+                }
+            });
+
+            if (!format) return;
+
+            await generateReportWithFormat(reportType, month, format);
+        } else {
+            // For other reports, use PDF only
+            await generateReportPDF(reportType, month);
+        }
+        
+    } catch (error) {
+        console.error('Error generating report:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: `Failed to generate ${reportType.toUpperCase()} report`
+        });
+    } finally {
+        showLoading(false);
+    }
+}
+
+// Generate report with specific format
+async function generateReportWithFormat(reportType, month, format = 'pdf') {
+    try {
+        showLoading(true);
+        
+        let endpoint, fileName, contentType;
+        
+        if (format === 'excel') {
+            switch(reportType) {
+                case 'paye':
+                    endpoint = '/payroll/export/paye/excel';
+                    break;
+                case 'pension':
+                    endpoint = '/payroll/export/pension/excel';
+                    break;
+                default:
+                    endpoint = `/payroll/report/${reportType}`;
+                    format = 'pdf'; // Fallback to PDF for other types
             }
+        } else {
+            endpoint = `/payroll/report/${reportType}`;
+        }
+        
+        if (format === 'excel') {
+            contentType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+            fileName = `${reportType}_report_${month}.xlsx`;
+        } else {
+            contentType = 'application/pdf';
+            fileName = `${reportType}_report_${month}.pdf`;
+        }
 
-            try {
-                showLoading(true);
-                
-                const response = await axios.post(`/payroll/report/${reportType}`, 
-                    { month }, 
-                    { responseType: 'blob' }
-                );
+        const response = await axios.post(endpoint, 
+            { month }, 
+            { responseType: 'blob' }
+        );
 
-                const blob = new Blob([response.data], { type: 'application/pdf' });
-                const url = window.URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = `${reportType}_report_${month}.pdf`;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                window.URL.revokeObjectURL(url);
+        const blob = new Blob([response.data], { type: contentType });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
 
-                // Close modal
-                bootstrap.Modal.getInstance(document.getElementById('reportsModal')).hide();
+        // Close modal if open
+        const reportsModal = document.getElementById('reportsModal');
+        if (reportsModal) {
+            const modal = bootstrap.Modal.getInstance(reportsModal);
+            if (modal) modal.hide();
+        }
 
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Success',
-                    text: `${reportType.toUpperCase()} report generated successfully`,
-                    timer: 2000,
-                    showConfirmButton: false
-                });
-            } catch (error) {
-                console.error('Error generating report:', error);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: `Failed to generate ${reportType.toUpperCase()} report`
-                });
-            } finally {
-                showLoading(false);
+        Swal.fire({
+            icon: 'success',
+            title: 'Success',
+            text: `${reportType.toUpperCase()} report generated successfully as ${format.toUpperCase()}`,
+            timer: 2000,
+            showConfirmButton: false
+        });
+    } catch (error) {
+        console.error(`Error generating ${reportType} report (${format}):`, error);
+        
+        let errorMessage = `Failed to generate ${reportType.toUpperCase()} ${format.toUpperCase()} report`;
+        if (error.response) {
+            if (error.response.status === 403) {
+                errorMessage = 'Access denied. Admin/HR/Finance role required.';
+            } else if (error.response.status === 404) {
+                errorMessage = 'No data found for the selected month';
+            } else if (error.response.status === 500) {
+                errorMessage = 'Server error occurred';
             }
         }
+
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: errorMessage
+        });
+        throw error; // Re-throw to be caught by parent function
+    } finally {
+        showLoading(false);
+    }
+}
+
+// Generate PDF report (for backward compatibility)
+async function generateReportPDF(reportType, month) {
+    await generateReportWithFormat(reportType, month, 'pdf');
+}
 
         // Generate selected report from dropdown
         async function generateSelectedReport() {

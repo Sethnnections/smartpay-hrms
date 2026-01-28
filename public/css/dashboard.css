@@ -47,7 +47,14 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: rgba(10, 31, 58, 0.1) !important;
+    background-color: white;
+    color: #ebe1e1;
+}
+
+.avatar-sm span i {
+    font-size: 1.5rem; /* Adjust icon size */
+    color: var(--sidebar-dark-blue); /* Use a variable for color */
+    margin-right: 0.5rem; /* Space between icon and text */
 }
 
 .avatar-title {
@@ -156,27 +163,32 @@
 
 /* Summary Cards Styling */
 .summary-card-employees {
-    background-color: #0a1f3a;
+    background-color: var(--sidebar-dark-blue);
     color: white;
-    border-left: 4px solid #e86029;
+    border-left: 4px solid #f19789;
+}
+
+.summary-card-active {
+    color: white;
+    border-left: 4px solid #f19789;
 }
 
 .summary-card-departments {
     background-color: #ffffff;
     color: #0a1f3a;
-    border-left: 4px solid #28a745;
+    border-left: 4px solid #f19789;
 }
 
 .summary-card-payroll {
     background-color: #ffffff;
     color: #0a1f3a;
-    border-left: 4px solid #0d6efd;
+    border-left: 4px solid #f19789;
 }
 
 .summary-card-turnover {
     background-color: #ffffff;
     color: #0a1f3a;
-    border-left: 4px solid #e86029;
+    border-left: 4px solid #f19789;
 }
 
 /* Card Content Styling */
