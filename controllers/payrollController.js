@@ -5,6 +5,8 @@ const Payroll = require('../models/Payroll');
 const Employee = require('../models/Employee');
 const Grade = require('../models/Grade');
 const CompanySettings = require('../models/CompanySettings');
+const excelGenerator = require('../utils/excelGenerator'); 
+
 const moment = require('moment');
 const { v4: uuidv4 } = require('uuid');
 
@@ -36,15 +38,15 @@ async function loadCompanySettings() {
     COMPANY_CURRENCY = settings.currency || 'MWK';
     COMPANY_TIN = settings.taxIdentificationNumber || '';
 
-    console.log('✅ Company settings loaded successfully');
+    console.log(' Company settings loaded successfully');
   } catch (err) {
-    console.error('❌ Error loading company settings:', err.message);
+    console.error(' Error loading company settings:', err.message);
     // Provide safe defaults to avoid breaking
-    COMPANY_NAME = 'Norah Tech Supplies Ltd.';
-    COMPANY_ADDRESS = 'Umoyo Building, Blantyre, Malawi';
+    COMPANY_NAME = 'Simama Hotel';
+    COMPANY_ADDRESS = 'Falls Estate M1 Rd, Lilongwe';
     COMPANY_LOGO = path.join(process.cwd(), 'public', 'logo.png');
     BANK_NAME = 'National Bank of Malawi';
-    COMPANY_ACCOUNT = '123456789';
+    COMPANY_ACCOUNT = 'xxxxxxxxxxx';
     COMPANY_CURRENCY = 'MWK';
   }
 }
@@ -52,7 +54,7 @@ async function loadCompanySettings() {
 
 // Directory for storing generated payslips
 const PAYSLIP_DIR = process.env.PAYSLIP_DIR || path.join('/tmp', 'payslips');
-let COMPANY_LOGO = path.join(process.cwd(), 'public', 'logo.png');
+let COMPANY_LOGO = path.join(process.cwd(), 'public', 'simamalogo.png');
 
 
 (async () => {
@@ -2233,6 +2235,167 @@ addCustomEarning: async (payrollId, earningData, userId) => {
     return payroll;
   } catch (error) {
     throw error;
+  }
+}
+,
+// Add these methods to payrollController object:
+generateBankInstructionExcel: async function(res, options = {}, requestedBy = {}) {
+  try {
+    const { month, startDate, endDate } = options;
+    
+    if (!month && !(startDate && endDate)) {
+      throw new Error('Provide either month (YYYY-MM) or startDate and endDate (YYYY-MM-DD).');
+    }
+
+    const query = { isActive: true };
+    if (month) {
+      query.payrollMonth = month;
+    } else {
+      const sd = new Date(startDate);
+      const ed = new Date(endDate);
+      query['payPeriod.startDate'] = { $gte: sd };
+      query['payPeriod.endDate'] = { $lte: ed };
+    }
+
+    const payrolls = await Payroll.find(query)
+      .populate({
+        path: 'employeeId',
+        populate: [
+          { path: 'employmentInfo.departmentId', select: 'name code' }
+        ]
+      })
+      .sort({ 'employeeId.personalInfo.lastName': 1 })
+      .lean();
+
+    if (!payrolls || payrolls.length === 0) {
+      return res.status(404).json({ error: 'No payroll records found.' });
+    }
+
+    const fileLabel = month ? month : `${startDate}_to_${endDate}`;
+    const filename = `bank_instruction_${fileLabel}.xlsx`;
+    
+    const companyDetails = {
+      name: COMPANY_NAME,
+      address: COMPANY_ADDRESS,
+      bank: BANK_NAME,
+      account: COMPANY_ACCOUNT
+    };
+
+    const workbook = await excelGenerator.generateBankInstructionExcel(payrolls, companyDetails);
+    
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    
+    await workbook.xlsx.write(res);
+    res.end();
+    
+  } catch (err) {
+    console.error('generateBankInstructionExcel error:', err);
+    if (!res.headersSent) {
+      res.status(500).json({ error: err.message || 'Failed to generate Excel' });
+    }
+  }
+},
+
+generatePAYEExcel: async function(res, options = {}, requestedBy = {}) {
+  try {
+    const { month, startDate, endDate } = options;
+    
+    if (!month && !(startDate && endDate)) {
+      throw new Error('Provide either month (YYYY-MM) or startDate and endDate (YYYY-MM-DD).');
+    }
+
+    const query = { isActive: true };
+    if (month) {
+      query.payrollMonth = month;
+    } else {
+      const sd = new Date(startDate);
+      const ed = new Date(endDate);
+      query['payPeriod.startDate'] = { $gte: sd };
+      query['payPeriod.endDate'] = { $lte: ed };
+    }
+
+    const payrolls = await Payroll.find(query)
+      .populate({
+        path: 'employeeId',
+        populate: [
+          { path: 'employmentInfo.departmentId', select: 'name code' }
+        ]
+      })
+      .sort({ 'employeeId.personalInfo.lastName': 1 })
+      .lean();
+
+    if (!payrolls || payrolls.length === 0) {
+      return res.status(404).json({ error: 'No payroll records found.' });
+    }
+
+    const fileLabel = month ? month : `${startDate}_to_${endDate}`;
+    const filename = `paye_report_${fileLabel}.xlsx`;
+    
+    const workbook = await excelGenerator.generatePAYEExcel(payrolls);
+    
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    
+    await workbook.xlsx.write(res);
+    res.end();
+    
+  } catch (err) {
+    console.error('generatePAYEExcel error:', err);
+    if (!res.headersSent) {
+      res.status(500).json({ error: err.message || 'Failed to generate Excel' });
+    }
+  }
+},
+
+generatePensionExcel: async function(res, options = {}, requestedBy = {}) {
+  try {
+    const { month, startDate, endDate } = options;
+    
+    if (!month && !(startDate && endDate)) {
+      throw new Error('Provide either month (YYYY-MM) or startDate and endDate (YYYY-MM-DD).');
+    }
+
+    const query = { isActive: true };
+    if (month) {
+      query.payrollMonth = month;
+    } else {
+      const sd = new Date(startDate);
+      const ed = new Date(endDate);
+      query['payPeriod.startDate'] = { $gte: sd };
+      query['payPeriod.endDate'] = { $lte: ed };
+    }
+
+    const payrolls = await Payroll.find(query)
+      .populate({
+        path: 'employeeId',
+        populate: [
+          { path: 'employmentInfo.departmentId', select: 'name code' }
+        ]
+      })
+      .sort({ 'employeeId.personalInfo.lastName': 1 })
+      .lean();
+
+    if (!payrolls || payrolls.length === 0) {
+      return res.status(404).json({ error: 'No payroll records found.' });
+    }
+
+    const fileLabel = month ? month : `${startDate}_to_${endDate}`;
+    const filename = `pension_report_${fileLabel}.xlsx`;
+    
+    const workbook = await excelGenerator.generatePensionExcel(payrolls);
+    
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    
+    await workbook.xlsx.write(res);
+    res.end();
+    
+  } catch (err) {
+    console.error('generatePensionExcel error:', err);
+    if (!res.headersSent) {
+      res.status(500).json({ error: err.message || 'Failed to generate Excel' });
+    }
   }
 }
 };

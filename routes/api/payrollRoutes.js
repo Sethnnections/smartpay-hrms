@@ -701,4 +701,109 @@ router.post('/:id/earnings/custom', requireHROrAdmin, async (req, res) => {
     res.status(error.statusCode || 500).json({ error: error.message });
   }
 });
+
+
+// Excel Export Routes
+router.post('/export/bank-instruction/excel', flexibleAuth, async (req, res) => {
+  try {
+    if (!req.user || !['admin', 'finance'].includes(req.user.role)) {
+      return res.status(403).json({ error: 'Access denied. Finance/Admin role required.' });
+    }
+
+    const { month, startDate, endDate } = req.body;
+    
+    await payrollController.generateBankInstructionExcel(res, { month, startDate, endDate }, req.user);
+  } catch (error) {
+    console.error('bank-instruction excel route error:', error);
+    if (!res.headersSent) {
+      res.status(error.statusCode || 500).json({ error: error.message });
+    }
+  }
+});
+
+router.post('/export/paye/excel', flexibleAuth, async (req, res) => {
+  try {
+    if (!req.user || !['admin', 'finance', 'hr'].includes(req.user.role)) {
+      return res.status(403).json({ error: 'Access denied. Admin/HR/Finance role required.' });
+    }
+
+    const { month, startDate, endDate } = req.body;
+    
+    await payrollController.generatePAYEExcel(res, { month, startDate, endDate }, req.user);
+  } catch (error) {
+    console.error('paye excel route error:', error);
+    if (!res.headersSent) {
+      res.status(error.statusCode || 500).json({ error: error.message });
+    }
+  }
+});
+
+router.post('/export/pension/excel', flexibleAuth, async (req, res) => {
+  try {
+    if (!req.user || !['admin', 'finance', 'hr'].includes(req.user.role)) {
+      return res.status(403).json({ error: 'Access denied. Admin/HR/Finance role required.' });
+    }
+
+    const { month, startDate, endDate } = req.body;
+    
+    await payrollController.generatePensionExcel(res, { month, startDate, endDate }, req.user);
+  } catch (error) {
+    console.error('pension excel route error:', error);
+    if (!res.headersSent) {
+      res.status(error.statusCode || 500).json({ error: error.message });
+    }
+  }
+});
+
+// Combined export route
+router.post('/export/:type/:format', flexibleAuth, async (req, res) => {
+  try {
+    const { type, format } = req.params;
+    const { month, startDate, endDate } = req.body;
+    
+    // Check permissions
+    if (!req.user || !['admin', 'finance', 'hr'].includes(req.user.role)) {
+      return res.status(403).json({ error: 'Access denied.' });
+    }
+    
+    if (!['excel', 'pdf'].includes(format)) {
+      return res.status(400).json({ error: 'Invalid format. Use "excel" or "pdf".' });
+    }
+    
+    const validTypes = ['bank-instruction', 'paye', 'pension', 'overtime', 'loan', 'housing', 'advance'];
+    if (!validTypes.includes(type)) {
+      return res.status(400).json({ error: 'Invalid report type.' });
+    }
+    
+    if (format === 'excel') {
+      switch(type) {
+        case 'bank-instruction':
+          await payrollController.generateBankInstructionExcel(res, { month, startDate, endDate }, req.user);
+          break;
+        case 'paye':
+          await payrollController.generatePAYEExcel(res, { month, startDate, endDate }, req.user);
+          break;
+        case 'pension':
+          await payrollController.generatePensionExcel(res, { month, startDate, endDate }, req.user);
+          break;
+        default:
+          return res.status(400).json({ error: 'Excel not available for this report type yet.' });
+      }
+    } else {
+      // Use existing PDF methods
+      switch(type) {
+        case 'bank-instruction':
+          await payrollController.generateBankInstructionPDF(res, { month, startDate, endDate }, req.user);
+          break;
+        default:
+          await payrollController.generateReport(res, type, { month, startDate, endDate }, req.user);
+      }
+    }
+  } catch (error) {
+    console.error('export route error:', error);
+    if (!res.headersSent) {
+      res.status(error.statusCode || 500).json({ error: error.message });
+    }
+  }
+});
 module.exports = router;
