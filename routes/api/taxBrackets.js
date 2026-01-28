@@ -13,5 +13,6 @@ router.post('/', taxBracketController.createTaxBracket);
 router.put('/:id', taxBracketController.updateTaxBracket);
 router.delete('/:id', taxBracketController.deleteTaxBracket);
 router.post('/test-calculation', taxBracketController.testTaxCalculation);
+router.post('/test-calculation-detailed', taxBracketController.testTaxCalculationDetailed);
 
 module.exports = router;

@@ -682,66 +682,76 @@
         }
 
         // Test tax calculation
-        async function testTaxCalculation() {
-            const country = document.getElementById('testCountry').value;
-            const currency = document.getElementById('testCurrency').value;
-            const income = parseFloat(document.getElementById('testIncome').value);
-            
-            if (!income || income <= 0) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Invalid Input',
-                    text: 'Please enter a valid income amount'
-                });
-                return;
-            }
-            
-            try {
-                const response = await axios.post('/tax-brackets/test-calculation', {
-                    grossPay: income,
-                    country: country,
-                    currency: currency
-                });
-                
-                const result = response.data.data;
-                
-                // Update results
-                document.getElementById('resultGrossIncome').textContent = formatCurrency(income, currency);
-                document.getElementById('resultTaxAmount').textContent = formatCurrency(result.amount, currency);
-                document.getElementById('resultNetIncome').textContent = formatCurrency(income - result.amount, currency);
-                document.getElementById('resultTaxRate').textContent = `${result.rate.toFixed(2)}%`;
-                
-                // Show brackets used
-                const bracketsList = document.getElementById('bracketsUsedList');
-                if (result.bracketsUsed && result.bracketsUsed.length > 0) {
-                    bracketsList.innerHTML = result.bracketsUsed.map(bracket => `
-                        <div class="mb-2 p-2 border rounded">
-                            <div class="d-flex justify-content-between">
-                                <strong>${bracket.name}</strong>
-                                <span class="badge bg-primary">${bracket.rate}%</span>
-                            </div>
-                            <div class="text-muted small">
-                                ${formatCurrency(bracket.min, currency)} - ${bracket.max ? formatCurrency(bracket.max, currency) : '∞'}
-                            </div>
-                        </div>
-                    `).join('');
-                } else {
-                    bracketsList.innerHTML = '<p class="text-muted">No bracket details available</p>';
-                }
-                
-                // Show results card
-                taxResultCard.classList.remove('d-none');
-                
-            } catch (error) {
-                console.error('Error testing tax calculation:', error);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: error.response?.data?.error || 'Failed to calculate tax'
-                });
-            }
-        }
 
+        // Replace the existing testTaxCalculation function with this:
+async function testTaxCalculation() {
+    const country = document.getElementById('testCountry').value;
+    const currency = document.getElementById('testCurrency').value;
+    const income = parseFloat(document.getElementById('testIncome').value);
+    
+    if (!income || income <= 0 || isNaN(income)) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Invalid Input',
+            text: 'Please enter a valid income amount greater than 0'
+        });
+        return;
+    }
+    
+    try {
+        showLoading(true);
+        
+        const response = await axios.post('/tax-brackets/test-calculation-detailed', {
+            grossPay: income,
+            country: country,
+            currency: currency
+        });
+        
+        const result = response.data.data;
+        
+        // Update results
+        document.getElementById('resultGrossIncome').textContent = formatCurrency(income, currency);
+        document.getElementById('resultTaxAmount').textContent = formatCurrency(result.taxAmount, currency);
+        document.getElementById('resultNetIncome').textContent = formatCurrency(result.netPay, currency);
+        document.getElementById('resultTaxRate').textContent = `${result.effectiveRate.toFixed(2)}%`;
+        
+        // Show brackets used
+        const bracketsList = document.getElementById('bracketsUsedList');
+        if (result.bracketsUsed && result.bracketsUsed.length > 0) {
+            bracketsList.innerHTML = result.bracketsUsed.map((bracket, index) => `
+                <div class="mb-2 p-2 border rounded">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <strong>${bracket.name || `Bracket ${index + 1}`}</strong>
+                        <span class="badge bg-primary">${bracket.rate}%</span>
+                    </div>
+                    <div class="d-flex justify-content-between text-muted small mb-1">
+                        <span>Range:</span>
+                        <span>${formatCurrency(bracket.min, currency)} - ${bracket.max ? formatCurrency(bracket.max, currency) : '∞'}</span>
+                    </div>
+                    <div class="d-flex justify-content-between text-muted small">
+                        <span>Tax in this bracket:</span>
+                        <span>${formatCurrency(bracket.amount, currency)}</span>
+                    </div>
+                </div>
+            `).join('');
+        } else {
+            bracketsList.innerHTML = '<p class="text-muted">No bracket details available</p>';
+        }
+        
+        // Show results card
+        taxResultCard.classList.remove('d-none');
+        
+    } catch (error) {
+        console.error('Error testing tax calculation:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: error.response?.data?.error || 'Failed to calculate tax'
+        });
+    } finally {
+        showLoading(false);
+    }
+}
         // Get current filter values
         function getCurrentFilters() {
             return {

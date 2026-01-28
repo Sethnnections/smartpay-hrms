@@ -93,3 +93,34 @@ exports.testTaxCalculation = async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 };
+
+// Test tax calculation with details
+exports.testTaxCalculationDetailed = async (req, res) => {
+  try {
+    const { grossPay, country, currency } = req.body;
+    
+    if (!grossPay) {
+      return res.status(400).json({ success: false, error: 'Gross pay is required' });
+    }
+    
+    const TaxBracket = require('../models/TaxBracket');
+    const Payroll = require('../models/Payroll'); // Make sure to import Payroll model
+    
+    // Use the Payroll model's calculateProgressiveTax method
+    const taxCalculation = await Payroll.calculateProgressiveTax(grossPay, country, currency);
+    
+    res.json({ 
+      success: true, 
+      data: {
+        grossPay,
+        taxAmount: taxCalculation.amount,
+        effectiveRate: taxCalculation.rate,
+        bracketsUsed: taxCalculation.bracketsUsed || [],
+        netPay: grossPay - taxCalculation.amount
+      }
+    });
+  } catch (error) {
+    console.error('Error in test tax calculation:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};

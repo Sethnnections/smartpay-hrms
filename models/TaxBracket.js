@@ -92,4 +92,46 @@ taxBracketSchema.virtual('isCurrentlyEffective').get(function() {
          (this.effectiveTo === null || this.effectiveTo >= now);
 });
 
+//calculate both tax amount and effective rate
+taxBracketSchema.statics.calculateProgressiveTax = async function(amount, country = 'MW', currency = 'MWK') {
+  const brackets = await this.getCurrentBrackets(country, currency);
+  let tax = 0;
+  let effectiveRate = 0;
+  
+  // Store which brackets were used
+  const bracketsUsed = [];
+  
+  for (const bracket of brackets) {
+    if (amount > bracket.minAmount) {
+      const upper = bracket.maxAmount === null ? amount : Math.min(amount, bracket.maxAmount);
+      const taxableInBracket = Math.max(0, upper - bracket.minAmount);
+      
+      if (taxableInBracket > 0) {
+        const taxInBracket = taxableInBracket * (bracket.taxRate / 100);
+        tax += taxInBracket;
+        
+        bracketsUsed.push({
+          bracketName: bracket.bracketName,
+          minAmount: bracket.minAmount,
+          maxAmount: bracket.maxAmount,
+          rate: bracket.taxRate,
+          taxableAmount: taxableInBracket,
+          taxAmount: taxInBracket
+        });
+      }
+    }
+  }
+  
+  // Calculate effective tax rate
+  if (amount > 0) {
+    effectiveRate = (tax / amount) * 100;
+  }
+  
+  return { 
+    amount: Math.round(tax * 100) / 100, 
+    rate: Math.round(effectiveRate * 100) / 100,
+    bracketsUsed
+  };
+};
+
 module.exports = mongoose.model('TaxBracket', taxBracketSchema);
