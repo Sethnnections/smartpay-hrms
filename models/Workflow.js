@@ -2,27 +2,22 @@ const mongoose = require('mongoose');
 const moment = require('moment');
 
 const workflowSchema = new mongoose.Schema({
-  payrollId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Payroll',
-    required: true,
-    unique: true
-  },
-  currentMonth: {
+  month: {
     type: String,
     required: true,
-    default: () => moment().format('YYYY-MM')
+    match: [/^\d{4}-\d{2}$/, 'Month must be in YYYY-MM format'],
+    unique: true
   },
-  initiatedBy: {
+  requestedBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true
   },
-  initiatedAt: {
+  requestedAt: {
     type: Date,
     default: Date.now
   },
-  // Static 3-step approval
+  // Static 3-step approval BEFORE payroll generation
   steps: [{
     stepNumber: {
       type: Number,
@@ -57,58 +52,64 @@ const workflowSchema = new mongoose.Schema({
     enum: ['pending', 'in_progress', 'approved', 'rejected', 'completed'],
     default: 'pending'
   },
-  completedAt: Date
+  completedAt: Date,
+  payrollGenerated: {
+    type: Boolean,
+    default: false
+  },
+  generatedAt: Date,
+  generatedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }
 }, {
   timestamps: true
 });
 
-// Check if current month workflow exists
-workflowSchema.statics.checkCurrentMonthWorkflow = async function() {
-  const currentMonth = moment().format('YYYY-MM');
-  return await this.findOne({ currentMonth });
+// Check if workflow exists for a month
+workflowSchema.statics.getByMonth = async function(month) {
+  return await this.findOne({ month });
 };
 
-// Create workflow for payroll
-workflowSchema.statics.createForPayroll = async function(payrollId, initiatedBy) {
+// Create workflow for month
+workflowSchema.statics.createForMonth = async function(month, requestedBy) {
   const Workflow = this;
   const User = mongoose.model('User');
   
-  // Check if current month already has workflow
-  const existing = await Workflow.checkCurrentMonthWorkflow();
+  // Check if workflow already exists for this month
+  const existing = await Workflow.getByMonth(month);
   if (existing) {
-    throw new Error(`Workflow for ${moment().format('MMMM YYYY')} already exists`);
+    throw new Error(`Workflow for ${month} already exists`);
   }
   
-  // Get the 3 static users
-  const hrUser = await User.findOne({ email: 'hr@company.com' });
-  const employeeUser = await User.findOne({ email: 'employee@company.com' });
-  const adminUser = await User.findOne({ email: 'admin@company.com' });
+  // Find users by role
+  const hrApprover = await User.findOne({ role: 'hr', isActive: true });
+  const employeeApprover = await User.findOne({ role: 'employee', isActive: true });
+  const adminApprover = await User.findOne({ role: 'admin', isActive: true });
   
-  if (!hrUser || !employeeUser || !adminUser) {
-    throw new Error('Static users not found. Please create: hr@company.com, employee@company.com, admin@company.com');
-  }
+  // Use the current user as fallback for any missing approvers
+  const currentUser = await User.findById(requestedBy);
   
-  // Create static workflow steps
   const workflow = new Workflow({
-    payrollId: payrollId,
-    initiatedBy: initiatedBy,
+    month: month,
+    requestedBy: requestedBy,
     steps: [
       {
         stepNumber: 1,
         role: 'hr',
-        approverId: hrUser._id,
+        approverId: hrApprover ? hrApprover._id : currentUser._id,
         status: 'pending'
       },
       {
         stepNumber: 2,
         role: 'employee',
-        approverId: employeeUser._id,
+        approverId: employeeApprover ? employeeApprover._id : currentUser._id,
         status: 'pending'
       },
       {
         stepNumber: 3,
         role: 'admin',
-        approverId: adminUser._id,
+        approverId: adminApprover ? adminApprover._id : currentUser._id,
         status: 'pending'
       }
     ],
@@ -140,15 +141,9 @@ workflowSchema.methods.approveStep = async function(userId, notes = '') {
   if (nextStep) {
     this.currentStep = nextStep.stepNumber;
   } else {
-    // All steps approved
-    this.status = 'completed';
+    // All steps approved - workflow is ready for payroll generation
+    this.status = 'approved';
     this.completedAt = new Date();
-    
-    // Update payroll payment status
-    const Payroll = mongoose.model('Payroll');
-    await Payroll.findByIdAndUpdate(this.payrollId, {
-      'payment.status': 'approved'
-    });
   }
   
   return this.save();
@@ -172,15 +167,27 @@ workflowSchema.methods.rejectStep = async function(userId, notes = '') {
   return this.save();
 };
 
+// Mark payroll as generated
+workflowSchema.methods.markPayrollGenerated = async function(generatedBy) {
+  this.payrollGenerated = true;
+  this.generatedAt = new Date();
+  this.generatedBy = generatedBy;
+  this.status = 'completed';
+  
+  return this.save();
+};
+
 // Get workflow summary
 workflowSchema.methods.getSummary = function() {
   return {
     workflowId: this._id,
-    currentMonth: this.currentMonth,
+    month: this.month,
     status: this.status,
-    initiatedBy: this.initiatedBy,
-    initiatedAt: this.initiatedAt,
+    requestedBy: this.requestedBy,
+    requestedAt: this.requestedAt,
     currentStep: this.currentStep,
+    payrollGenerated: this.payrollGenerated,
+    generatedAt: this.generatedAt,
     steps: this.steps.map(step => ({
       stepNumber: step.stepNumber,
       role: step.role,
@@ -191,6 +198,38 @@ workflowSchema.methods.getSummary = function() {
     })),
     pendingApprovals: this.steps.filter(step => step.status === 'pending').map(step => step.role),
     completedApprovals: this.steps.filter(step => step.status === 'approved').map(step => step.role)
+  };
+};
+
+// Check if payroll can be generated for this month
+workflowSchema.statics.canGeneratePayroll = async function(month) {
+  const workflow = await this.findOne({ month });
+  
+  if (!workflow) {
+    return {
+      canGenerate: false,
+      reason: 'No workflow exists for this month'
+    };
+  }
+  
+  if (workflow.status === 'approved' && !workflow.payrollGenerated) {
+    return {
+      canGenerate: true,
+      workflowId: workflow._id,
+      month: workflow.month
+    };
+  }
+  
+  if (workflow.payrollGenerated) {
+    return {
+      canGenerate: false,
+      reason: 'Payroll already generated for this month'
+    };
+  }
+  
+  return {
+    canGenerate: false,
+    reason: `Workflow status: ${workflow.status}`
   };
 };
 

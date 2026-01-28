@@ -1,11 +1,15 @@
 const express = require('express');
 const router = express.Router();
 const WorkflowController = require('../../controllers/WorkflowController');
+const { authenticateToken, requireAdmin, requireHROrAdmin } = require('../../utils/auth');
 
-// Check current month workflow status
-router.get('/status', async (req, res) => {
+// Apply authentication to all report routes
+router.use(authenticateToken);
+
+// Get workflow status for a month
+router.get('/status/:month?', async (req, res) => {
   try {
-    const status = await WorkflowController.getCurrentStatus();
+    const status = await WorkflowController.getWorkflowStatus(req.params.month);
     res.json({
       success: true,
       ...status
@@ -18,14 +22,19 @@ router.get('/status', async (req, res) => {
   }
 });
 
-// Create workflow (called after payroll generation)
-router.post('/create/:payrollId', async (req, res) => {
+// Create workflow for a month
+router.post('/create', async (req, res) => {
   try {
-    const result = await WorkflowController.createWorkflow(
-      req.params.payrollId,
-      req.user.id
-    );
+    const { month } = req.body;
     
+    if (!month) {
+      return res.status(400).json({
+        success: false,
+        message: 'Month is required (YYYY-MM)'
+      });
+    }
+    
+    const result = await WorkflowController.createWorkflow(month, req.user.id);
     res.json(result);
   } catch (error) {
     res.status(400).json({
@@ -61,6 +70,44 @@ router.post('/reject', async (req, res) => {
   }
 });
 
+// Check if payroll can be generated
+router.get('/can-generate/:month', async (req, res) => {
+  try {
+    const result = await WorkflowController.checkCanGeneratePayroll(req.params.month);
+    res.json({
+      success: true,
+      ...result
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// Mark payroll as generated
+router.post('/mark-generated', async (req, res) => {
+  try {
+    const { month } = req.body;
+    
+    if (!month) {
+      return res.status(400).json({
+        success: false,
+        message: 'Month is required'
+      });
+    }
+    
+    const result = await WorkflowController.markPayrollGenerated(month, req.user.id);
+    res.json(result);
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
 // Get my pending approvals
 router.get('/my-approvals', async (req, res) => {
   try {
@@ -84,24 +131,6 @@ router.get('/history', async (req, res) => {
     res.json({
       success: true,
       history: history
-    });
-  } catch (error) {
-    res.status(400).json({
-      success: false,
-      message: error.message
-    });
-  }
-});
-
-// Check if can generate payroll (for frontend button)
-router.get('/can-generate', async (req, res) => {
-  try {
-    const status = await WorkflowController.checkCurrentMonth();
-    
-    res.json({
-      success: true,
-      canGenerate: !status.exists, // Can generate if no workflow exists
-      reason: status.exists ? `Workflow for ${status.workflow?.currentMonth} already exists` : 'Can generate payroll'
     });
   } catch (error) {
     res.status(400).json({

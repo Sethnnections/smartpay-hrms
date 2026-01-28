@@ -1,258 +1,4 @@
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>TPS - Payroll Management</title>
 
-  <!-- Bootstrap CSS -->
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
-  <!-- Font Awesome -->
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-  <!-- Google Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <!-- DataTables CSS -->
-  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css"/>
-  <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.bootstrap5.min.css"/>
-  <!-- Date Range Picker -->
-  <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
-
-  <link rel="stylesheet" href="/css/admin.css">
-  <!-- Page-specific CSS -->
-  <link rel="stylesheet" href="/css/departments.css">
-  
-</head>
-<body>
-  <!-- Sidebar Overlay -->
-  <div class="sidebar-overlay" id="sidebarOverlay"></div>
-
-  <!-- Sidebar -->
-  <%- include('./partials/sidebar', { currentPage: 'payroll' }) %>
-
-  <!-- Main -->
-  <div class="main-content" id="mainContent">
-    <%- include('./partials/header', { title: 'Payroll Management', user: typeof user !== 'undefined' ? user : { name: 'User' } }) %>
-
-    <main class="dashboard-content py-1">
-      <div class="container-fluid">
-      <!-- Top: Summary + Action -->
-<div class="row mb-3 mt-3" style="margin-top: 4px;">
-  <!-- Left Side: Stat Cards -->
-  <div class="col-lg-9">
-    <div class="row g-3">
-      <!-- Total Payrolls -->
-      <div class="col-md-4">
-        <div class="stat-card">
-          <div class="stat-header">
-            <p class="stat-title">Total Payrolls</p>
-            <div class="stat-icon">
-              <i class="fas fa-file-invoice"></i>
-            </div>
-          </div>
-          <div class="stat-value" id="totalPayrolls" style="font-size: 1.5rem;">0</div>
-          <div class="stat-trend">
-            <i class="fas fa-chart-line"></i>
-            <span>Payroll records</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Processed Employees -->
-      <div class="col-md-4">
-        <div class="stat-card">
-          <div class="stat-header">
-            <p class="stat-title">Processed Employees</p>
-            <div class="stat-icon">
-              <i class="fas fa-users"></i>
-            </div>
-          </div>
-          <div class="stat-value" id="processedEmployees" style="font-size: 1.5rem;">0</div>
-          <div class="stat-trend">
-            <i class="fas fa-user-check"></i>
-            <span>Employees processed</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Pending Payments -->
-      <div class="col-md-4">
-        <div class="stat-card">
-          <div class="stat-header">
-            <p class="stat-title">Pending Payments</p>
-            <div class="stat-icon">
-              <i class="fas fa-clock"></i>
-            </div>
-          </div>
-          <div class="stat-value" id="pendingPayments" style="font-size: 1.5rem;">0</div>
-          <div class="stat-trend">
-            <i class="fas fa-hourglass-half"></i>
-            <span>Payments pending</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Right Side: Quick Actions -->
-  <div class="col-lg-3">
-    <div class="card p-2 h-100">
-      <div>
-        <small class="small-muted">Quick Actions</small>
-        <h6 class="mb-3">Generate payroll</h6>
-        <div class="mb-2">
-          <label class="form-label">Payroll Month</label>
-          <input id="actionPayrollMonth" type="month" class="form-control" />
-        </div>
-        <div class="d-grid">
-          <button id="actionGenerateBtn" class="btn btn-outline-primary btn-processing">
-            <span class="spinner-area d-none">
-              <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-            </span>
-            <i class="fa fa-cogs me-2"></i>
-            Generate Payroll
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!--         
-        <div class="card mt-2 p-3">
-          <div class="row g-2 align-items-end">
-            <div class="col-md-3">
-              <label class="form-label">Payroll Month</label>
-              <input id="bankMonth" type="month" class="form-control" />
-            </div>
-
-            <div class="col-md-3">
-              <label class="form-label">Or Start Date</label>
-              <input id="bankStart" type="date" class="form-control" />
-            </div>
-
-            <div class="col-md-3">
-              <label class="form-label">End Date</label>
-              <input id="bankEnd" type="date" class="form-control" />
-            </div>
-
-            <div class="col-md-3 d-grid">
-              <button id="downloadBankPdfBtn" class="btn btn-outline-success">
-                <i class="fa fa-download me-2"></i> Bank Instruction PDF
-              </button>
-            </div>
-          </div>
-        </div> -->
-
-        <!-- Filters -->
-        <div class="card mb-3 p-3 filter-card">
-          <div class="row g-2 align-items-end">
-            <div class="col-md-3">
-              <label class="form-label">Date Range</label>
-              <input type="text" id="dateRangeFilter" class="form-control" placeholder="Select date range">
-            </div>
-
-            <div class="col-md-2">
-              <label class="form-label">Filter Month</label>
-              <input id="filterMonth" type="month" class="form-control" />
-            </div>
-
-            <div class="col-md-2">
-              <label class="form-label">Department</label>
-              <select id="filterDepartment" class="form-select">
-                <option value="">-- All Departments --</option>
-                <!-- populated dynamically -->
-              </select>
-            </div>
-
-            <div class="col-md-2">
-              <label class="form-label">Status</label>
-              <select id="filterStatus" class="form-select">
-                <option value="">-- Any --</option>
-                <option value="pending">Pending</option>
-                <option value="paid">Paid</option>
-                <option value="approved">Approved</option>
-                <option value="rejected">Rejected</option>
-              </select>
-            </div>
-
-            <div class="col-md-3 d-grid gap-2 d-md-flex">
-              <button id="applyFiltersBtn" class="btn btn-outline-primary flex-fill">
-                <i class="fa fa-filter me-1"></i> Apply Filters
-              </button>
-              <button id="clearFiltersBtn" class="btn btn-outline-secondary flex-fill">
-                <i class="fa fa-times me-1"></i> Clear
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Table -->
-        <div class="card p-3">
-          <div class="d-flex justify-content-between align-items-center mb-3">
-            <h5 class="mb-0">Payroll Records</h5>
-            <div class="btn-group">
-              <button type="button" class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                <i class="fa fa-download me-1"></i> Export
-              </button>
-              <ul class="dropdown-menu">
-                <li><a class="dropdown-item export-btn" data-type="excel" href="#"><i class="fa fa-file-excel text-success me-2"></i> Excel</a></li>
-                <li><a class="dropdown-item export-btn" data-type="csv" href="#"><i class="fa fa-file-csv text-info me-2"></i> CSV</a></li>
-                <li><a class="dropdown-item export-btn" data-type="pdf" href="#"><i class="fa fa-file-pdf text-danger me-2"></i> PDF</a></li>
-                <li>
-                  <a class="dropdown-item" id="downloadAllPayslipsBtn" href="#">
-                    <i class="fa fa-file-pdf text-danger me-2"></i> All Payslips (PDF)
-                  </a>
-                </li>
-
-              </ul>
-            </div>
-          </div>
-          
-          <div class="table-responsive">
-            <table id="payrollTable" class="table table-striped table-hover" style="width:100%">
-              <thead class="table-light">
-                <tr>
-                  <th>Employee</th>
-                  <th>Employee ID</th>
-                  <th>Department</th>
-                  <th>Period</th>
-                  <th>Gross</th>
-                  <th>Net</th>
-                  <th>Payment Status</th>
-                  <th>Approval Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody></tbody>
-            </table>
-          </div>
-        </div>
-
-      </div>
-    </main>
-  </div>
-
-  <!-- Payslip Preview Modal -->
-  <div class="modal fade" id="payslipModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Payslip Preview</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-          <div id="payslipPreviewContent" class="payslip-preview">
-            <p class="text-center text-muted">Select a payroll record to preview payslip</p>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-          <button type="button" class="btn btn-outline-primary" id="generatePayslipBtn">
-            <i class="fa fa-file-pdf me-1"></i> Generate & Download
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
 
   <!-- SCRIPTS: jQuery first -->
   <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
@@ -1074,6 +820,1264 @@
 
     })();
   </script>
+
+  <!-- optional custom admin script -->
+  <script src="/js/admin.js"></script>
+</body>
+</html>
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TPS - Payroll Management</title>
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Font Awesome -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- DataTables CSS -->
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css"/>
+  <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.bootstrap5.min.css"/>
+  <!-- Date Range Picker -->
+  <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+
+  <link rel="stylesheet" href="/css/admin.css">
+  <!-- Page-specific CSS -->
+  <link rel="stylesheet" href="/css/departments.css">
+  
+  <style>
+    /* Workflow specific styles */
+    .workflow-step {
+      position: relative;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      transition: all 0.3s ease;
+      background: #f8f9fa;
+      border-left: 4px solid #dee2e6;
+    }
+    
+    .workflow-step.completed {
+      background: #d4edda;
+      border-left-color: #28a745;
+    }
+    
+    .workflow-step.in-progress {
+      background: #fff3cd;
+      border-left-color: #ffc107;
+    }
+    
+    .workflow-step.pending {
+      background: #f8f9fa;
+      border-left-color: #6c757d;
+    }
+    
+    .workflow-step.rejected {
+      background: #f8d7da;
+      border-left-color: #dc3545;
+    }
+    
+    .step-number {
+      display: inline-block;
+      width: 30px;
+      height: 30px;
+      line-height: 30px;
+      text-align: center;
+      background: #6c757d;
+      color: white;
+      border-radius: 50%;
+      margin-right: 10px;
+      font-weight: bold;
+    }
+    
+    .step-number.completed {
+      background: #28a745;
+    }
+    
+    .step-number.in-progress {
+      background: #ffc107;
+    }
+    
+    .step-info {
+      flex-grow: 1;
+    }
+    
+    .step-role {
+      font-weight: 600;
+      color: #495057;
+    }
+    
+    .step-status {
+      font-size: 0.85rem;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-weight: 500;
+    }
+    
+    .status-pending {
+      background: #e9ecef;
+      color: #6c757d;
+    }
+    
+    .status-approved {
+      background: #d4edda;
+      color: #155724;
+    }
+    
+    .status-rejected {
+      background: #f8d7da;
+      color: #721c24;
+    }
+    
+    .workflow-connector {
+      height: 20px;
+      width: 2px;
+      background: #dee2e6;
+      margin: 0 auto;
+      margin-top: -10px;
+      margin-bottom: -10px;
+      position: relative;
+      z-index: 1;
+    }
+    
+    .workflow-connector.completed {
+      background: #28a745;
+    }
+    
+    .workflow-card {
+      border: 1px solid #dee2e6;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    
+    .workflow-header {
+      background: #f8f9fa;
+      padding: 15px;
+      border-bottom: 1px solid #dee2e6;
+    }
+    
+    .workflow-body {
+      padding: 20px;
+    }
+    
+    .initiate-workflow-btn {
+      width: 100%;
+      padding: 12px;
+      font-size: 1rem;
+    }
+    
+    .approve-btn {
+      background: #28a745;
+      color: white;
+      border: none;
+      padding: 5px 15px;
+      border-radius: 4px;
+      font-size: 0.85rem;
+    }
+    
+    .reject-btn {
+      background: #dc3545;
+      color: white;
+      border: none;
+      padding: 5px 15px;
+      border-radius: 4px;
+      font-size: 0.85rem;
+    }
+    
+    .workflow-alert {
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    
+    .workflow-alert.info {
+      background: #d1ecf1;
+      border-left: 4px solid #17a2b8;
+    }
+    
+    .workflow-alert.success {
+      background: #d4edda;
+      border-left: 4px solid #28a745;
+    }
+    
+    .workflow-alert.warning {
+      background: #fff3cd;
+      border-left: 4px solid #ffc107;
+    }
+    
+    .workflow-alert.danger {
+      background: #f8d7da;
+      border-left: 4px solid #dc3545;
+    }
+  </style>
+</head>
+<body>
+  <!-- Sidebar Overlay -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <!-- Sidebar -->
+  <%- include('./partials/sidebar', { currentPage: 'payroll' }) %>
+
+  <!-- Main -->
+  <div class="main-content" id="mainContent">
+    <%- include('./partials/header', { title: 'Payroll Management', user: typeof user !== 'undefined' ? user : { name: 'User' } }) %>
+
+    <main class="dashboard-content py-1">
+      <div class="container-fluid">
+        <!-- Workflow Section -->
+        <div class="row mb-3 mt-3">
+          <div class="col-lg-9">
+            <!-- Workflow Card -->
+            <div class="card workflow-card">
+              <div class="workflow-header">
+                <div class="d-flex justify-content-between align-items-center">
+                  <h5 class="mb-0">Payroll Workflow</h5>
+                  <div class="badge bg-primary" id="workflowCurrentMonth"></div>
+                </div>
+              </div>
+              <div class="workflow-body">
+                <!-- Workflow Status Messages -->
+                <div id="workflowMessages"></div>
+                
+                <!-- Workflow Steps Container -->
+                <div id="workflowSteps" style="display: none;">
+                  <!-- Workflow steps will be loaded here -->
+                </div>
+                
+                <!-- No Workflow State -->
+                <div id="noWorkflowState" style="display: none;">
+                  <div class="text-center py-4">
+                    <i class="fas fa-project-diagram fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No Payroll Workflow Started</h5>
+                    <p class="text-muted mb-4">Start the payroll approval process for the current month</p>
+                    <button class="btn btn-primary btn-lg initiate-workflow-btn" id="initiateWorkflowBtn">
+                      <i class="fas fa-play-circle me-2"></i> Start Payroll Workflow
+                    </button>
+                  </div>
+                </div>
+                
+                <!-- Workflow Actions (for approvers) -->
+                <div id="workflowActions" class="mt-4" style="display: none;">
+                  <div class="d-flex justify-content-center gap-3">
+                    <button class="btn btn-success btn-lg px-4" id="approveStepBtn">
+                      <i class="fas fa-check-circle me-2"></i> Approve Step
+                    </button>
+                    <button class="btn btn-danger btn-lg px-4" id="rejectStepBtn">
+                      <i class="fas fa-times-circle me-2"></i> Reject
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Workflow History (Compact) -->
+            <div class="card mt-3">
+              <div class="card-header">
+                <h6 class="mb-0">Recent Workflows</h6>
+              </div>
+              <div class="card-body p-0">
+                <div class="table-responsive">
+                  <table class="table table-hover mb-0" id="workflowHistoryTable">
+                    <thead class="table-light">
+                      <tr>
+                        <th>Month</th>
+                        <th>Status</th>
+                        <th>Initiated By</th>
+                        <th>Initiated At</th>
+                        <th>Completed At</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <!-- Workflow history will be loaded here -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Right Side: Quick Actions -->
+          <div class="col-lg-3">
+            <div class="card h-100">
+              <div class="card-header">
+                <h6 class="mb-0">Payroll Actions</h6>
+              </div>
+              <div class="card-body">
+                <!-- Generate Payroll Button (Only shown when workflow is completed) -->
+                <div id="generatePayrollSection" style="display: none;">
+                  <h6 class="mb-3">Generate Payroll</h6>
+                  <div class="mb-3">
+                    <label class="form-label">Payroll Month</label>
+                    <input id="actionPayrollMonth" type="month" class="form-control" />
+                  </div>
+                  <div class="d-grid">
+                    <button id="actionGenerateBtn" class="btn btn-success btn-processing">
+                      <span class="spinner-area d-none">
+                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                      </span>
+                      <i class="fas fa-cogs me-2"></i>
+                      Generate Payroll
+                    </button>
+                  </div>
+                </div>
+                
+                <!-- Workflow in Progress Message -->
+                <div id="workflowInProgressMsg" class="alert alert-warning" style="display: none;">
+                  <i class="fas fa-clock me-2"></i>
+                  <strong>Workflow in Progress</strong>
+                  <p class="mb-0 mt-2 small">Complete the approval workflow to generate payroll</p>
+                </div>
+                
+                <!-- Download Reports Section -->
+                <div class="mt-4">
+                  <h6 class="mb-3">Reports</h6>
+                  <div class="d-grid gap-2">
+                    <button class="btn btn-outline-primary" id="downloadBankPdfBtn">
+                      <i class="fas fa-file-pdf me-2"></i> Bank Instruction
+                    </button>
+                    <button class="btn btn-outline-success" id="downloadPayslipsBtn">
+                      <i class="fas fa-file-archive me-2"></i> All Payslips
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="card mb-3 p-3 filter-card">
+          <div class="row g-2 align-items-end">
+            <div class="col-md-3">
+              <label class="form-label">Date Range</label>
+              <input type="text" id="dateRangeFilter" class="form-control" placeholder="Select date range">
+            </div>
+
+            <div class="col-md-2">
+              <label class="form-label">Filter Month</label>
+              <input id="filterMonth" type="month" class="form-control" />
+            </div>
+
+            <div class="col-md-2">
+              <label class="form-label">Department</label>
+              <select id="filterDepartment" class="form-select">
+                <option value="">-- All Departments --</option>
+                <!-- populated dynamically -->
+              </select>
+            </div>
+
+            <div class="col-md-2">
+              <label class="form-label">Status</label>
+              <select id="filterStatus" class="form-select">
+                <option value="">-- Any --</option>
+                <option value="pending">Pending</option>
+                <option value="paid">Paid</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+              </select>
+            </div>
+
+            <div class="col-md-3 d-grid gap-2 d-md-flex">
+              <button id="applyFiltersBtn" class="btn btn-outline-primary flex-fill">
+                <i class="fa fa-filter me-1"></i> Apply Filters
+              </button>
+              <button id="clearFiltersBtn" class="btn btn-outline-secondary flex-fill">
+                <i class="fa fa-times me-1"></i> Clear
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <div class="card p-3">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0">Payroll Records</h5>
+            <div class="btn-group">
+              <button type="button" class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="fa fa-download me-1"></i> Export
+              </button>
+              <ul class="dropdown-menu">
+                <li><a class="dropdown-item export-btn" data-type="excel" href="#"><i class="fa fa-file-excel text-success me-2"></i> Excel</a></li>
+                <li><a class="dropdown-item export-btn" data-type="csv" href="#"><i class="fa fa-file-csv text-info me-2"></i> CSV</a></li>
+                <li><a class="dropdown-item export-btn" data-type="pdf" href="#"><i class="fa fa-file-pdf text-danger me-2"></i> PDF</a></li>
+                <li>
+                  <a class="dropdown-item" id="downloadAllPayslipsBtn" href="#">
+                    <i class="fa fa-file-pdf text-danger me-2"></i> All Payslips (PDF)
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </div>
+          
+          <div class="table-responsive">
+            <table id="payrollTable" class="table table-striped table-hover" style="width:100%">
+              <thead class="table-light">
+                <tr>
+                  <th>Employee</th>
+                  <th>Employee ID</th>
+                  <th>Department</th>
+                  <th>Period</th>
+                  <th>Gross</th>
+                  <th>Net</th>
+                  <th>Payment Status</th>
+                  <th>Approval Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- SCRIPTS: jQuery first -->
+  <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+  <!-- Bootstrap bundle -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+
+  <!-- DataTables + Buttons + dependencies -->
+  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+  <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+  <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.bootstrap5.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+  <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+
+  <!-- Date Range Picker -->
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+
+  <!-- Utilities -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.2/axios.min.js"></script>
+
+  <script>
+  (function () {
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      window.location.href = '/login';
+    }
+
+    // Helpers
+    const authHeader = () => ({ Authorization: `Bearer ${token}` });
+    let userRole = 'admin'; // This should come from your authentication system
+    let currentWorkflow = null;
+    let canApproveStep = false;
+    let payrollTable = null;
+    let selectedPayrollId = null;
+    let dateRangeFilter = null;
+
+    // Initialize Date Range Picker
+    function initDateRangePicker() {
+      if (!jQuery.fn.daterangepicker) {
+        console.warn('DateRangePicker not loaded');
+        return;
+      }
+      
+      $('#dateRangeFilter').daterangepicker({
+        autoUpdateInput: false,
+        locale: {
+          cancelLabel: 'Clear',
+          format: 'YYYY-MM-DD'
+        },
+        ranges: {
+          'This Month': [moment().startOf('month'), moment().endOf('month')],
+          'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
+          'Last 3 Months': [moment().subtract(2, 'month').startOf('month'), moment().endOf('month')],
+          'This Year': [moment().startOf('year'), moment().endOf('year')]
+        }
+      });
+
+      $('#dateRangeFilter').on('apply.daterangepicker', function(ev, picker) {
+        $(this).val(picker.startDate.format('YYYY-MM-DD') + ' to ' + picker.endDate.format('YYYY-MM-DD'));
+        dateRangeFilter = {
+          startDate: picker.startDate.format('YYYY-MM-DD'),
+          endDate: picker.endDate.format('YYYY-MM-DD')
+        };
+      });
+
+      $('#dateRangeFilter').on('cancel.daterangepicker', function(ev, picker) {
+        $(this).val('');
+        dateRangeFilter = null;
+      });
+    }
+
+    // Initialize DataTable
+    function initTable() {
+      if (!$.fn.DataTable) {
+        console.warn('DataTables not loaded');
+        return;
+      }
+      
+      payrollTable = $('#payrollTable').DataTable({
+        data: [],
+        columns: [
+          { 
+            data: 'employeeId.personalInfo', 
+            render: (p) => p ? `${p.firstName || ''} ${p.lastName || ''}` : 'N/A'
+          },
+          { data: 'employeeId.employeeId', defaultContent: 'N/A' },
+          { 
+            data: 'employeeId.employmentInfo.departmentId', 
+            render: (dept) => dept ? dept.name : 'N/A'
+          },
+          { 
+            data: null, 
+            render: (data) => {
+              if (data.payPeriod && data.payPeriod.startDate && data.payPeriod.endDate) {
+                return `${formatDate(data.payPeriod.startDate)} to ${formatDate(data.payPeriod.endDate)}`;
+              }
+              return data.payrollMonth || 'N/A';
+            }
+          },
+          { 
+            data: 'grossPay', 
+            render: (v) => formatCurrency(v),
+            className: 'text-end'
+          },
+          { 
+            data: 'netPay', 
+            render: (v) => formatCurrency(v),
+            className: 'text-end fw-bold'
+          },
+          { 
+            data: 'payment.status', 
+            render: (s) => renderPaymentStatus(s),
+            className: 'text-center'
+          },
+          { 
+            data: null, 
+            render: (data) => renderApprovalStatus(data),
+            className: 'text-center'
+          },
+          { 
+            data: null, 
+            render: (data) => renderActionButtons(data),
+            className: 'text-center',
+            orderable: false
+          }
+        ],
+        responsive: true,
+        pageLength: 10,
+        lengthMenu: [10, 25, 50, 100],
+        order: [[3, 'desc']],
+        dom: '<"top"f>rt<"bottom"lip><"clear">',
+        language: {
+          search: "Search:",
+          searchPlaceholder: "Employee, department...",
+          lengthMenu: "Show _MENU_ entries",
+          info: "Showing _START_ to _END_ of _TOTAL_ entries",
+          infoEmpty: "Showing 0 to 0 of 0 entries",
+          infoFiltered: "(filtered from _MAX_ total entries)",
+          paginate: {
+            first: "First",
+            last: "Last",
+            next: "Next",
+            previous: "Previous"
+          }
+        }
+      });
+    }
+
+    function formatCurrency(val) {
+      if (val == null || isNaN(val)) return '-';
+      return 'MK ' + Number(val).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    }
+
+    function formatDate(dateString) {
+      if (!dateString) return 'N/A';
+      return moment(dateString).format('DD MMM YYYY');
+    }
+
+    function renderPaymentStatus(status) {
+      if (!status) return '<span class="badge bg-secondary">unknown</span>';
+      const cls = {
+        'pending': 'badge-pending',
+        'paid': 'badge-paid',
+        'failed': 'badge-rejected'
+      }[status] || 'badge-secondary';
+      return `<span class="badge ${cls}">${status}</span>`;
+    }
+
+    function renderApprovalStatus(data) {
+      const hrStatus = data.approvals?.hr?.status || 'pending';
+      const financeStatus = data.approvals?.finance?.status || 'pending';
+      
+      if (hrStatus === 'rejected' || financeStatus === 'rejected') {
+        return '<span class="badge badge-rejected">Rejected</span>';
+      }
+      if (hrStatus === 'approved' && financeStatus === 'approved') {
+        return '<span class="badge badge-approved">Approved</span>';
+      }
+      return '<span class="badge badge-pending'>Pending</span>';
+    }
+
+    function renderActionButtons(data) {
+      let buttons = `
+        <button class="btn btn-sm btn-outline-primary btn-action view-payslip" data-id="${data._id}" title="View Payslip">
+          <i class="fa fa-eye"></i>
+        </button>
+      `;
+      
+      // Add approve/reject buttons for HR/Admin
+      if (['admin', 'hr', 'finance'].includes(userRole)) {
+        if (data.approvals?.hr?.status !== 'approved' && ['admin', 'hr'].includes(userRole)) {
+          buttons += `
+            <button class="btn btn-sm btn-outline-success btn-action approve-payroll" data-id="${data._id}" data-type="hr" title="Approve (HR)">
+              <i class="fa fa-check"></i>
+            </button>
+          `;
+        }
+        
+        if (data.approvals?.finance?.status !== 'approved' && ['admin', 'finance'].includes(userRole)) {
+          buttons += `
+            <button class="btn btn-sm btn-outline-success btn-action approve-payroll" data-id="${data._id}" data-type="finance" title="Approve (Finance)">
+              <i class="fa fa-check-circle"></i>
+            </button>
+          `;
+        }
+        
+        if (data.payment?.status !== 'paid') {
+          buttons += `
+            <button class="btn btn-sm btn-outline-info btn-action mark-paid" data-id="${data._id}" title="Mark as Paid">
+              <i class="fa fa-money-bill"></i>
+            </button>
+          `;
+        }
+      }
+      
+      return `<div class="btn-group">${buttons}</div>`;
+    }
+
+    // Fetch departments for filter
+    async function loadDepartments() {
+      try {
+        const res = await axios.get('/api/departments', { headers: authHeader() });
+        const departments = Array.isArray(res.data) ? res.data : res.data.departments ?? [];
+        const $select = $('#filterDepartment');
+        $select.empty().append('<option value="">-- All Departments --</option>');
+        departments.forEach(d => {
+          $select.append(`<option value="${d._id}">${escapeHtml(d.name)} (${escapeHtml(d.code)})</option>`);
+        });
+      } catch (err) {
+        console.error('Failed to load departments', err);
+        Swal.fire({ 
+          icon: 'warning', 
+          title: 'Departments', 
+          text: 'Could not load departments for filters',
+          timer: 2500, 
+          toast: true, 
+          position: 'top-end', 
+          showConfirmButton: false
+        });
+      }
+    }
+
+    // Fetch payrolls with filters
+    async function loadPayrolls(filters = {}) {
+      try {
+        Swal.fire({ 
+          title: 'Loading payrolls...', 
+          didOpen: () => Swal.showLoading(), 
+          allowOutsideClick: false, 
+          showConfirmButton: false 
+        });
+        
+        // Build query params
+        const params = new URLSearchParams();
+        if (filters.month) params.append('month', filters.month);
+        if (filters.department) params.append('departmentId', filters.department);
+        if (filters.status) params.append('paymentStatus', filters.status);
+        if (filters.startDate && filters.endDate) {
+          params.append('startDate', filters.startDate);
+          params.append('endDate', filters.endDate);
+        }
+        
+        const queryString = params.toString();
+        const url = `/api/payroll/${queryString ? `?${queryString}` : ''}`;
+        
+        const res = await axios.get(url, { headers: authHeader() });
+        Swal.close();
+
+        const payrolls = res.data?.payrolls ?? [];
+
+        // Update summary cards
+        $('#totalPayrolls').text(res.data?.pagination?.totalRecords ?? payrolls.length);
+        $('#processedEmployees').text(payrolls.length);
+        $('#pendingPayments').text(payrolls.filter(p => p.payment?.status === 'pending').length);
+
+        // Replace DataTable data
+        if (payrollTable) {
+          payrollTable.clear();
+          payrollTable.rows.add(payrolls);
+          payrollTable.draw();
+        }
+      } catch (err) {
+        console.error('Failed to load payrolls', err);
+        Swal.fire({ icon: 'error', title: 'Error', text: 'Failed to load payrolls' });
+      }
+    }
+
+    // Get current filter values
+    function getCurrentFilters() {
+      return {
+        month: $('#filterMonth').val(),
+        department: $('#filterDepartment').val(),
+        status: $('#filterStatus').val(),
+        startDate: dateRangeFilter ? dateRangeFilter.startDate : null,
+        endDate: dateRangeFilter ? dateRangeFilter.endDate : null
+      };
+    }
+
+    // Apply filters
+    function applyFilters() {
+      const filters = getCurrentFilters();
+      loadPayrolls(filters);
+    }
+
+    // Clear filters
+    function clearFilters() {
+      $('#filterMonth').val('');
+      $('#filterDepartment').val('');
+      $('#filterStatus').val('');
+      $('#dateRangeFilter').val('');
+      dateRangeFilter = null;
+      loadPayrolls();
+    }
+
+    // Escapes simple html to avoid injection
+    function escapeHtml(s) {
+      if (!s) return '';
+      return s.replace(/[&<>"'`=\/]/g, function (c) {
+        return {
+          '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+          '/': '&#x2F;', '=': '&#x3D;', '`': '&#x60;'
+        }[c];
+      });
+    }
+
+    // Workflow Functions
+    async function loadWorkflowStatus() {
+      try {
+        const response = await axios.get('/api/workflow/status', { headers: authHeader() });
+        const data = response.data;
+        
+        // Update current month display
+        document.getElementById('workflowCurrentMonth').textContent = 
+          moment(data.currentMonth || new Date()).format('MMMM YYYY');
+        
+        if (data.exists) {
+          // Show workflow steps
+          document.getElementById('noWorkflowState').style.display = 'none';
+          document.getElementById('workflowSteps').style.display = 'block';
+          
+          // Render workflow steps
+          renderWorkflowSteps(data);
+          
+          // Check if user can approve current step
+          canApproveStep = data.canApprove || false;
+          
+          // Show/hide approve buttons based on user role
+          const hasPendingStep = data.steps?.some(step => step.status === 'pending' && 
+            (step.role === userRole.toLowerCase() || 
+             (userRole === 'admin' && ['hr', 'employee', 'admin'].includes(step.role))));
+          
+          if (hasPendingStep && canApproveStep) {
+            document.getElementById('workflowActions').style.display = 'block';
+          } else {
+            document.getElementById('workflowActions').style.display = 'none';
+          }
+          
+          // Update action buttons based on workflow status
+          if (data.status === 'completed') {
+            // Show generate payroll button
+            document.getElementById('generatePayrollSection').style.display = 'block';
+            document.getElementById('workflowInProgressMsg').style.display = 'none';
+            
+            // Show success message
+            showWorkflowMessage('success', 'Workflow completed! You can now generate payroll.');
+          } else if (data.status === 'rejected') {
+            // Show rejected state
+            showWorkflowMessage('danger', 'Workflow was rejected. Please start a new workflow.');
+            document.getElementById('generatePayrollSection').style.display = 'none';
+            document.getElementById('workflowInProgressMsg').style.display = 'none';
+          } else {
+            // Workflow in progress
+            showWorkflowMessage('warning', 'Workflow in progress. Complete all approvals to generate payroll.');
+            document.getElementById('generatePayrollSection').style.display = 'none';
+            document.getElementById('workflowInProgressMsg').style.display = 'block';
+          }
+          
+          currentWorkflow = data;
+        } else {
+          // No workflow exists
+          document.getElementById('noWorkflowState').style.display = 'block';
+          document.getElementById('workflowSteps').style.display = 'none';
+          document.getElementById('workflowActions').style.display = 'none';
+          document.getElementById('generatePayrollSection').style.display = 'none';
+          document.getElementById('workflowInProgressMsg').style.display = 'none';
+          
+          // Show info message
+          showWorkflowMessage('info', 'Start the payroll workflow to begin the approval process.');
+        }
+        
+        // Load workflow history
+        await loadWorkflowHistory();
+      } catch (error) {
+        console.error('Error loading workflow status:', error);
+        showWorkflowMessage('danger', 'Failed to load workflow status');
+      }
+    }
+    
+    function renderWorkflowSteps(data) {
+      const stepsContainer = document.getElementById('workflowSteps');
+      stepsContainer.innerHTML = '';
+      
+      if (!data.steps || data.steps.length === 0) {
+        stepsContainer.innerHTML = '<p class="text-muted">No steps defined</p>';
+        return;
+      }
+      
+      data.steps.forEach((step, index) => {
+        const stepElement = document.createElement('div');
+        
+        // Determine step status class
+        let stepClass = 'pending';
+        if (step.status === 'approved') stepClass = 'completed';
+        else if (step.status === 'rejected') stepClass = 'rejected';
+        else if (index === (data.currentStep - 1)) stepClass = 'in-progress';
+        
+        stepElement.className = `workflow-step ${stepClass}`;
+        
+        // Determine step number class
+        let stepNumberClass = 'pending';
+        if (step.status === 'approved') stepNumberClass = 'completed';
+        else if (index === (data.currentStep - 1)) stepNumberClass = 'in-progress';
+        
+        stepElement.innerHTML = `
+          <div class="d-flex align-items-center">
+            <span class="step-number ${stepNumberClass}">${step.stepNumber}</span>
+            <div class="step-info">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <span class="step-role">${step.role.toUpperCase()} Approval</span>
+                  <div class="text-muted small">${step.approver?.name || step.approver?.email || 'N/A'}</div>
+                </div>
+                <span class="step-status status-${step.status || 'pending'}">
+                  ${step.status ? step.status.toUpperCase() : 'PENDING'}
+                </span>
+              </div>
+              ${step.approvedAt ? `
+                <div class="mt-2 small text-muted">
+                  <i class="far fa-clock me-1"></i>
+                  Approved: ${moment(step.approvedAt).format('DD MMM YYYY, HH:mm')}
+                </div>
+              ` : ''}
+              ${step.notes ? `
+                <div class="mt-1 small">
+                  <i class="far fa-sticky-note me-1"></i>
+                  ${step.notes}
+                </div>
+              ` : ''}
+            </div>
+          </div>
+        `;
+        
+        stepsContainer.appendChild(stepElement);
+        
+        // Add connector line between steps (except for last one)
+        if (index < data.steps.length - 1) {
+          const connector = document.createElement('div');
+          connector.className = `workflow-connector ${step.status === 'approved' ? 'completed' : ''}`;
+          stepsContainer.appendChild(connector);
+        }
+      });
+    }
+    
+    function showWorkflowMessage(type, message) {
+      const messagesContainer = document.getElementById('workflowMessages');
+      const alertClass = {
+        'info': 'info',
+        'success': 'success',
+        'warning': 'warning',
+        'danger': 'danger'
+      }[type] || 'info';
+      
+      messagesContainer.innerHTML = `
+        <div class="workflow-alert ${alertClass}">
+          <div class="d-flex align-items-center">
+            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'warning' ? 'exclamation-triangle' : type === 'danger' ? 'times-circle' : 'info-circle'} me-3"></i>
+            <div>${message}</div>
+          </div>
+        </div>
+      `;
+    }
+    
+    async function loadWorkflowHistory() {
+      try {
+        const response = await axios.get('/api/workflow/history', { 
+          headers: authHeader() 
+        });
+        
+        const historyTable = document.getElementById('workflowHistoryTable').getElementsByTagName('tbody')[0];
+        historyTable.innerHTML = '';
+        
+        if (response.data.history && response.data.history.length > 0) {
+          response.data.history.forEach(item => {
+            const row = historyTable.insertRow();
+            
+            // Status badge
+            let statusBadge = '';
+            switch(item.status) {
+              case 'completed':
+                statusBadge = '<span class="badge bg-success">Completed</span>';
+                break;
+              case 'rejected':
+                statusBadge = '<span class="badge bg-danger">Rejected</span>';
+                break;
+              case 'in_progress':
+                statusBadge = '<span class="badge bg-warning">In Progress</span>';
+                break;
+              default:
+                statusBadge = '<span class="badge bg-secondary">Pending</span>';
+            }
+            
+            row.innerHTML = `
+              <td>${item.currentMonth}</td>
+              <td>${statusBadge}</td>
+              <td>${item.initiatedBy?.email || 'N/A'}</td>
+              <td>${moment(item.initiatedAt).format('DD MMM YYYY')}</td>
+              <td>${item.completedAt ? moment(item.completedAt).format('DD MMM YYYY') : '-'}</td>
+              <td>
+                <button class="btn btn-sm btn-outline-info view-workflow-details" data-id="${item.workflowId}">
+                  <i class="fas fa-eye"></i>
+                </button>
+              </td>
+            `;
+          });
+        } else {
+          historyTable.innerHTML = `
+            <tr>
+              <td colspan="6" class="text-center py-4 text-muted">
+                <i class="fas fa-history fa-2x mb-2"></i>
+                <div>No workflow history found</div>
+              </td>
+            </tr>
+          `;
+        }
+      } catch (error) {
+        console.error('Error loading workflow history:', error);
+      }
+    }
+
+    // Bind UI Events
+    function bindUI() {
+      // Apply filters when button is clicked
+      $('#applyFiltersBtn').on('click', applyFilters);
+      
+      // Clear filters
+      $('#clearFiltersBtn').on('click', clearFilters);
+      
+      // Generate payroll
+      $('#actionGenerateBtn').on('click', async function () {
+        const month = $('#actionPayrollMonth').val() || $('#filterMonth').val();
+        if (!month) {
+          Swal.fire({
+            icon: 'warning',
+            title: 'Select Month',
+            text: 'Please select a payroll month first'
+          });
+          return;
+        }
+        
+        try {
+          Swal.fire({ 
+            title: 'Processing...', 
+            didOpen: () => Swal.showLoading(), 
+            allowOutsideClick: false 
+          });
+          
+          const response = await axios.post('/api/payroll/process', { month }, { headers: authHeader() });
+          
+          Swal.fire({
+            icon: 'success',
+            title: 'Success',
+            text: `Payroll generated for ${month}`,
+            timer: 2000
+          });
+          
+          // Reload payroll data
+          await loadPayrolls();
+          
+        } catch (error) {
+          console.error('Error generating payroll:', error);
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: error.response?.data?.message || 'Failed to generate payroll'
+          });
+        }
+      });
+
+      // View payslip
+      $(document).on('click', '.view-payslip', function() {
+        const payrollId = $(this).data('id');
+        previewPayslip(payrollId);
+      });
+
+      // Export buttons
+      $('.export-btn').on('click', function(e) {
+        e.preventDefault();
+        const type = $(this).data('type');
+        
+        // Trigger DataTable export
+        if (type === 'excel') {
+          payrollTable.button('.buttons-excel').trigger();
+        } else if (type === 'csv') {
+          payrollTable.button('.buttons-csv').trigger();
+        } else if (type === 'pdf') {
+          payrollTable.button('.buttons-pdf').trigger();
+        } 
+      });
+      
+      // Download all payslips
+      $('#downloadAllPayslipsBtn').on('click', async function () {
+        try {
+          Swal.fire({ title: 'Generating...', didOpen: () => Swal.showLoading(), allowOutsideClick: false });
+          const response = await axios.get('/api/payroll/payslips/all', {
+            headers: authHeader(),
+            responseType: 'blob'
+          });
+          Swal.close();
+
+          const blob = new Blob([response.data], { type: 'application/pdf' });
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `all_payslips.pdf`;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          window.URL.revokeObjectURL(url);
+        } catch (err) {
+          Swal.fire('Error', 'Failed to generate combined payslips', 'error');
+        }
+      });
+
+      // Initiate workflow
+      $('#initiateWorkflowBtn').on('click', async function() {
+        try {
+          const { value: month } = await Swal.fire({
+            title: 'Start Payroll Workflow',
+            html: `
+              <p>Enter the payroll month for the workflow:</p>
+              <input type="month" id="workflowMonth" class="swal2-input" value="${moment().format('YYYY-MM')}">
+            `,
+            showCancelButton: true,
+            confirmButtonText: 'Start Workflow',
+            cancelButtonText: 'Cancel',
+            preConfirm: () => {
+              const month = document.getElementById('workflowMonth').value;
+              if (!month) {
+                Swal.showValidationMessage('Please select a month');
+                return false;
+              }
+              return month;
+            }
+          });
+          
+          if (month) {
+            Swal.fire({
+              title: 'Creating Workflow...',
+              didOpen: () => Swal.showLoading(),
+              allowOutsideClick: false
+            });
+            
+            // First, generate payroll for the selected month
+            const generateResponse = await axios.post('/api/payroll/process', { 
+              month: month 
+            }, { headers: authHeader() });
+            
+            if (generateResponse.data.success) {
+              // Then create workflow
+              const workflowResponse = await axios.post(`/api/workflow/create/${generateResponse.data.payrollIds[0]}`, {}, { 
+                headers: authHeader() 
+              });
+              
+              Swal.fire({
+                icon: 'success',
+                title: 'Workflow Started',
+                text: 'Payroll workflow has been initiated successfully',
+                timer: 2000,
+                showConfirmButton: false
+              });
+              
+              // Reload workflow status
+              await loadWorkflowStatus();
+            } else {
+              throw new Error('Failed to generate payroll');
+            }
+          }
+        } catch (error) {
+          console.error('Error initiating workflow:', error);
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: error.response?.data?.message || 'Failed to start workflow'
+          });
+        }
+      });
+      
+      // Approve step
+      $('#approveStepBtn').on('click', async function() {
+        try {
+          const { value: notes } = await Swal.fire({
+            title: 'Approve Step',
+            input: 'textarea',
+            inputLabel: 'Approval Notes (optional)',
+            inputPlaceholder: 'Enter any notes for this approval...',
+            showCancelButton: true,
+            confirmButtonText: 'Approve',
+            cancelButtonText: 'Cancel'
+          });
+          
+          if (notes !== undefined) {
+            Swal.fire({
+              title: 'Approving...',
+              didOpen: () => Swal.showLoading(),
+              allowOutsideClick: false
+            });
+            
+            await axios.post('/api/workflow/approve', { notes }, { 
+              headers: authHeader() 
+            });
+            
+            Swal.fire({
+              icon: 'success',
+              title: 'Approved',
+              text: 'Step approved successfully',
+              timer: 2000,
+              showConfirmButton: false
+            });
+            
+            // Reload workflow status
+            await loadWorkflowStatus();
+          }
+        } catch (error) {
+          console.error('Error approving step:', error);
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: error.response?.data?.message || 'Failed to approve step'
+          });
+        }
+      });
+      
+      // Reject step
+      $('#rejectStepBtn').on('click', async function() {
+        try {
+          const { value: notes } = await Swal.fire({
+            title: 'Reject Step',
+            input: 'textarea',
+            inputLabel: 'Rejection Reason (required)',
+            inputPlaceholder: 'Please provide a reason for rejection...',
+            inputValidator: (value) => {
+              if (!value.trim()) {
+                return 'Please provide a rejection reason';
+              }
+            },
+            showCancelButton: true,
+            confirmButtonText: 'Reject',
+            cancelButtonText: 'Cancel'
+          });
+          
+          if (notes !== undefined) {
+            Swal.fire({
+              title: 'Rejecting...',
+              didOpen: () => Swal.showLoading(),
+              allowOutsideClick: false
+            });
+            
+            await axios.post('/api/workflow/reject', { notes }, { 
+              headers: authHeader() 
+            });
+            
+            Swal.fire({
+              icon: 'info',
+              title: 'Rejected',
+              text: 'Step has been rejected',
+              timer: 2000,
+              showConfirmButton: false
+            });
+            
+            // Reload workflow status
+            await loadWorkflowStatus();
+          }
+        } catch (error) {
+          console.error('Error rejecting step:', error);
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: error.response?.data?.message || 'Failed to reject step'
+          });
+        }
+      });
+      
+      // View workflow details
+      $(document).on('click', '.view-workflow-details', async function() {
+        const workflowId = $(this).data('id');
+        // You can implement a detailed view modal here
+        Swal.fire({
+          title: 'Workflow Details',
+          text: `Showing details for workflow ${workflowId}`,
+          icon: 'info'
+        });
+      });
+    }
+
+    // Initialize everything
+    async function initializePage() {
+      try {
+        // Load workflow status first
+        await loadWorkflowStatus();
+        
+        // Initialize components
+        initDateRangePicker();
+        initTable();
+        await loadDepartments();
+        await loadPayrolls();
+        bindUI();
+        
+        console.log('Payroll page initialized successfully');
+      } catch (error) {
+        console.error('Error initializing page:', error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Initialization Error',
+          text: 'Failed to initialize the payroll page'
+        });
+      }
+    }
+
+    // Start initialization when DOM is ready
+    $(document).ready(function() {
+      initializePage();
+    });
+
+  })();
+</script>
 
   <!-- optional custom admin script -->
   <script src="/js/admin.js"></script>

@@ -1,48 +1,22 @@
 const Workflow = require('../models/Workflow');
-const Payroll = require('../models/Payroll');
 const moment = require('moment');
 
 class WorkflowController {
-  // Check if current month workflow exists
-  static async checkCurrentMonth() {
+  // Check if can generate payroll for a month
+  static async checkCanGeneratePayroll(month) {
     try {
-      const currentMonth = moment().format('YYYY-MM');
-      const existing = await Workflow.findOne({ currentMonth })
-        .populate('payrollId')
-        .populate('initiatedBy', 'email')
-        .populate('steps.approverId', 'email role');
-      
-      if (!existing) {
-        return {
-          exists: false,
-          message: `No workflow for ${currentMonth}`,
-          canCreate: true,
-          currentMonth: currentMonth
-        };
-      }
-      
-      return {
-        exists: true,
-        workflow: existing.getSummary(),
-        canApprove: existing.status === 'in_progress',
-        canCreate: false
-      };
+      const result = await Workflow.canGeneratePayroll(month);
+      return result;
     } catch (error) {
       throw error;
     }
   }
   
-  // Create workflow for current month
-  static async createWorkflow(payrollId, initiatedBy) {
+  // Create workflow for a month
+  static async createWorkflow(month, requestedBy) {
     try {
-      // Check if we already have workflow for current month
-      const check = await this.checkCurrentMonth();
-      if (check.exists) {
-        throw new Error(`Workflow for ${moment().format('MMMM YYYY')} already exists`);
-      }
-      
       // Create workflow
-      const workflow = await Workflow.createForPayroll(payrollId, initiatedBy);
+      const workflow = await Workflow.createForMonth(month, requestedBy);
       
       return {
         success: true,
@@ -50,6 +24,7 @@ class WorkflowController {
         workflow: workflow.getSummary()
       };
     } catch (error) {
+      console.error('Error creating workflow:', error);
       throw error;
     }
   }
@@ -57,11 +32,12 @@ class WorkflowController {
   // Approve step
   static async approveStep(userId) {
     try {
+      // Get current month
       const currentMonth = moment().format('YYYY-MM');
       
-      // Get current month workflow
+      // Get active workflow for current month
       const workflow = await Workflow.findOne({ 
-        currentMonth,
+        month: currentMonth,
         status: 'in_progress'
       }).populate('steps.approverId');
       
@@ -96,7 +72,7 @@ class WorkflowController {
       const currentMonth = moment().format('YYYY-MM');
       
       const workflow = await Workflow.findOne({ 
-        currentMonth,
+        month: currentMonth,
         status: 'in_progress'
       }).populate('steps.approverId');
       
@@ -116,16 +92,87 @@ class WorkflowController {
     }
   }
   
+  // Get workflow status for a month
+  static async getWorkflowStatus(month = null) {
+    try {
+      const queryMonth = month || moment().format('YYYY-MM');
+      const workflow = await Workflow.findOne({ month: queryMonth })
+        .populate('requestedBy', 'email name')
+        .populate('steps.approverId', 'email role name')
+        .populate('generatedBy', 'email name');
+      
+      if (!workflow) {
+        return {
+          exists: false,
+          month: queryMonth,
+          message: `No workflow for ${queryMonth}`,
+          canCreateWorkflow: true
+        };
+      }
+      
+      const summary = workflow.getSummary();
+      
+      return {
+        exists: true,
+        month: queryMonth,
+        status: workflow.status,
+        requestedBy: workflow.requestedBy.email,
+        requestedAt: workflow.requestedAt,
+        payrollGenerated: workflow.payrollGenerated,
+        steps: summary.steps.map(step => ({
+          role: step.role,
+          approver: step.approver.email,
+          status: step.status,
+          approvedAt: step.approvedAt
+        })),
+        pendingApprovals: summary.pendingApprovals,
+        completedApprovals: summary.completedApprovals,
+        canApprove: workflow.status === 'in_progress',
+        canGeneratePayroll: workflow.status === 'approved' && !workflow.payrollGenerated
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+  
+  // Mark payroll as generated
+  static async markPayrollGenerated(month, generatedBy) {
+    try {
+      const workflow = await Workflow.findOne({ month });
+      
+      if (!workflow) {
+        throw new Error('No workflow found for this month');
+      }
+      
+      if (workflow.status !== 'approved') {
+        throw new Error('Workflow must be approved before generating payroll');
+      }
+      
+      if (workflow.payrollGenerated) {
+        throw new Error('Payroll already generated for this month');
+      }
+      
+      await workflow.markPayrollGenerated(generatedBy);
+      
+      return {
+        success: true,
+        message: 'Payroll generation recorded',
+        workflow: workflow.getSummary()
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+  
   // Get user's pending approvals
   static async getMyPendingApprovals(userId) {
     try {
       const currentMonth = moment().format('YYYY-MM');
       
       const workflow = await Workflow.findOne({ 
-        currentMonth,
+        month: currentMonth,
         status: 'in_progress'
       })
-      .populate('payrollId')
       .populate('steps.approverId', 'email role');
       
       if (!workflow) {
@@ -161,60 +208,16 @@ class WorkflowController {
     }
   }
   
-  // Get workflow history (all completed workflows)
+  // Get workflow history
   static async getWorkflowHistory() {
     try {
-      const workflows = await Workflow.find({
-        status: { $in: ['completed', 'rejected'] }
-      })
-      .sort({ createdAt: -1 })
-      .populate('payrollId')
-      .populate('initiatedBy', 'email')
-      .populate('steps.approverId', 'email role');
+      const workflows = await Workflow.find({})
+        .sort({ createdAt: -1 })
+        .populate('requestedBy', 'email')
+        .populate('generatedBy', 'email')
+        .populate('steps.approverId', 'email role');
       
       return workflows.map(wf => wf.getSummary());
-    } catch (error) {
-      throw error;
-    }
-  }
-  
-  // Get current workflow status (for display)
-  static async getCurrentStatus() {
-    try {
-      const currentMonth = moment().format('YYYY-MM');
-      
-      const workflow = await Workflow.findOne({ currentMonth })
-        .populate('payrollId')
-        .populate('initiatedBy', 'email name')
-        .populate('steps.approverId', 'email role name');
-      
-      if (!workflow) {
-        return {
-          exists: false,
-          currentMonth: currentMonth,
-          message: `No workflow for ${moment().format('MMMM YYYY')}`,
-          canStartWorkflow: true
-        };
-      }
-      
-      const summary = workflow.getSummary();
-      
-      return {
-        exists: true,
-        currentMonth: currentMonth,
-        status: workflow.status,
-        initiatedBy: workflow.initiatedBy.email,
-        initiatedAt: workflow.initiatedAt,
-        steps: summary.steps.map(step => ({
-          role: step.role,
-          approver: step.approver.email,
-          status: step.status,
-          approvedAt: step.approvedAt
-        })),
-        pendingApprovals: summary.pendingApprovals,
-        completedApprovals: summary.completedApprovals,
-        canApprove: workflow.status === 'in_progress'
-      };
     } catch (error) {
       throw error;
     }
