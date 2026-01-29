@@ -3,13 +3,12 @@
         <div class="brand-logo">
             <img src="/logo (2).png" alt="TeamPay Logo" class="logo" style="width: 120px; height: 100px; object-fit: contain;">
             <img src="/words.png" alt="TeamPay Logo" class="logo" style="width: 100px; height: 90px; object-fit: contain;">
-
-           
         </div>
-
     </div>
 
     <nav class="sidebar-nav">
+
+        <!-- MAIN (ALL ROLES) -->
         <div class="nav-section">
             <div class="nav-section-title">Main</div>
             <ul class="nav flex-column">
@@ -22,7 +21,8 @@
             </ul>
         </div>
 
-        <div class="nav-section">
+        <!-- HR MANAGEMENT (ADMIN ONLY) -->
+        <div class="nav-section role-admin">
             <div class="nav-section-title">HR Management</div>
             <ul class="nav flex-column">
                 <li class="nav-item">
@@ -52,32 +52,32 @@
             </ul>
         </div>
 
+        <!-- PAYROLL -->
         <div class="nav-section">
             <div class="nav-section-title">Payroll</div>
             <ul class="nav flex-column">
+
+                <!-- Visible to ALL -->
                 <li class="nav-item">
-                    <a href="/admin/payroll" class="nav-link <%= currentPage === 'payroll' ? 'active' : '' %>">
+                    <a href="/admin/payroll" class="nav-link <%= currentPage === 'Process Payroll' ? 'active' : '' %>">
                         <i class="fas fa-calculator"></i>
                         <span>Process Payroll</span>
                     </a>
                 </li>
-                
-                <li class="nav-item">
+
+                <!-- ADMIN ONLY -->
+                <li class="nav-item role-admin">
                     <a href="/admin/payrolls" class="nav-link <%= currentPage === 'payrolls' ? 'active' : '' %>">
                         <i class="fas fa-money-check-alt"></i>
                         <span>Processed Payrolls</span>
                     </a>
                 </li>
-                <!-- <li class="nav-item">
-                    <a href="/admin/payslips" class="nav-link <%= currentPage === 'payslips' ? 'active' : '' %>">
-                        <i class="fas fa-file-invoice"></i>
-                        <span>Payslips</span>
-                    </a>
-                </li> -->
+
             </ul>
         </div>
 
-        <div class="nav-section">
+        <!-- REPORTS (ADMIN ONLY) -->
+        <div class="nav-section role-admin">
             <div class="nav-section-title">Reports</div>
             <ul class="nav flex-column">
                 <li class="nav-item">
@@ -86,11 +86,11 @@
                         <span>Analytics</span>
                     </a>
                 </li>
-                
             </ul>
         </div>
 
-        <div class="nav-section">
+        <!-- SYSTEM (ADMIN ONLY) -->
+        <div class="nav-section role-admin">
             <div class="nav-section-title">System</div>
             <ul class="nav flex-column">
                 <li class="nav-item">
@@ -113,41 +113,26 @@
                 </li>
             </ul>
         </div>
+
     </nav>
 </aside>
 
+<!-- ROLE VISIBILITY SCRIPT -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const userData = localStorage.getItem("user");
 
+    if (!userData) {
+        window.location.href = "/";
+        return;
+    }
 
+    const user = JSON.parse(userData);
+    const role = user.role ? user.role.toLowerCase() : "";
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    // Hide admin-only elements if not admin
+    if (role !== "admin") {
+        document.querySelectorAll(".role-admin").forEach(el => el.style.display = "none");
+    }
+});
+</script>
