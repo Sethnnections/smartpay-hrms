@@ -1,12 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const WorkflowController = require('../../controllers/WorkflowController');
-const { authenticateToken, requireAdmin, requireHROrAdmin } = require('../../utils/auth');
+const { authenticateToken } = require('../../utils/auth');
 
-// Apply authentication to all report routes
 router.use(authenticateToken);
 
-// Get workflow status for a month
+// Get workflow status
 router.get('/status/:month?', async (req, res) => {
   try {
     const status = await WorkflowController.getWorkflowStatus(req.params.month);
@@ -22,7 +21,7 @@ router.get('/status/:month?', async (req, res) => {
   }
 });
 
-// Create workflow for a month
+// Create workflow
 router.post('/create', async (req, res) => {
   try {
     const { month } = req.body;
@@ -44,10 +43,10 @@ router.post('/create', async (req, res) => {
   }
 });
 
-// Approve current step
+// Approve step
 router.post('/approve', async (req, res) => {
   try {
-    const result = await WorkflowController.approveStep(req.user.id);
+    const result = await WorkflowController.approveStep(req.user.id, req.user.role);
     res.json(result);
   } catch (error) {
     res.status(400).json({
@@ -57,10 +56,10 @@ router.post('/approve', async (req, res) => {
   }
 });
 
-// Reject current step
+// Reject step
 router.post('/reject', async (req, res) => {
   try {
-    const result = await WorkflowController.rejectStep(req.user.id);
+    const result = await WorkflowController.rejectStep(req.user.id, req.user.role);
     res.json(result);
   } catch (error) {
     res.status(400).json({
@@ -86,8 +85,8 @@ router.get('/can-generate/:month', async (req, res) => {
   }
 });
 
-// Mark payroll as generated
-router.post('/mark-generated', async (req, res) => {
+// Generate payroll
+router.post('/generate-payroll', async (req, res) => {
   try {
     const { month } = req.body;
     
@@ -111,7 +110,7 @@ router.post('/mark-generated', async (req, res) => {
 // Get my pending approvals
 router.get('/my-approvals', async (req, res) => {
   try {
-    const result = await WorkflowController.getMyPendingApprovals(req.user.id);
+    const result = await WorkflowController.getMyPendingApprovals(req.user.id, req.user.role);
     res.json({
       success: true,
       ...result

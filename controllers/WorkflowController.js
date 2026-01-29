@@ -1,12 +1,39 @@
 const Workflow = require('../models/Workflow');
+const Payroll = require('../models/Payroll');
 const moment = require('moment');
 
 class WorkflowController {
   // Check if can generate payroll for a month
   static async checkCanGeneratePayroll(month) {
     try {
-      const result = await Workflow.canGeneratePayroll(month);
-      return result;
+      const workflow = await Workflow.findOne({ month });
+      
+      if (!workflow) {
+        return {
+          canGenerate: false,
+          reason: 'No workflow exists for this month'
+        };
+      }
+      
+      if (workflow.status === 'approved' && !workflow.payrollGenerated) {
+        return {
+          canGenerate: true,
+          workflowId: workflow._id,
+          month: workflow.month
+        };
+      }
+      
+      if (workflow.payrollGenerated) {
+        return {
+          canGenerate: false,
+          reason: 'Payroll already generated for this month'
+        };
+      }
+      
+      return {
+        canGenerate: false,
+        reason: `Workflow status: ${workflow.status}`
+      };
     } catch (error) {
       throw error;
     }
@@ -15,51 +42,83 @@ class WorkflowController {
   // Create workflow for a month
   static async createWorkflow(month, requestedBy) {
     try {
+      // Check if workflow already exists
+      const existing = await Workflow.findOne({ month });
+      if (existing) {
+        throw new Error(`Workflow for ${month} already exists`);
+      }
+      
       // Create workflow
-      const workflow = await Workflow.createForMonth(month, requestedBy);
+      const workflow = await Workflow.create({
+        month: month,
+        requestedBy: requestedBy,
+        steps: [
+          { stepNumber: 1, role: 'hr', status: 'pending' },
+          { stepNumber: 2, role: 'employee', status: 'pending' },
+          { stepNumber: 3, role: 'admin', status: 'pending' }
+        ],
+        currentStep: 1,
+        status: 'in_progress'
+      });
       
       return {
         success: true,
         message: 'Workflow created successfully',
-        workflow: workflow.getSummary()
+        workflow: workflow
       };
     } catch (error) {
-      console.error('Error creating workflow:', error);
       throw error;
     }
   }
   
   // Approve step
-  static async approveStep(userId) {
+  static async approveStep(userId, userRole) {
     try {
-      // Get current month
       const currentMonth = moment().format('YYYY-MM');
       
       // Get active workflow for current month
       const workflow = await Workflow.findOne({ 
         month: currentMonth,
         status: 'in_progress'
-      }).populate('steps.approverId');
+      });
       
       if (!workflow) {
         throw new Error('No active workflow found for current month');
       }
       
-      // Check if user has pending approval
-      const canApprove = workflow.steps.some(
-        step => step.approverId._id.toString() === userId.toString() && step.status === 'pending'
+      // Find the current step for this user's role
+      const currentStep = workflow.steps.find(
+        step => step.role === userRole && step.status === 'pending'
       );
       
-      if (!canApprove) {
+      if (!currentStep) {
         throw new Error('You have no pending approvals');
       }
       
-      await workflow.approveStep(userId);
+      // Update step
+      currentStep.status = 'approved';
+      currentStep.approvedAt = new Date();
+      currentStep.approvedBy = userId;
+      
+      // Check if all steps are approved
+      const pendingSteps = workflow.steps.filter(step => step.status === 'pending');
+      
+      if (pendingSteps.length === 0) {
+        // All steps approved
+        workflow.status = 'approved';
+        workflow.completedAt = new Date();
+      } else {
+        // Move to next pending step
+        const nextStep = workflow.steps.find(step => step.status === 'pending');
+        workflow.currentStep = nextStep.stepNumber;
+      }
+      
+      await workflow.save();
       
       return {
         success: true,
         message: 'Approval recorded',
-        workflow: workflow.getSummary()
+        workflow: workflow
       };
     } catch (error) {
       throw error;
@@ -67,25 +126,40 @@ class WorkflowController {
   }
   
   // Reject step
-  static async rejectStep(userId) {
+  static async rejectStep(userId, userRole) {
     try {
       const currentMonth = moment().format('YYYY-MM');
       
       const workflow = await Workflow.findOne({ 
         month: currentMonth,
         status: 'in_progress'
-      }).populate('steps.approverId');
+      });
       
       if (!workflow) {
         throw new Error('No active workflow found for current month');
       }
       
-      await workflow.rejectStep(userId);
+      // Find the current step for this user's role
+      const currentStep = workflow.steps.find(
+        step => step.role === userRole && step.status === 'pending'
+      );
+      
+      if (!currentStep) {
+        throw new Error('You have no pending approvals');
+      }
+      
+      // Update step
+      currentStep.status = 'rejected';
+      currentStep.approvedAt = new Date();
+      currentStep.approvedBy = userId;
+      workflow.status = 'rejected';
+      
+      await workflow.save();
       
       return {
         success: true,
         message: 'Rejection recorded',
-        workflow: workflow.getSummary()
+        workflow: workflow
       };
     } catch (error) {
       throw error;
@@ -96,10 +170,7 @@ class WorkflowController {
   static async getWorkflowStatus(month = null) {
     try {
       const queryMonth = month || moment().format('YYYY-MM');
-      const workflow = await Workflow.findOne({ month: queryMonth })
-        .populate('requestedBy', 'email name')
-        .populate('steps.approverId', 'email role name')
-        .populate('generatedBy', 'email name');
+      const workflow = await Workflow.findOne({ month: queryMonth });
       
       if (!workflow) {
         return {
@@ -110,24 +181,15 @@ class WorkflowController {
         };
       }
       
-      const summary = workflow.getSummary();
-      
       return {
         exists: true,
         month: queryMonth,
         status: workflow.status,
-        requestedBy: workflow.requestedBy.email,
+        requestedBy: workflow.requestedBy,
         requestedAt: workflow.requestedAt,
         payrollGenerated: workflow.payrollGenerated,
-        steps: summary.steps.map(step => ({
-          role: step.role,
-          approver: step.approver.email,
-          status: step.status,
-          approvedAt: step.approvedAt
-        })),
-        pendingApprovals: summary.pendingApprovals,
-        completedApprovals: summary.completedApprovals,
-        canApprove: workflow.status === 'in_progress',
+        steps: workflow.steps,
+        currentStep: workflow.currentStep,
         canGeneratePayroll: workflow.status === 'approved' && !workflow.payrollGenerated
       };
     } catch (error) {
@@ -152,12 +214,22 @@ class WorkflowController {
         throw new Error('Payroll already generated for this month');
       }
       
-      await workflow.markPayrollGenerated(generatedBy);
+      // Generate payroll for all active employees
+      const payrollRecords = await Payroll.processAllEmployees(month, generatedBy);
+      
+      // Mark workflow as completed
+      workflow.payrollGenerated = true;
+      workflow.generatedAt = new Date();
+      workflow.generatedBy = generatedBy;
+      workflow.status = 'completed';
+      
+      await workflow.save();
       
       return {
         success: true,
-        message: 'Payroll generation recorded',
-        workflow: workflow.getSummary()
+        message: `Payroll generated for ${payrollRecords.length} employees`,
+        workflow: workflow,
+        payrollCount: payrollRecords.length
       };
     } catch (error) {
       throw error;
@@ -165,15 +237,14 @@ class WorkflowController {
   }
   
   // Get user's pending approvals
-  static async getMyPendingApprovals(userId) {
+  static async getMyPendingApprovals(userId, userRole) {
     try {
       const currentMonth = moment().format('YYYY-MM');
       
       const workflow = await Workflow.findOne({ 
         month: currentMonth,
         status: 'in_progress'
-      })
-      .populate('steps.approverId', 'email role');
+      });
       
       if (!workflow) {
         return {
@@ -182,9 +253,9 @@ class WorkflowController {
         };
       }
       
-      // Check if this user has pending step
+      // Check if this user has pending step for their role
       const pendingStep = workflow.steps.find(
-        step => step.approverId._id.toString() === userId.toString() && step.status === 'pending'
+        step => step.role === userRole && step.status === 'pending'
       );
       
       if (!pendingStep) {
@@ -196,7 +267,7 @@ class WorkflowController {
       
       return {
         hasPending: true,
-        workflow: workflow.getSummary(),
+        workflow: workflow,
         myStep: {
           stepNumber: pendingStep.stepNumber,
           role: pendingStep.role,
@@ -213,11 +284,9 @@ class WorkflowController {
     try {
       const workflows = await Workflow.find({})
         .sort({ createdAt: -1 })
-        .populate('requestedBy', 'email')
-        .populate('generatedBy', 'email')
-        .populate('steps.approverId', 'email role');
+        .limit(10);
       
-      return workflows.map(wf => wf.getSummary());
+      return workflows;
     } catch (error) {
       throw error;
     }
