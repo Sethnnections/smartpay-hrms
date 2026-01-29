@@ -341,14 +341,14 @@
                     <div class="card-body">
                         <div class="row g-3">
                             <!-- Month Selection -->
-                            <div class="col-md-3">
+                            <div class="col-md-4">
                                 <label class="form-label">Select Month</label>
                                 <input type="month" class="form-control" id="selectedMonth" 
                                        value="" onchange="loadPayrollData()">
                             </div>
                             
                             <!-- Department Filter -->
-                            <div class="col-md-3">
+                            <div class="col-md-4">
                                 <label class="form-label">Department</label>
                                 <select class="form-select" id="departmentFilter" onchange="filterPayrolls()">
                                     <option value="">All Departments</option>
@@ -356,7 +356,7 @@
                             </div>
                             
                             <!-- Status Filter -->
-                            <div class="col-md-3">
+                            <div class="col-md-4">
                                 <label class="form-label">Payment Status</label>
                                 <select class="form-select" id="statusFilter" onchange="filterPayrolls()">
                                     <option value="">All Status</option>
@@ -368,16 +368,7 @@
                                 </select>
                             </div>
                             
-                            <!-- Actions -->
-                            <div class="col-md-3">
-                                <label class="form-label">Actions</label>
-                                <div class="d-grid gap-2">
-                                    <button class="btn btn-primary btn-sm" onclick="processPayroll()">
-                                        <i class="fas fa-play me-1"></i>
-                                        Process Payroll
-                                    </button>
-                                </div>
-                            </div>
+                         
                         </div>
                         
                         <!-- Action Buttons Row -->

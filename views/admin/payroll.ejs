@@ -683,7 +683,7 @@
             <div class="d-flex justify-content-between align-items-center">
               <div>
                 <i class="fas fa-project-diagram me-2"></i>Payroll Workflow
-                <small class="text-secondary ms-2">HR → Employee → Admin</small>
+                <small class="text-secondary ms-2">HR → Finance → Admin</small>
               </div>
               <div class="user-avatar" id="initiatorAvatar" title="Workflow Initiator">
                 <span>?</span>
@@ -909,37 +909,12 @@
     const userData = localStorage.getItem("user");
     if (userData) {
       currentUser = JSON.parse(userData);
-      updateHeaderUserSection();
     } else {
       window.location.href = '/login';
     }
   }
 
-  // Update header with user info
-  function updateHeaderUserSection() {
-    const headerSection = document.getElementById("headerUserSection");
-    if (currentUser) {
-      headerSection.innerHTML = `
-        <div class="dropdown">
-          <button class="btn btn-outline-light btn-sm dropdown-toggle d-flex align-items-center" type="button" data-bs-toggle="dropdown">
-            <div class="user-avatar me-2">
-              ${currentUser.name ? currentUser.name.charAt(0).toUpperCase() : 'U'}
-            </div>
-            <div class="text-start">
-              <div class="text-xs fw-semibold">${currentUser.name || 'User'}</div>
-              <div class="text-xs opacity-75">${currentUser.role.toUpperCase()}</div>
-            </div>
-          </button>
-          <ul class="dropdown-menu dropdown-menu-end">
-            <li><a class="dropdown-item" href="#"><i class="fas fa-user me-2"></i>Profile</a></li>
-            <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2"></i>Settings</a></li>
-            <li><hr class="dropdown-divider"></li>
-            <li><a class="dropdown-item text-danger" href="/logout"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
-          </ul>
-        </div>
-      `;
-    }
-  }
+
 
   // Auth header for API calls
   const authHeader = () => ({
@@ -1127,7 +1102,7 @@
   function getStepDescription(role) {
     const descriptions = {
       'hr': 'Human Resources verification',
-      'employee': 'Employee representative review',
+      'employee': 'Finance representative review',
       'admin': 'Final administrative approval'
     };
     return descriptions[role] || 'Approval required';
@@ -1187,7 +1162,7 @@
             <p>The workflow requires 3-step approval:</p>
             <ol>
               <li><strong>HR</strong> approval</li>
-              <li><strong>Employee</strong> approval</li>
+              <li><strong>Finance</strong> approval</li>
               <li><strong>Admin</strong> approval</li>
             </ol>
           </div>
@@ -1815,7 +1790,7 @@
           <h6>Payroll Workflow Guide</h6>
           <ol>
             <li><strong>Start Workflow:</strong> Any user can start a workflow for a month</li>
-            <li><strong>3-Step Approval:</strong> HR → Employee → Admin must approve</li>
+            <li><strong>3-Step Approval:</strong> HR → Finance → Admin must approve</li>
             <li><strong>Generate Payroll:</strong> After all approvals, generate payroll</li>
             <li><strong>View History:</strong> Check past workflows and generated payrolls</li>
           </ol>
