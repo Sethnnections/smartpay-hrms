@@ -57,12 +57,13 @@
             <div class="nav-section-title">Payroll</div>
             <ul class="nav flex-column">
 
-                <!-- Visible to ALL -->
+
+                <!-- In the sidebar partial, update the Process Payroll link -->
                 <li class="nav-item">
-                    <a href="/admin/payroll" class="nav-link <%= currentPage === 'Process Payroll' ? 'active' : '' %>">
-                        <i class="fas fa-calculator"></i>
-                        <span>Process Payroll</span>
-                    </a>
+                <a href="/admin/workflow" class="nav-link <%= currentPage === 'Process Payroll' ? 'active' : '' %>">
+                    <i class="fas fa-calculator"></i>
+                    <span>Process Payroll</span>
+                </a>
                 </li>
 
                 <!-- ADMIN ONLY -->

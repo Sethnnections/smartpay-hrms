@@ -2236,8 +2236,260 @@ addCustomEarning: async (payrollId, earningData, userId) => {
   } catch (error) {
     throw error;
   }
-}
-,
+},
+
+// Add these methods to payrollController object:
+
+// Add adjustment with duration and recovery period
+addAdjustmentWithRecovery: async (payrollId, adjustmentData, userId) => {
+  try {
+    const payroll = await Payroll.findById(payrollId);
+    
+    if (!payroll) {
+      throw new Error('Payroll record not found');
+    }
+    
+    // Check if adjustments are allowed (before approval)
+    const workflow = await Workflow.findOne({ month: payroll.payrollMonth });
+    if (workflow && workflow.status !== 'in_progress') {
+      throw new Error('Adjustments can only be made before payroll approval');
+    }
+    
+    // Validate recovery period for temporary adjustments
+    if (adjustmentData.duration === 'temporary' && adjustmentData.recoveryPeriod) {
+      if (!adjustmentData.recoveryPeriod.numberOfMonths || adjustmentData.recoveryPeriod.numberOfMonths < 1) {
+        throw new Error('Recovery period must be at least 1 month');
+      }
+      
+      if (!adjustmentData.recoveryPeriod.amountPerMonth || adjustmentData.recoveryPeriod.amountPerMonth <= 0) {
+        throw new Error('Amount per month must be greater than 0');
+      }
+      
+      // Calculate total amount
+      const totalAmount = adjustmentData.recoveryPeriod.numberOfMonths * adjustmentData.recoveryPeriod.amountPerMonth;
+      adjustmentData.amount = adjustmentData.recoveryPeriod.amountPerMonth; // Current month's amount
+      adjustmentData.totalAmount = totalAmount;
+      adjustmentData.remainingMonths = adjustmentData.recoveryPeriod.numberOfMonths - 1;
+    }
+    
+    const adjustment = {
+      ...adjustmentData,
+      appliedBy: userId,
+      appliedAt: new Date()
+    };
+    
+    payroll.adjustments.push(adjustment);
+    
+    // Recalculate payroll
+    if (adjustment.type === 'addition') {
+      if (adjustment.category === 'allowance') {
+        payroll.allowances.other += adjustment.amount;
+      } else if (adjustment.category === 'bonus') {
+        payroll.bonuses.other += adjustment.amount;
+      }
+    } else if (adjustment.type === 'deduction') {
+      payroll.deductions.other.push({
+        name: adjustment.reason,
+        amount: adjustment.amount,
+        description: adjustment.category
+      });
+    }
+    
+    await payroll.save();
+    return payroll;
+  } catch (error) {
+    throw error;
+  }
+},
+
+// Apply recovery adjustments to future payrolls
+applyRecoveryAdjustments: async (employeeId, month, userId) => {
+  try {
+    // Find all temporary adjustments with recovery period
+    const payrolls = await Payroll.find({
+      employeeId,
+      'adjustments.duration': 'temporary',
+      'adjustments.recoveryPeriod': { $exists: true },
+      'adjustments.remainingMonths': { $gt: 0 }
+    });
+    
+    const recoveryAdjustments = [];
+    
+    payrolls.forEach(payroll => {
+      payroll.adjustments.forEach(adj => {
+        if (adj.duration === 'temporary' && 
+            adj.recoveryPeriod && 
+            adj.remainingMonths > 0 &&
+            new Date(adj.appliedAt) < new Date()) { // Only apply if past the applied date
+            
+          // Check if this adjustment should be applied this month
+          const appliedDate = new Date(adj.appliedAt);
+          const currentDate = new Date();
+          const monthsDiff = (currentDate.getFullYear() - appliedDate.getFullYear()) * 12 + 
+                            (currentDate.getMonth() - appliedDate.getMonth());
+          
+          if (monthsDiff > 0 && monthsDiff <= adj.recoveryPeriod.numberOfMonths) {
+            recoveryAdjustments.push({
+              originalAdjustmentId: adj._id,
+              type: adj.type,
+              category: adj.category,
+              reason: `Recovery: ${adj.reason} (${monthsDiff}/${adj.recoveryPeriod.numberOfMonths})`,
+              amount: adj.recoveryPeriod.amountPerMonth,
+              appliedBy: userId,
+              appliedAt: new Date()
+            });
+            
+            // Decrement remaining months
+            adj.remainingMonths = Math.max(0, adj.remainingMonths - 1);
+          }
+        }
+      });
+    });
+    
+    // Apply to current month's payroll
+    const currentPayroll = await Payroll.findOne({
+      employeeId,
+      payrollMonth: month
+    });
+    
+    if (currentPayroll) {
+      recoveryAdjustments.forEach(adj => {
+        currentPayroll.adjustments.push(adj);
+        
+        // Update payroll amounts
+        if (adj.type === 'deduction') {
+          currentPayroll.deductions.other.push({
+            name: adj.reason,
+            amount: adj.amount,
+            description: 'Recovery deduction'
+          });
+        }
+      });
+      
+      await currentPayroll.save();
+    }
+    
+    // Update original payrolls
+    for (const payroll of payrolls) {
+      await payroll.save();
+    }
+    
+    return recoveryAdjustments;
+  } catch (error) {
+    throw error;
+  }
+},
+
+// Check if payroll can be edited (before approval)
+canEditPayroll: async (payrollId) => {
+  try {
+    const payroll = await Payroll.findById(payrollId);
+    
+    if (!payroll) {
+      return { canEdit: false, reason: 'Payroll not found' };
+    }
+    
+    const workflow = await Workflow.findOne({ month: payroll.payrollMonth });
+    
+    if (!workflow) {
+      return { canEdit: true, reason: 'No workflow exists' };
+    }
+    
+    if (workflow.status === 'in_progress') {
+      return { 
+        canEdit: true, 
+        reason: 'Payroll is in progress and can be edited',
+        workflowStatus: workflow.status
+      };
+    }
+    
+    if (workflow.status === 'approved') {
+      return { 
+        canEdit: false, 
+        reason: 'Payroll has been approved and cannot be edited',
+        workflowStatus: workflow.status
+      };
+    }
+    
+    if (payroll.payment.status === 'paid') {
+      return { 
+        canEdit: false, 
+        reason: 'Payroll has been paid and cannot be edited',
+        paymentStatus: payroll.payment.status
+      };
+    }
+    
+    return { canEdit: true };
+  } catch (error) {
+    throw error;
+  }
+},
+
+// Generate salary advance with recovery period
+createSalaryAdvance: async (payrollId, advanceData, userId) => {
+  try {
+    const payroll = await Payroll.findById(payrollId);
+    
+    if (!payroll) {
+      throw new Error('Payroll record not found');
+    }
+    
+    // Check if payroll can be edited
+    const canEdit = await payrollController.canEditPayroll(payrollId);
+    if (!canEdit.canEdit) {
+      throw new Error(canEdit.reason);
+    }
+    
+    const { amount, numberOfMonths, reason = 'Salary Advance' } = advanceData;
+    
+    if (amount <= 0) {
+      throw new Error('Advance amount must be greater than 0');
+    }
+    
+    if (numberOfMonths < 1) {
+      throw new Error('Recovery period must be at least 1 month');
+    }
+    
+    const monthlyDeduction = amount / numberOfMonths;
+    
+    // Create adjustment for current month
+    const adjustment = {
+      type: 'deduction',
+      category: 'advance',
+      duration: 'temporary',
+      reason: `${reason} (1/${numberOfMonths})`,
+      amount: monthlyDeduction,
+      appliedBy: userId,
+      appliedAt: new Date(),
+      recoveryPeriod: {
+        numberOfMonths: numberOfMonths,
+        amountPerMonth: monthlyDeduction,
+        totalAmount: amount
+      },
+      remainingMonths: numberOfMonths - 1
+    };
+    
+    payroll.adjustments.push(adjustment);
+    
+    // Add to deductions
+    payroll.deductions.other.push({
+      name: `${reason} (1/${numberOfMonths})`,
+      amount: monthlyDeduction,
+      description: 'Salary Advance Deduction'
+    });
+    
+    await payroll.save();
+    
+    return {
+      success: true,
+      message: `Salary advance of ${amount} created. Will be recovered over ${numberOfMonths} months.`,
+      adjustment: adjustment,
+      payroll: payroll
+    };
+  } catch (error) {
+    throw error;
+  }
+},
 // Add these methods to payrollController object:
 generateBankInstructionExcel: async function(res, options = {}, requestedBy = {}) {
   try {

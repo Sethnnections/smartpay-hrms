@@ -252,30 +252,51 @@ const payrollSchema = new mongoose.Schema(
       default: 1,
       min: [0, "Exchange rate cannot be negative"],
     },
-
     adjustments: [
       {
         type: {
           type: String,
-          enum: ["addition", "deduction", "adjustment"],
+          enum: ["addition", "deduction", "adjustment", "advance"],
           required: true,
         },
         category: {
           type: String,
-          enum: ["salary", "allowance", "bonus", "tax", "other", "edit"],
+          enum: [
+            "salary",
+            "allowance",
+            "bonus",
+            "tax",
+            "other",
+            "edit",
+            "advance",
+          ],
           required: true,
         },
         duration: {
           type: String,
-          enum: ["temporary", "permanent"],
+          enum: ["temporary", "permanent", "recovery"],
           default: "temporary",
         },
         durationDetails: {
           startDate: Date,
           endDate: Date,
           numberOfMonths: Number,
+          amountPerMonth: Number,
+        },
+        // Add recovery period fields
+        recoveryPeriod: {
+          numberOfMonths: Number,
+          amountPerMonth: Number,
+          totalAmount: Number,
+          startMonth: String, // YYYY-MM
+          endMonth: String, // YYYY-MM
+        },
+        remainingMonths: {
+          type: Number,
+          default: 0,
         },
         amount: { type: Number, required: true },
+        totalAmount: { type: Number }, // For recovery adjustments
         reason: { type: String, required: true, trim: true },
         appliedBy: {
           type: mongoose.Schema.Types.ObjectId,
@@ -350,7 +371,7 @@ payrollSchema.statics.calculateProgressiveTax = async function (
   currency = "MWK",
 ) {
   // For MWK currency, always use the fixed Malawi formula
-  if (currency === 'MWK') {
+  if (currency === "MWK") {
     return this.calculateMalawiTax2024(grossPay);
   }
 
@@ -367,7 +388,6 @@ payrollSchema.statics.calculateProgressiveTax = async function (
       `Found ${taxBrackets.length} tax brackets for ${country}/${currency}`,
     );
 
-    
     let tax = 0;
     let remainingIncome = grossPay;
     const bracketsUsed = [];

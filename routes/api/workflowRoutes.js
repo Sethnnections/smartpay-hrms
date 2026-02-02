@@ -6,14 +6,16 @@ const { authenticateToken } = require('../../utils/auth');
 router.use(authenticateToken);
 
 // Get workflow status
-router.get('/status/:month?', async (req, res) => {
+router.get('/status', async (req, res) => {
   try {
-    const status = await WorkflowController.getWorkflowStatus(req.params.month);
+    const { month } = req.query;
+    const status = await WorkflowController.getWorkflowStatus(month);
     res.json({
       success: true,
       ...status
     });
   } catch (error) {
+    console.error('Workflow status error:', error);
     res.status(400).json({
       success: false,
       message: error.message
@@ -36,6 +38,7 @@ router.post('/create', async (req, res) => {
     const result = await WorkflowController.createWorkflow(month, req.user.id);
     res.json(result);
   } catch (error) {
+    console.error('Create workflow error:', error);
     res.status(400).json({
       success: false,
       message: error.message
@@ -46,9 +49,11 @@ router.post('/create', async (req, res) => {
 // Approve step
 router.post('/approve', async (req, res) => {
   try {
-    const result = await WorkflowController.approveStep(req.user.id, req.user.role);
+    const { notes, role } = req.body;
+    const result = await WorkflowController.approveStep(req.user.id, role || req.user.role, notes);
     res.json(result);
   } catch (error) {
+    console.error('Approve step error:', error);
     res.status(400).json({
       success: false,
       message: error.message
@@ -59,9 +64,11 @@ router.post('/approve', async (req, res) => {
 // Reject step
 router.post('/reject', async (req, res) => {
   try {
-    const result = await WorkflowController.rejectStep(req.user.id, req.user.role);
+    const { reason, role } = req.body;
+    const result = await WorkflowController.rejectStep(req.user.id, role || req.user.role, reason);
     res.json(result);
   } catch (error) {
+    console.error('Reject step error:', error);
     res.status(400).json({
       success: false,
       message: error.message
@@ -78,28 +85,7 @@ router.get('/can-generate/:month', async (req, res) => {
       ...result
     });
   } catch (error) {
-    res.status(400).json({
-      success: false,
-      message: error.message
-    });
-  }
-});
-
-// Generate payroll
-router.post('/generate-payroll', async (req, res) => {
-  try {
-    const { month } = req.body;
-    
-    if (!month) {
-      return res.status(400).json({
-        success: false,
-        message: 'Month is required'
-      });
-    }
-    
-    const result = await WorkflowController.markPayrollGenerated(month, req.user.id);
-    res.json(result);
-  } catch (error) {
+    console.error('Can generate error:', error);
     res.status(400).json({
       success: false,
       message: error.message
@@ -116,6 +102,7 @@ router.get('/my-approvals', async (req, res) => {
       ...result
     });
   } catch (error) {
+    console.error('My approvals error:', error);
     res.status(400).json({
       success: false,
       message: error.message
@@ -132,6 +119,7 @@ router.get('/history', async (req, res) => {
       history: history
     });
   } catch (error) {
+    console.error('Workflow history error:', error);
     res.status(400).json({
       success: false,
       message: error.message

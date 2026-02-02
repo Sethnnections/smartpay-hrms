@@ -3,23 +3,25 @@ const Payroll = require('../models/Payroll');
 const moment = require('moment');
 
 class WorkflowController {
-  // Check if can generate payroll for a month
+  // HR can generate payroll without approval first
   static async checkCanGeneratePayroll(month) {
     try {
       const workflow = await Workflow.findOne({ month });
       
       if (!workflow) {
         return {
-          canGenerate: false,
-          reason: 'No workflow exists for this month'
+          canGenerate: true,
+          reason: 'No workflow exists - HR can generate payroll'
         };
       }
       
-      if (workflow.status === 'approved' && !workflow.payrollGenerated) {
+      // HR can generate if workflow exists but payroll not generated yet
+      if (!workflow.payrollGenerated) {
         return {
           canGenerate: true,
           workflowId: workflow._id,
-          month: workflow.month
+          month: workflow.month,
+          status: workflow.status
         };
       }
       
@@ -39,31 +41,124 @@ class WorkflowController {
     }
   }
   
-  // Create workflow for a month
-  static async createWorkflow(month, requestedBy) {
-    try {
-      // Check if workflow already exists
-      const existing = await Workflow.findOne({ month });
-      if (existing) {
-        throw new Error(`Workflow for ${month} already exists`);
-      }
-      
-      // Create workflow
-      const workflow = await Workflow.create({
-        month: month,
-        requestedBy: requestedBy,
-        steps: [
-          { stepNumber: 1, role: 'hr', status: 'pending' },
-          { stepNumber: 2, role: 'employee', status: 'pending' },
-          { stepNumber: 3, role: 'admin', status: 'pending' }
-        ],
-        currentStep: 1,
-        status: 'in_progress'
-      });
+  // Create workflow when HR generates payroll
+// WorkflowController.js - Update the createWorkflow method
+static async createWorkflow(month, requestedBy) {
+  try {
+    console.log('Creating workflow for:', month, 'requestedBy:', requestedBy);
+    
+    // Check if workflow already exists
+    const existing = await Workflow.findOne({ month });
+    if (existing) {
+      // Update existing workflow
+      existing.payrollGenerated = true;
+      existing.generatedAt = new Date();
+      existing.generatedBy = requestedBy;
+      existing.status = 'in_progress';
+      await existing.save();
       
       return {
         success: true,
-        message: 'Workflow created successfully',
+        message: 'Workflow updated successfully',
+        workflow: existing
+      };
+    }
+    
+    // Create new workflow with 3-step approval: HR -> Employee (Finance) -> Admin
+    const workflow = await Workflow.create({
+      month: month,
+      requestedBy: requestedBy,
+      requestedAt: new Date(),
+      steps: [
+        { stepNumber: 1, role: 'hr', status: 'pending' },
+        { stepNumber: 2, role: 'employee', status: 'pending' }, // Finance approval done by employee role
+        { stepNumber: 3, role: 'admin', status: 'pending' }
+      ],
+      currentStep: 1,
+      status: 'in_progress',
+      payrollGenerated: true,
+      generatedAt: new Date(),
+      generatedBy: requestedBy,
+      adjustmentsAllowed: true
+    });
+    
+    console.log('Workflow created successfully:', workflow._id);
+    
+    return {
+      success: true,
+      message: 'Workflow created successfully',
+      workflow: workflow
+    };
+  } catch (error) {
+    console.error('Error creating workflow:', error);
+    throw error;
+  }
+}
+  
+  // Check if adjustments can be made (before approval)
+  static async canMakeAdjustments(month) {
+    try {
+      const workflow = await Workflow.findOne({ month });
+      
+      if (!workflow) {
+        return {
+          canAdjust: false,
+          reason: 'No workflow exists'
+        };
+      }
+      
+      // Allow adjustments if payroll is generated but not approved
+      if (workflow.payrollGenerated && workflow.status === 'in_progress' && workflow.currentStep === 1) {
+        return {
+          canAdjust: true,
+          workflowId: workflow._id,
+          month: workflow.month,
+          currentStep: workflow.currentStep
+        };
+      }
+      
+      return {
+        canAdjust: false,
+        reason: workflow.status === 'approved' ? 'Payroll already approved' : 'Adjustments period ended'
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+  
+  // Start approval process (HR initiates approvals after adjustments)
+  static async startApprovalProcess(month, userId) {
+    try {
+      const workflow = await Workflow.findOne({ month });
+      
+      if (!workflow) {
+        throw new Error('No workflow found for this month');
+      }
+      
+      if (!workflow.payrollGenerated) {
+        throw new Error('Payroll must be generated before starting approval');
+      }
+      
+      if (workflow.status !== 'in_progress') {
+        throw new Error(`Workflow status is ${workflow.status}, cannot start approval`);
+      }
+      
+      // Mark HR step as approved (since HR is the one starting approval after adjustments)
+      const hrStep = workflow.steps.find(step => step.role === 'hr');
+      if (hrStep) {
+        hrStep.status = 'approved';
+        hrStep.approvedAt = new Date();
+        hrStep.approvedBy = userId;
+      }
+      
+      // Move to employee (finance) step
+      workflow.currentStep = 2;
+      
+      await workflow.save();
+      
+      return {
+        success: true,
+        message: 'Approval process started. Waiting for finance approval (employee role).',
         workflow: workflow
       };
     } catch (error) {
@@ -71,8 +166,8 @@ class WorkflowController {
     }
   }
   
-  // Approve step
-  static async approveStep(userId, userRole) {
+  // Approve step (for any role)
+  static async approveStep(userId, userRole, notes = '') {
     try {
       const currentMonth = moment().format('YYYY-MM');
       
@@ -99,6 +194,10 @@ class WorkflowController {
       currentStep.status = 'approved';
       currentStep.approvedAt = new Date();
       currentStep.approvedBy = userId;
+      currentStep.notes = notes;
+      
+      // Move to next step
+      workflow.currentStep = currentStep.stepNumber + 1;
       
       // Check if all steps are approved
       const pendingSteps = workflow.steps.filter(step => step.status === 'pending');
@@ -107,10 +206,6 @@ class WorkflowController {
         // All steps approved
         workflow.status = 'approved';
         workflow.completedAt = new Date();
-      } else {
-        // Move to next pending step
-        const nextStep = workflow.steps.find(step => step.status === 'pending');
-        workflow.currentStep = nextStep.stepNumber;
       }
       
       await workflow.save();
@@ -126,7 +221,7 @@ class WorkflowController {
   }
   
   // Reject step
-  static async rejectStep(userId, userRole) {
+  static async rejectStep(userId, userRole, reason) {
     try {
       const currentMonth = moment().format('YYYY-MM');
       
@@ -152,6 +247,7 @@ class WorkflowController {
       currentStep.status = 'rejected';
       currentStep.approvedAt = new Date();
       currentStep.approvedBy = userId;
+      currentStep.notes = reason;
       workflow.status = 'rejected';
       
       await workflow.save();
@@ -166,7 +262,47 @@ class WorkflowController {
     }
   }
   
-  // Get workflow status for a month
+  // Mark payroll as paid (after approvals)
+  static async markPayrollPaid(month, paidBy) {
+    try {
+      const workflow = await Workflow.findOne({ month });
+      
+      if (!workflow) {
+        throw new Error('No workflow found for this month');
+      }
+      
+      if (workflow.status !== 'approved') {
+        throw new Error('Workflow must be approved before marking as paid');
+      }
+      
+      // Update all payrolls for this month to paid status
+      const payrolls = await Payroll.find({ payrollMonth: month });
+      
+      for (const payroll of payrolls) {
+        if (payroll.payment.status !== 'paid') {
+          payroll.payment.status = 'paid';
+          payroll.payment.paidAt = new Date();
+          payroll.payment.reference = `PAY-${month}-${payroll.employeeId}`;
+          await payroll.save();
+        }
+      }
+      
+      // Update workflow status
+      workflow.status = 'completed';
+      workflow.completedAt = new Date();
+      await workflow.save();
+      
+      return {
+        success: true,
+        message: `Marked ${payrolls.length} payrolls as paid`,
+        count: payrolls.length
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+  
+  // Get workflow status
   static async getWorkflowStatus(month = null) {
     try {
       const queryMonth = month || moment().format('YYYY-MM');
@@ -177,9 +313,17 @@ class WorkflowController {
           exists: false,
           month: queryMonth,
           message: `No workflow for ${queryMonth}`,
-          canCreateWorkflow: true
+          canGeneratePayroll: true,
+          canMakeAdjustments: false,
+          canStartApproval: false,
+          canMarkPaid: false
         };
       }
+      
+      // Check if adjustments can be made
+      const canAdjust = workflow.payrollGenerated && 
+                       workflow.status === 'in_progress' && 
+                       workflow.currentStep === 1;
       
       return {
         exists: true,
@@ -190,46 +334,10 @@ class WorkflowController {
         payrollGenerated: workflow.payrollGenerated,
         steps: workflow.steps,
         currentStep: workflow.currentStep,
-        canGeneratePayroll: workflow.status === 'approved' && !workflow.payrollGenerated
-      };
-    } catch (error) {
-      throw error;
-    }
-  }
-  
-  // Mark payroll as generated
-  static async markPayrollGenerated(month, generatedBy) {
-    try {
-      const workflow = await Workflow.findOne({ month });
-      
-      if (!workflow) {
-        throw new Error('No workflow found for this month');
-      }
-      
-      if (workflow.status !== 'approved') {
-        throw new Error('Workflow must be approved before generating payroll');
-      }
-      
-      if (workflow.payrollGenerated) {
-        throw new Error('Payroll already generated for this month');
-      }
-      
-      // Generate payroll for all active employees
-      const payrollRecords = await Payroll.processAllEmployees(month, generatedBy);
-      
-      // Mark workflow as completed
-      workflow.payrollGenerated = true;
-      workflow.generatedAt = new Date();
-      workflow.generatedBy = generatedBy;
-      workflow.status = 'completed';
-      
-      await workflow.save();
-      
-      return {
-        success: true,
-        message: `Payroll generated for ${payrollRecords.length} employees`,
-        workflow: workflow,
-        payrollCount: payrollRecords.length
+        canGeneratePayroll: !workflow.payrollGenerated,
+        canMakeAdjustments: canAdjust,
+        canStartApproval: workflow.payrollGenerated && workflow.status === 'in_progress' && workflow.currentStep === 1,
+        canMarkPaid: workflow.status === 'approved'
       };
     } catch (error) {
       throw error;
@@ -282,9 +390,12 @@ class WorkflowController {
   // Get workflow history
   static async getWorkflowHistory() {
     try {
-      const workflows = await Workflow.find({})
+      const workflows = await Workflow.find()
         .sort({ createdAt: -1 })
-        .limit(10);
+        .limit(50)
+        .populate('requestedBy', 'name email')
+        .populate('generatedBy', 'name email')
+        .populate('steps.approvedBy', 'name email');
       
       return workflows;
     } catch (error) {
