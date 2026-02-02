@@ -1,4 +1,3 @@
-// models/TaxBracket.js
 const mongoose = require('mongoose');
 
 const taxBracketSchema = new mongoose.Schema({
