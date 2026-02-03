@@ -12,271 +12,549 @@
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/admin.css">
-    <link rel="stylesheet" href="/css/departments.css">
+    <link rel="stylesheet" href="/css/dashboard.css">
     <style>
-        .btn-sm {
-            padding: 0.25rem 0.5rem;
-            font-size: 0.875rem;
-        }
-
-        .badge {
-            padding: 0.5em 0.75em;
-            border-radius: 6px;
-            font-weight: 500;
-        }
-
-        .badge.bg-success { background-color: var(--success-color) !important; }
-        .badge.bg-warning { background-color: var(--warning-color) !important; }
-        .badge.bg-danger { background-color: var(--danger-color) !important; }
-        .badge.bg-secondary { background-color: var(--secondary-color) !important; }
-
-        .form-control, .form-select {
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-            padding: 0.75rem;
-        }
-
-        .form-control:focus, .form-select:focus {
-            border-color: var(--accent-color);
-            box-shadow: 0 0 0 0.2rem rgba(245, 158, 11, 0.25);
-        }
-
-        .modal-content {
-            border-radius: 12px;
-            border: none;
-        }
-
-        .modal-header {
-            background: var(--primary-color);
-            color: white;
-            border-radius: 12px 12px 0 0;
-        }
-
-        .loading-spinner {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            border-top-color: white;
-            animation: spin 1s ease-in-out infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        .dropdown-menu {
-            border-radius: 8px;
-            border: none;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
-        }
-
-        .payroll-details {
-            background: #f8fafc;
-            border-radius: 8px;
-            padding: 1rem;
-            margin: 0.5rem 0;
-        }
-
-        .earnings-section, .deductions-section {
-            background: white;
-            border-radius: 8px;
-            padding: 1rem;
-            margin-bottom: 1rem;
-            border-left: 4px solid var(--success-color);
-        }
-
-        .deductions-section {
-            border-left-color: var(--danger-color);
-        }
-
-        .breakdown-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0.5rem 0;
-            border-bottom: 1px solid #e5e7eb;
-        }
-
-        .breakdown-item:last-child {
-            border-bottom: none;
+        /* Enhanced Professional Styling */
+        .payroll-status-badge {
+            font-size: 0.85rem;
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
             font-weight: 600;
-            background: var(--light-bg);
-            margin: 0.5rem -1rem -1rem -1rem;
-            padding: 0.75rem 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
-        .reports-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 1rem;
-            margin-top: 1.5rem;
+        .payroll-status-badge.status-paid {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
         }
 
-        .report-card {
+        .payroll-status-badge.status-pending {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+            box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+        }
+
+        .payroll-status-badge.status-approved {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+        }
+
+        .payroll-status-badge.status-processing {
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+            color: white;
+            box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+        }
+
+        .payroll-status-badge.status-failed {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+        }
+
+        .detail-section {
             background: white;
             border-radius: 12px;
             padding: 1.5rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            text-align: center;
-            transition: transform 0.2s ease;
+            margin-bottom: 1.5rem;
             border: 1px solid var(--border-color);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
         }
 
-        .report-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px -8px rgba(0, 0, 0, 0.2);
+        .detail-section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.25rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--border-color);
         }
 
-        .report-icon {
-            font-size: 2.5rem;
-            margin-bottom: 1rem;
-            color: var(--primary-color);
-        }
-
-        .report-title {
+        .detail-section-title {
             font-size: 1.1rem;
             font-weight: 600;
-            margin-bottom: 0.5rem;
-            color: var(--primary-color);
-        }
-
-        .report-description {
-            color: #6b7280;
-            font-size: 0.875rem;
-            margin-bottom: 1rem;
-        }
-
-        .editable-amount {
-            cursor: pointer;
-            padding: 4px 8px;
-            border-radius: 4px;
-            transition: background-color 0.2s;
-            position: relative;
-        }
-
-        .editable-amount:hover {
-            background-color: #f0f9ff;
-        }
-
-        .editable-amount i {
-            opacity: 0.5;
-            transition: opacity 0.2s;
-        }
-
-        .editable-amount:hover i {
-            opacity: 1;
-        }
-
-        .inline-edit-form {
-            display: none;
+            color: var(--text-primary);
+            display: flex;
             align-items: center;
             gap: 0.5rem;
+            margin: 0;
         }
 
-        .inline-edit-form.active {
+        .detail-section-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
             display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
         }
 
-        .inline-edit-input {
-            width: 120px;
-            padding: 0.25rem 0.5rem;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 0.875rem;
+        .detail-section-icon.icon-employee {
+            background: rgba(108, 12, 13, 0.1);
+            color: var(--sidebar-dark-blue);
         }
 
-        .btn-inline {
-            padding: 0.25rem 0.5rem;
-            font-size: 0.75rem;
-            line-height: 1;
+        .detail-section-icon.icon-period {
+            background: rgba(59, 130, 246, 0.1);
+            color: #3b82f6;
         }
 
-        .earnings-list, .deductions-list {
-            margin-bottom: 1rem;
+        .detail-section-icon.icon-earnings {
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
         }
 
-        .list-item {
+        .detail-section-icon.icon-deductions {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+        }
+
+        .detail-row {
+            display: grid;
+            grid-template-columns: 180px 1fr;
+            gap: 1rem;
+            padding: 0.75rem 0;
+            align-items: start;
+        }
+
+        .detail-row:not(:last-child) {
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .detail-value {
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+
+        .amount-breakdown-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0.75rem;
-            margin-bottom: 0.5rem;
-            background: #f8f9fa;
-            border-radius: 6px;
-            border: 1px solid #e9ecef;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            background: #f8fafc;
+            border-radius: 8px;
+            border-left: 3px solid transparent;
+            transition: all 0.2s ease;
         }
 
-        .list-item-content {
-            flex-grow: 1;
+        .amount-breakdown-item:hover {
+            background: #f1f5f9;
+            transform: translateX(4px);
         }
 
-        .list-item-name {
+        .amount-breakdown-item.item-primary {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-left-color: var(--golden-yellow);
+        }
+
+        .amount-breakdown-item.item-success {
+            border-left-color: #10b981;
+        }
+
+        .amount-breakdown-item.item-danger {
+            border-left-color: #ef4444;
+        }
+
+        .amount-breakdown-item.item-total {
+            background: linear-gradient(135deg, #e8f5e8 0%, #d1f0d1 100%);
+            border: 2px solid #10b981;
+            font-weight: 700;
+            margin-top: 1rem;
+            padding: 1.25rem 1rem;
+        }
+
+        .amount-breakdown-item.item-total-deductions {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            border: 2px solid #ef4444;
+            font-weight: 700;
+            margin-top: 1rem;
+            padding: 1.25rem 1rem;
+        }
+
+        .amount-name {
             font-weight: 500;
-            color: #333;
+            color: var(--text-primary);
         }
 
-        .list-item-description {
-            font-size: 0.875rem;
-            color: #666;
+        .amount-description {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
             margin-top: 0.25rem;
         }
 
-        .list-item-amount {
+        .amount-value {
             font-weight: 600;
-            margin-right: 1rem;
+            font-size: 1.05rem;
+            color: var(--text-primary);
         }
 
-        .list-item-actions {
+        .amount-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-left: 1rem;
+        }
+
+        .net-pay-card {
+            background: linear-gradient(135deg, var(--sidebar-dark-blue) 0%, #8b0e0f 100%);
+            color: white;
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            margin: 2rem 0;
+            box-shadow: 0 10px 30px rgba(108, 12, 13, 0.3);
+        }
+
+        .net-pay-label {
+            font-size: 0.95rem;
+            font-weight: 500;
+            opacity: 0.9;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .net-pay-amount {
+            font-size: 2.5rem;
+            font-weight: 700;
+            letter-spacing: -1px;
+        }
+
+        .adjustments-timeline {
+            position: relative;
+            padding-left: 2rem;
+        }
+
+        .adjustments-timeline::before {
+            content: '';
+            position: absolute;
+            left: 0.5rem;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(to bottom, var(--golden-yellow), transparent);
+        }
+
+        .adjustment-item {
+            position: relative;
+            margin-bottom: 1.5rem;
+            padding-left: 1.5rem;
+        }
+
+        .adjustment-item::before {
+            content: '';
+            position: absolute;
+            left: -1.4rem;
+            top: 0.5rem;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--golden-yellow);
+            border: 3px solid white;
+            box-shadow: 0 0 0 2px var(--golden-yellow);
+        }
+
+        .adjustment-card {
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1rem;
+        }
+
+        .adjustment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 0.75rem;
+        }
+
+        .adjustment-reason {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+        }
+
+        .adjustment-amount {
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .adjustment-amount.positive {
+            color: #10b981;
+        }
+
+        .adjustment-amount.negative {
+            color: #ef4444;
+        }
+
+        .adjustment-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .adjustment-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+
+        .paid-lock-notice {
+            background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+            border: 2px solid #10b981;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .paid-lock-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: #10b981;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .paid-lock-content h5 {
+            color: #065f46;
+            font-weight: 700;
+            margin: 0 0 0.25rem 0;
+            font-size: 1.1rem;
+        }
+
+        .paid-lock-content p {
+            color: #047857;
+            margin: 0;
+            font-size: 0.9rem;
+        }
+
+        .approval-status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .approval-card {
+            background: white;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .approval-card.approved {
+            border-color: #10b981;
+            background: linear-gradient(135deg, #ecfdf5 0%, white 100%);
+        }
+
+        .approval-card.pending {
+            border-color: #f59e0b;
+            background: linear-gradient(135deg, #fffbeb 0%, white 100%);
+        }
+
+        .approval-card.rejected {
+            border-color: #ef4444;
+            background: linear-gradient(135deg, #fef2f2 0%, white 100%);
+        }
+
+        .approval-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            margin: 0 auto 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .approval-card.approved .approval-icon {
+            background: #10b981;
+            color: white;
+        }
+
+        .approval-card.pending .approval-icon {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .approval-card.rejected .approval-icon {
+            background: #ef4444;
+            color: white;
+        }
+
+        .approval-title {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .approval-by {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .approval-date {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-top: 0.5rem;
+        }
+
+        /* Responsive table styling */
+        .table-responsive {
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .table th {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+        }
+
+        .table tbody tr {
+            transition: all 0.2s ease;
+        }
+
+        .table tbody tr:hover {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            transform: scale(1.01);
+            box-shadow: 0 2px 8px rgba(248, 195, 183, 0.2);
+        }
+
+        .employee-name-cell {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .employee-id-cell {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .action-btn-group {
             display: flex;
             gap: 0.25rem;
         }
 
-        .add-item-form {
-            background: #f8f9fa;
-            border: 2px dashed #dee2e6;
-            border-radius: 6px;
-            padding: 1rem;
-            margin-top: 1rem;
+        /* Stats cards enhancement */
+        .stat-card {
+            position: relative;
+            overflow: hidden;
         }
 
-        .add-item-form.active {
-            border-style: solid;
-            border-color: var(--primary-color);
-            background: white;
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 100px;
+            height: 100px;
+            background: radial-gradient(circle, rgba(248, 195, 183, 0.2) 0%, transparent 70%);
+            border-radius: 50%;
+            transform: translate(30%, -30%);
         }
 
-        @media (max-width: 768px) {
-            .sidebar {
-                transform: translateX(-100%);
-            }
+        /* Filter card enhancement */
+        .filter-card-header {
+            background: linear-gradient(135deg, var(--sidebar-dark-blue) 0%, #8b0e0f 100%);
+            color: white;
+            border-radius: 12px 12px 0 0;
+            padding: 1.25rem 1.5rem;
+        }
 
-            .sidebar.show {
-                transform: translateX(0);
-            }
+        .filter-card-header h5 {
+            margin: 0;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
 
+        /* Enhanced modal styling */
+        .modal-content {
+            border-radius: 16px;
+            overflow: hidden;
+            border: none;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, var(--sidebar-dark-blue) 0%, #8b0e0f 100%);
+            color: white;
+            padding: 1.5rem 2rem;
+            border: none;
+        }
+
+        .modal-title {
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .btn-close-white {
+            filter: brightness(0) invert(1);
+        }
+
+        .modal-body {
+            padding: 2rem;
+        }
+
+        .modal-footer {
+            background: #f8fafc;
+            border-top: 2px solid var(--border-color);
+            padding: 1.25rem 2rem;
+        }
+
+        /* Loading states */
+        .skeleton-loader {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s ease-in-out infinite;
+            border-radius: 4px;
+        }
+
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        /* Print styles */
+        @media print {
+            .sidebar, .top-header, .filter-card, .action-btn-group, .modal-footer {
+                display: none !important;
+            }
+            
             .main-content {
-                margin-left: 0;
+                margin-left: 0 !important;
             }
-
-            .sidebar-overlay {
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0, 0, 0, 0.5);
-                z-index: 999;
-                display: none;
-            }
-
-            .sidebar-overlay.show {
-                display: block;
-            }
-
-            .stats-grid {
-                grid-template-columns: 1fr;
+            
+            .detail-section {
+                page-break-inside: avoid;
             }
         }
     </style>
@@ -290,7 +568,7 @@
 
     <!-- Main -->
     <div class="main-content" id="mainContent">
-        <%- include('./partials/header', { title: 'Processed payrolls and reports generation', user: typeof user !== 'undefined' ? user : { name: 'User' } }) %>
+        <%- include('./partials/header', { title: 'Payroll Management', user: typeof user !== 'undefined' ? user : { name: 'User' } }) %>
 
         <!-- Page Content -->
         <main class="dashboard-content">
@@ -298,66 +576,94 @@
                 
                 <!-- Stats Cards -->
                 <div class="stats-grid">
-                    <div class="stat-card primary">
-                        <div class="stat-icon">
-                            <i class="fas fa-users text-primary"></i>
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-title">Total Employees</div>
+                            <div class="stat-icon">
+                                <i class="fas fa-users"></i>
+                            </div>
                         </div>
-                        <div class="stat-value text-primary" id="totalEmployees">0</div>
-                        <div class="stat-label">Total Employees</div>
+                        <div class="stat-value" id="totalEmployees">0</div>
+                        <div class="stat-trend">
+                            <i class="fas fa-chart-line"></i>
+                            <span>Active payroll records</span>
+                        </div>
                     </div>
-                    <div class="stat-card success">
-                        <div class="stat-icon">
-                            <i class="fas fa-money-bill-wave text-success"></i>
+                    
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-title">Total Gross Pay</div>
+                            <div class="stat-icon">
+                                <i class="fas fa-money-bill-wave"></i>
+                            </div>
                         </div>
-                        <div class="stat-value text-success" id="totalGrossPay">MWK 0</div>
-                        <div class="stat-label">Total Gross Pay</div>
+                        <div class="stat-value" id="totalGrossPay">MWK 0</div>
+                        <div class="stat-trend">
+                            <i class="fas fa-arrow-up"></i>
+                            <span>Before deductions</span>
+                        </div>
                     </div>
-                    <div class="stat-card warning">
-                        <div class="stat-icon">
-                            <i class="fas fa-minus-circle text-warning"></i>
+                    
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-title">Total Deductions</div>
+                            <div class="stat-icon">
+                                <i class="fas fa-minus-circle"></i>
+                            </div>
                         </div>
-                        <div class="stat-value text-warning" id="totalDeductions">MWK 0</div>
-                        <div class="stat-label">Total Deductions</div>
+                        <div class="stat-value" id="totalDeductions">MWK 0</div>
+                        <div class="stat-trend">
+                            <i class="fas fa-arrow-down"></i>
+                            <span>Taxes & contributions</span>
+                        </div>
                     </div>
-                    <div class="stat-card primary">
-                        <div class="stat-icon">
-                            <i class="fas fa-hand-holding-usd text-primary"></i>
+                    
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-title">Total Net Pay</div>
+                            <div class="stat-icon">
+                                <i class="fas fa-hand-holding-usd"></i>
+                            </div>
                         </div>
-                        <div class="stat-value text-primary" id="totalNetPay">MWK 0</div>
-                        <div class="stat-label">Total Net Pay</div>
+                        <div class="stat-value" id="totalNetPay">MWK 0</div>
+                        <div class="stat-trend">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Final disbursement</span>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Actions and Filters -->
-                <div class="card">
-                    <div class="card-header">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0">
-                                <i class="fas fa-cogs me-2"></i>
-                                Payroll Actions & Filters
-                            </h5>
-                        </div>
+                <!-- Filters & Actions Card -->
+                <div class="card mb-4">
+                    <div class="filter-card-header">
+                        <h5>
+                            <i class="fas fa-filter"></i>
+                            Filters & Actions
+                        </h5>
                     </div>
                     <div class="card-body">
-                        <div class="row g-3">
-                            <!-- Month Selection -->
+                        <div class="row g-3 mb-3">
                             <div class="col-md-4">
-                                <label class="form-label">Select Month</label>
+                                <label class="form-label fw-semibold">
+                                    <i class="fas fa-calendar-alt me-2"></i>Payroll Month
+                                </label>
                                 <input type="month" class="form-control" id="selectedMonth" 
                                        value="" onchange="loadPayrollData()">
                             </div>
                             
-                            <!-- Department Filter -->
                             <div class="col-md-4">
-                                <label class="form-label">Department</label>
+                                <label class="form-label fw-semibold">
+                                    <i class="fas fa-building me-2"></i>Department
+                                </label>
                                 <select class="form-select" id="departmentFilter" onchange="filterPayrolls()">
                                     <option value="">All Departments</option>
                                 </select>
                             </div>
                             
-                            <!-- Status Filter -->
                             <div class="col-md-4">
-                                <label class="form-label">Payment Status</label>
+                                <label class="form-label fw-semibold">
+                                    <i class="fas fa-flag me-2"></i>Payment Status
+                                </label>
                                 <select class="form-select" id="statusFilter" onchange="filterPayrolls()">
                                     <option value="">All Status</option>
                                     <option value="pending">Pending</option>
@@ -367,32 +673,21 @@
                                     <option value="failed">Failed</option>
                                 </select>
                             </div>
-                            
-                         
                         </div>
                         
-                        <!-- Action Buttons Row -->
-                        <div class="row mt-3">
-                            <div class="col-12">
-                                <div class="btn-toolbar gap-2" role="toolbar">
-                                    <button class="btn btn-success btn-sm" onclick="generateConsolidatedPayslips()">
-                                        <i class="fas fa-file-pdf me-1"></i>
-                                        All Payslips
-                                    </button>
-                                    <button class="btn btn-info btn-sm" onclick="generateBankInstruction()">
-                                        <i class="fas fa-university me-1"></i>
-                                        Bank Instruction
-                                    </button>
-                                    <button class="btn btn-warning btn-sm" onclick="showReportsModal()">
-                                        <i class="fas fa-chart-line me-1"></i>
-                                        Generate Reports
-                                    </button>
-                                    <button class="btn btn-outline-primary btn-sm" onclick="createFromPrevious()">
-                                        <i class="fas fa-copy me-1"></i>
-                                        Copy Previous Month
-                                    </button>
-                                </div>
-                            </div>
+                        <div class="d-flex flex-wrap gap-2 pt-3 border-top">
+                            <button class="btn btn-success" onclick="generateConsolidatedPayslips()">
+                                <i class="fas fa-file-pdf me-2"></i>All Payslips
+                            </button>
+                            <button class="btn btn-info" onclick="generateBankInstruction()">
+                                <i class="fas fa-university me-2"></i>Bank Instruction
+                            </button>
+                            <button class="btn btn-warning" onclick="showReportsModal()">
+                                <i class="fas fa-chart-line me-2"></i>Generate Reports
+                            </button>
+                            <button class="btn btn-outline-primary" onclick="createFromPrevious()">
+                                <i class="fas fa-copy me-2"></i>Copy Previous Month
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -402,15 +697,14 @@
                     <div class="card-header">
                         <div class="d-flex justify-content-between align-items-center">
                             <h5 class="mb-0">
-                                <i class="fas fa-list me-2"></i>
-                                Payroll Records
+                                <i class="fas fa-list me-2"></i>Payroll Records
                             </h5>
                             <span class="badge bg-info" id="recordCount">0 records</span>
                         </div>
                     </div>
                     <div class="card-body p-0">
                         <div class="table-responsive">
-                            <table class="table table-hover">
+                            <table class="table table-hover mb-0">
                                 <thead>
                                     <tr>
                                         <th>Employee</th>
@@ -426,8 +720,8 @@
                                 <tbody id="payrollTableBody">
                                     <tr>
                                         <td colspan="8" class="text-center py-5 text-muted">
-                                            <i class="fas fa-search fa-2x mb-3"></i>
-                                            <div>Select a month to view payroll records</div>
+                                            <i class="fas fa-search fa-3x mb-3 d-block"></i>
+                                            <div class="fs-5">Select a month to view payroll records</div>
                                         </td>
                                     </tr>
                                 </tbody>
@@ -438,8 +732,7 @@
 
                 <!-- Pagination -->
                 <nav aria-label="Payroll pagination" id="paginationContainer" style="display: none;">
-                    <ul class="pagination justify-content-center" id="pagination">
-                    </ul>
+                    <ul class="pagination justify-content-center mt-4" id="pagination"></ul>
                 </nav>
 
             </div>
@@ -452,7 +745,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">
-                        <i class="fas fa-receipt me-2"></i>
+                        <i class="fas fa-receipt"></i>
                         Payroll Details
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
@@ -461,10 +754,11 @@
                     <!-- Content will be loaded dynamically -->
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Close
+                    </button>
                     <button type="button" class="btn btn-primary" onclick="downloadPayslip()">
-                        <i class="fas fa-download me-1"></i>
-                        Download Payslip
+                        <i class="fas fa-download me-2"></i>Download Payslip
                     </button>
                 </div>
             </div>
@@ -477,19 +771,19 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">
-                        <i class="fas fa-chart-line me-2"></i>
+                        <i class="fas fa-chart-line"></i>
                         Generate Reports
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="row mb-3">
+                    <div class="row mb-4">
                         <div class="col-md-6">
-                            <label class="form-label">Report Month</label>
+                            <label class="form-label fw-semibold">Report Month</label>
                             <input type="month" class="form-control" id="reportMonth">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Report Type</label>
+                            <label class="form-label fw-semibold">Report Type</label>
                             <select class="form-select" id="reportType">
                                 <option value="">Select Report Type</option>
                                 <option value="paye">PAYE Tax Report</option>
@@ -555,8 +849,7 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                     <button type="button" class="btn btn-primary" onclick="generateSelectedReport()">
-                        <i class="fas fa-download me-1"></i>
-                        Generate Report
+                        <i class="fas fa-download me-2"></i>Generate Report
                     </button>
                 </div>
             </div>
@@ -569,14 +862,14 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">
-                        <i class="fas fa-play me-2"></i>
+                        <i class="fas fa-play"></i>
                         Process Payroll
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label class="form-label">Payroll Month</label>
+                        <label class="form-label fw-semibold">Payroll Month</label>
                         <input type="month" class="form-control" id="processMonth" required>
                     </div>
                     <div class="alert alert-info">
@@ -587,8 +880,7 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="button" class="btn btn-primary" onclick="confirmProcessPayroll()">
-                        <i class="fas fa-play me-1"></i>
-                        Process Payroll
+                        <i class="fas fa-play me-2"></i>Process Payroll
                     </button>
                 </div>
             </div>
@@ -619,32 +911,34 @@
 
         // Initialize page
         document.addEventListener('DOMContentLoaded', function() {
-            // Set current month as default
             const currentDate = new Date();
             const currentMonth = currentDate.toISOString().slice(0, 7);
             document.getElementById('selectedMonth').value = currentMonth;
             
-            // Load initial data
             loadPayrollData();
             loadDepartments();
         });
 
         // Sidebar functionality
-        document.getElementById('sidebarToggle').addEventListener('click', function() {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('sidebarOverlay');
-            
-            sidebar.classList.toggle('show');
-            overlay.classList.toggle('show');
-        });
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        if (sidebarToggle) {
+            sidebarToggle.addEventListener('click', function() {
+                const sidebar = document.getElementById('sidebar');
+                const overlay = document.getElementById('sidebarOverlay');
+                
+                sidebar.classList.toggle('show');
+                overlay.classList.toggle('show');
+            });
+        }
 
-        document.getElementById('sidebarOverlay').addEventListener('click', function() {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('sidebarOverlay');
-            
-            sidebar.classList.remove('show');
-            overlay.classList.remove('show');
-        });
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+        if (sidebarOverlay) {
+            sidebarOverlay.addEventListener('click', function() {
+                const sidebar = document.getElementById('sidebar');
+                sidebar.classList.remove('show');
+                this.classList.remove('show');
+            });
+        }
 
         // Load payroll data for selected month
         async function loadPayrollData() {
@@ -654,7 +948,6 @@
             try {
                 showLoading(true);
                 
-                // Load payroll records
                 const response = await axios.get(`/payroll`, {
                     params: { month: selectedMonth, limit: 100 }
                 });
@@ -706,8 +999,8 @@
                 tbody.innerHTML = `
                     <tr>
                         <td colspan="8" class="text-center py-5 text-muted">
-                            <i class="fas fa-inbox fa-2x mb-3"></i>
-                            <div>No payroll records found</div>
+                            <i class="fas fa-inbox fa-3x mb-3 d-block"></i>
+                            <div class="fs-5">No payroll records found</div>
                         </td>
                     </tr>
                 `;
@@ -732,8 +1025,8 @@
                 return `
                     <tr onclick="viewPayrollDetails('${payroll._id}')" style="cursor: pointer;">
                         <td>
-                            <div class="fw-bold">${fullName || 'N/A'}</div>
-                            <small class="text-muted">${employee.employeeId || 'N/A'}</small>
+                            <div class="employee-name-cell">${fullName || 'N/A'}</div>
+                            <div class="employee-id-cell">${employee.employeeId || 'N/A'}</div>
                         </td>
                         <td>${department.name || 'N/A'}</td>
                         <td>
@@ -742,20 +1035,18 @@
                             </span>
                         </td>
                         <td class="fw-bold">${payroll.currency || 'MWK'} ${(payroll.grossPay || 0).toLocaleString()}</td>
-                        <td class="text-danger">${payroll.currency || 'MWK'} ${(payroll.deductions?.total || 0).toLocaleString()}</td>
+                        <td class="text-danger fw-semibold">${payroll.currency || 'MWK'} ${(payroll.deductions?.total || 0).toLocaleString()}</td>
                         <td class="fw-bold text-success">${payroll.currency || 'MWK'} ${(payroll.netPay || 0).toLocaleString()}</td>
                         <td>
-                            <div class="d-flex flex-column gap-1">
-                                ${statusBadge}
-                                ${approvalStatus}
-                            </div>
+                            ${statusBadge}
+                            <div class="mt-1">${approvalStatus}</div>
                         </td>
                         <td>
-                            <div class="btn-group-vertical btn-group-sm">
-                                <button class="btn btn-outline-primary btn-sm" onclick="event.stopPropagation(); viewPayrollDetails('${payroll._id}')">
+                            <div class="action-btn-group">
+                                <button class="btn btn-sm btn-outline-primary" onclick="event.stopPropagation(); viewPayrollDetails('${payroll._id}')" title="View Details">
                                     <i class="fas fa-eye"></i>
                                 </button>
-                                <button class="btn btn-outline-success btn-sm" onclick="event.stopPropagation(); downloadPayslip('${payroll._id}')">
+                                <button class="btn btn-sm btn-outline-success" onclick="event.stopPropagation(); downloadPayslip('${payroll._id}')" title="Download Payslip">
                                     <i class="fas fa-download"></i>
                                 </button>
                             </div>
@@ -768,15 +1059,17 @@
         // Get status badge HTML
         function getStatusBadge(status) {
             const statusMap = {
-                'pending': { class: 'bg-warning', text: 'Pending' },
-                'approved': { class: 'bg-info', text: 'Approved' },
-                'processing': { class: 'bg-primary', text: 'Processing' },
-                'paid': { class: 'bg-success', text: 'Paid' },
-                'failed': { class: 'bg-danger', text: 'Failed' }
+                'pending': { class: 'status-pending', icon: 'fa-clock', text: 'Pending' },
+                'approved': { class: 'status-approved', icon: 'fa-check-circle', text: 'Approved' },
+                'processing': { class: 'status-processing', icon: 'fa-spinner', text: 'Processing' },
+                'paid': { class: 'status-paid', icon: 'fa-check-double', text: 'Paid' },
+                'failed': { class: 'status-failed', icon: 'fa-times-circle', text: 'Failed' }
             };
             
-            const statusInfo = statusMap[status] || { class: 'bg-secondary', text: 'Unknown' };
-            return `<span class="badge ${statusInfo.class}">${statusInfo.text}</span>`;
+            const statusInfo = statusMap[status] || { class: 'bg-secondary', icon: 'fa-question', text: 'Unknown' };
+            return `<span class="payroll-status-badge ${statusInfo.class}">
+                <i class="fas ${statusInfo.icon} me-1"></i>${statusInfo.text}
+            </span>`;
         }
 
         // Get approval status
@@ -785,13 +1078,13 @@
             const finance = payroll.approvals?.finance?.status || 'pending';
             
             if (hr === 'rejected' || finance === 'rejected') {
-                return '<small class="text-danger">Rejected</small>';
+                return '<small class="text-danger"><i class="fas fa-times-circle me-1"></i>Rejected</small>';
             } else if (hr === 'approved' && finance === 'approved') {
-                return '<small class="text-success">Fully Approved</small>';
+                return '<small class="text-success"><i class="fas fa-check-double me-1"></i>Fully Approved</small>';
             } else if (hr === 'approved' || finance === 'approved') {
-                return '<small class="text-warning">Partially Approved</small>';
+                return '<small class="text-warning"><i class="fas fa-check-circle me-1"></i>Partially Approved</small>';
             } else {
-                return '<small class="text-muted">Pending Approval</small>';
+                return '<small class="text-muted"><i class="fas fa-hourglass-half me-1"></i>Pending Approval</small>';
             }
         }
 
@@ -852,7 +1145,7 @@
             }
         }
 
-        // Display payroll details with inline editing
+        // Display payroll details (NEW PROFESSIONAL LAYOUT)
         function displayPayrollDetails(payroll) {
             const employee = payroll.employeeId || {};
             const personal = employee.personalInfo || {};
@@ -862,56 +1155,97 @@
             const grade = employment.gradeId || {};
             
             const fullName = `${personal.firstName || ''} ${personal.lastName || ''}`.trim();
+            const currency = payroll.currency || 'MWK';
+            const isPaid = payroll.payment?.status === 'paid';
             
-            const content = `
+            let content = '';
+            
+            // Show paid lock notice if payroll is marked as paid
+            if (isPaid) {
+                content += `
+                    <div class="paid-lock-notice">
+                        <div class="paid-lock-icon">
+                            <i class="fas fa-lock"></i>
+                        </div>
+                        <div class="paid-lock-content">
+                            <h5>Payroll Locked</h5>
+                            <p>This payroll has been marked as paid and can no longer be modified. All adjustments are disabled.</p>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            content += `
                 <div class="row">
                     <!-- Employee Information -->
-                    <div class="col-md-6">
-                        <div class="card mb-3">
-                            <div class="card-header bg-primary text-white">
-                                <h6 class="mb-0"><i class="fas fa-user me-2"></i>Employee Information</h6>
-                            </div>
-                            <div class="card-body">
-                                <div class="row g-2">
-                                    <div class="col-6"><strong>Name:</strong></div>
-                                    <div class="col-6">${fullName || 'N/A'}</div>
-                                    <div class="col-6"><strong>Employee ID:</strong></div>
-                                    <div class="col-6">${employee.employeeId || 'N/A'}</div>
-                                    <div class="col-6"><strong>Department:</strong></div>
-                                    <div class="col-6">${department.name || 'N/A'}</div>
-                                    <div class="col-6"><strong>Position:</strong></div>
-                                    <div class="col-6">${position.name || 'N/A'}</div>
-                                    <div class="col-6"><strong>Grade:</strong></div>
-                                    <div class="col-6">${grade.name || 'N/A'} (Level ${grade.level || 'N/A'})</div>
+                    <div class="col-lg-6 mb-3">
+                        <div class="detail-section">
+                            <div class="detail-section-header">
+                                <div class="detail-section-title">
+                                    <div class="detail-section-icon icon-employee">
+                                        <i class="fas fa-user"></i>
+                                    </div>
+                                    Employee Information
                                 </div>
+                                ${getStatusBadge(payroll.payment?.status || 'pending')}
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Full Name</div>
+                                <div class="detail-value">${fullName || 'N/A'}</div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Employee ID</div>
+                                <div class="detail-value">${employee.employeeId || 'N/A'}</div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Department</div>
+                                <div class="detail-value">${department.name || 'N/A'}</div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Position</div>
+                                <div class="detail-value">${position.name || 'N/A'}</div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Grade</div>
+                                <div class="detail-value">${grade.name || 'N/A'} (Level ${grade.level || 'N/A'})</div>
                             </div>
                         </div>
                     </div>
 
                     <!-- Pay Period Information -->
-                    <div class="col-md-6">
-                        <div class="card mb-3">
-                            <div class="card-header bg-info text-white">
-                                <h6 class="mb-0"><i class="fas fa-calendar me-2"></i>Pay Period</h6>
-                            </div>
-                            <div class="card-body">
-                                <div class="row g-2">
-                                    <div class="col-6"><strong>Month:</strong></div>
-                                    <div class="col-6">${payroll.payrollMonth || 'N/A'}</div>
-                                    <div class="col-6"><strong>Start Date:</strong></div>
-                                    <div class="col-6">${payroll.payPeriod?.startDate ? new Date(payroll.payPeriod.startDate).toLocaleDateString() : 'N/A'}</div>
-                                    <div class="col-6"><strong>End Date:</strong></div>
-                                    <div class="col-6">${payroll.payPeriod?.endDate ? new Date(payroll.payPeriod.endDate).toLocaleDateString() : 'N/A'}</div>
-                                    <div class="col-6"><strong>Working Days:</strong></div>
-                                    <div class="col-6">${payroll.payPeriod?.workingDays || 0}</div>
-                                    <div class="col-6"><strong>Days Worked:</strong></div>
-                                    <div class="col-6">${payroll.payPeriod?.daysWorked || 0}</div>
-                                    <div class="col-6"><strong>Attendance:</strong></div>
-                                    <div class="col-6">
-                                        <span class="badge ${payroll.attendanceRate >= 90 ? 'bg-success' : payroll.attendanceRate >= 75 ? 'bg-warning' : 'bg-danger'}">
-                                            ${payroll.attendanceRate || 0}%
-                                        </span>
+                    <div class="col-lg-6 mb-3">
+                        <div class="detail-section">
+                            <div class="detail-section-header">
+                                <div class="detail-section-title">
+                                    <div class="detail-section-icon icon-period">
+                                        <i class="fas fa-calendar"></i>
                                     </div>
+                                    Pay Period Details
+                                </div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Payroll Month</div>
+                                <div class="detail-value">${payroll.payrollMonth || 'N/A'}</div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Period Start</div>
+                                <div class="detail-value">${payroll.payPeriod?.startDate ? new Date(payroll.payPeriod.startDate).toLocaleDateString() : 'N/A'}</div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Period End</div>
+                                <div class="detail-value">${payroll.payPeriod?.endDate ? new Date(payroll.payPeriod.endDate).toLocaleDateString() : 'N/A'}</div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Working Days</div>
+                                <div class="detail-value">${payroll.payPeriod?.workingDays || 0} days</div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Days Worked</div>
+                                <div class="detail-value">
+                                    ${payroll.payPeriod?.daysWorked || 0} days
+                                    <span class="badge ${payroll.attendanceRate >= 90 ? 'bg-success' : payroll.attendanceRate >= 75 ? 'bg-warning' : 'bg-danger'} ms-2">
+                                        ${payroll.attendanceRate || 0}% attendance
+                                    </span>
                                 </div>
                             </div>
                         </div>
@@ -920,180 +1254,83 @@
 
                 <div class="row">
                     <!-- Earnings Section -->
-                    <div class="col-md-6">
-                        <div class="earnings-section">
-                            <h6 class="text-success mb-3">
-                                <i class="fas fa-plus-circle me-2"></i>
-                                Earnings Breakdown
-                            </h6>
+                    <div class="col-lg-6 mb-3">
+                        <div class="detail-section">
+                            <div class="detail-section-header">
+                                <div class="detail-section-title">
+                                    <div class="detail-section-icon icon-earnings">
+                                        <i class="fas fa-plus-circle"></i>
+                                    </div>
+                                    Earnings Breakdown
+                                </div>
+                            </div>
                             
-                            <div class="earnings-list">
-                                <!-- Basic Salary -->
-                                <div class="list-item">
-                                    <div class="list-item-content">
-                                        <div class="list-item-name">Basic Salary</div>
-                                    </div>
-                                    <div class="list-item-amount" id="salary-base-display">
-                                        ${payroll.currency || 'MWK'} ${(payroll.salary?.base || 0).toLocaleString()}
-                                    </div>
-                                    <div class="list-item-actions">
-                                        <button class="btn btn-sm btn-outline-primary btn-inline" onclick="editInline('salary.base', ${payroll.salary?.base || 0}, 'salary-base')">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <!-- Prorated Salary -->
-                                <div class="list-item">
-                                    <div class="list-item-content">
-                                        <div class="list-item-name">Prorated Salary</div>
-                                    </div>
-                                    <div class="list-item-amount" id="salary-prorated-display">
-                                        ${payroll.currency || 'MWK'} ${(payroll.salary?.prorated || 0).toLocaleString()}
-                                    </div>
-                                    <div class="list-item-actions">
-                                        <button class="btn btn-sm btn-outline-primary btn-inline" onclick="editInline('salary.prorated', ${payroll.salary?.prorated || 0}, 'salary-prorated')">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                    </div>
-                                </div>
-
-                                ${generateAllowanceItems(payroll)}
-                                ${generateOvertimeItem(payroll)}
-                                ${generateBonusItems(payroll)}
-                            </div>
-
-                            <!-- Add Custom Earning Form -->
-                            <div class="add-item-form" id="add-earning-form">
-                                <div class="row g-2">
-                                    <div class="col-md-5">
-                                        <input type="text" class="form-control form-control-sm" id="new-earning-name" placeholder="Earning name">
-                                    </div>
-                                    <div class="col-md-4">
-                                        <input type="number" class="form-control form-control-sm" id="new-earning-amount" placeholder="Amount" step="0.01" min="0">
-                                    </div>
-                                    <div class="col-md-3">
-                                        <div class="btn-group w-100">
-                                            <button class="btn btn-sm btn-success" onclick="addCustomEarning()">
-                                                <i class="fas fa-plus"></i>
-                                            </button>
-                                            <button class="btn btn-sm btn-secondary" onclick="toggleAddEarningForm()">
-                                                <i class="fas fa-times"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="mt-2">
-                                <button class="btn btn-sm btn-outline-success" onclick="toggleAddEarningForm()">
-                                    <i class="fas fa-plus me-1"></i>
-                                    Add Custom Earning
-                                </button>
-                            </div>
-
-                            <div class="list-item mt-3" style="background: #e8f5e8; font-weight: bold;">
-                                <div class="list-item-content">
-                                    <div class="list-item-name text-success">GROSS PAY</div>
-                                </div>
-                                <div class="list-item-amount text-success">
-                                    ${payroll.currency || 'MWK'} ${(payroll.grossPay || 0).toLocaleString()}
-                                </div>
-                            </div>
+                            ${generateEarningsBreakdown(payroll, isPaid)}
                         </div>
                     </div>
 
                     <!-- Deductions Section -->
-                    <div class="col-md-6">
-                        <div class="deductions-section">
-                            <h6 class="text-danger mb-3">
-                                <i class="fas fa-minus-circle me-2"></i>
-                                Deductions Breakdown
-                            </h6>
+                    <div class="col-lg-6 mb-3">
+                        <div class="detail-section">
+                            <div class="detail-section-header">
+                                <div class="detail-section-title">
+                                    <div class="detail-section-icon icon-deductions">
+                                        <i class="fas fa-minus-circle"></i>
+                                    </div>
+                                    Deductions Breakdown
+                                </div>
+                            </div>
                             
-                            <div class="deductions-list">
-                                ${generateTaxItem(payroll)}
-                                ${generatePensionItem(payroll)}
-                                ${generateLoanItems(payroll)}
-                                ${generateOtherDeductionItems(payroll)}
-                            </div>
-
-                            <!-- Add Custom Deduction Form -->
-                            <div class="add-item-form" id="add-deduction-form">
-                                <div class="row g-2">
-                                    <div class="col-md-4">
-                                        <input type="text" class="form-control form-control-sm" id="new-deduction-name" placeholder="Deduction name">
-                                    </div>
-                                    <div class="col-md-3">
-                                        <input type="number" class="form-control form-control-sm" id="new-deduction-amount" placeholder="Amount" step="0.01" min="0">
-                                    </div>
-                                    <div class="col-md-3">
-                                        <input type="text" class="form-control form-control-sm" id="new-deduction-desc" placeholder="Description">
-                                    </div>
-                                    <div class="col-md-2">
-                                        <div class="btn-group w-100">
-                                            <button class="btn btn-sm btn-danger" onclick="addCustomDeduction()">
-                                                <i class="fas fa-plus"></i>
-                                            </button>
-                                            <button class="btn btn-sm btn-secondary" onclick="toggleAddDeductionForm()">
-                                                <i class="fas fa-times"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="mt-2">
-                                <button class="btn btn-sm btn-danger" onclick="toggleAddDeductionForm()">
-                                    <i class="fas fa-plus me-1"></i>
-                                    Add Custom Deduction
-                                </button>
-                            </div>
-
-                            <div class="list-item mt-3" style="background: #fee; font-weight: bold;">
-                                <div class="list-item-content">
-                                    <div class="list-item-name text-danger">TOTAL DEDUCTIONS</div>
-                                </div>
-                                <div class="list-item-amount text-danger">
-                                    ${payroll.currency || 'MWK'} ${(payroll.deductions?.total || 0).toLocaleString()}
-                                </div>
-                            </div>
+                            ${generateDeductionsBreakdown(payroll, isPaid)}
                         </div>
                     </div>
                 </div>
 
-                <!-- Net Pay -->
-                <div class="row">
-                    <div class="col-12">
-                        <div class="card bg-success text-white">
-                            <div class="card-body text-center">
-                                <h4 class="mb-0">
-                                    <i class="fas fa-hand-holding-usd me-2"></i>
-                                    NET PAY: ${payroll.currency || 'MWK'} ${(payroll.netPay || 0).toLocaleString()}
-                                </h4>
-                            </div>
-                        </div>
+                <!-- Net Pay Card -->
+                <div class="net-pay-card">
+                    <div class="net-pay-label">Final Net Pay</div>
+                    <div class="net-pay-amount">
+                        ${currency} ${(payroll.netPay || 0).toLocaleString()}
                     </div>
                 </div>
 
-                <!-- Payment and Approval Information -->
-                
+                ${generateApprovalsSection(payroll)}
                 ${generateAdjustmentsSection(payroll)}
             `;
             
             document.getElementById('payrollDetailsContent').innerHTML = content;
-            
-            // Hide add forms initially
-            document.getElementById('add-earning-form').style.display = 'none';
-            document.getElementById('add-deduction-form').style.display = 'none';
         }
 
-        // Generate allowance items
-        function generateAllowanceItems(payroll) {
-            const allowances = payroll.allowances || {};
+        // Generate earnings breakdown
+        function generateEarningsBreakdown(payroll, isPaid) {
             const currency = payroll.currency || 'MWK';
             let html = '';
             
+            // Basic Salary
+            html += `
+                <div class="amount-breakdown-item item-primary">
+                    <div>
+                        <div class="amount-name">Basic Salary</div>
+                    </div>
+                    <div class="amount-value">${currency} ${(payroll.salary?.base || 0).toLocaleString()}</div>
+                </div>
+            `;
+            
+            // Prorated Salary (if different from base)
+            if (payroll.salary?.prorated && payroll.salary.prorated !== payroll.salary.base) {
+                html += `
+                    <div class="amount-breakdown-item">
+                        <div>
+                            <div class="amount-name">Prorated Salary</div>
+                            <div class="amount-description">Based on ${payroll.payPeriod?.daysWorked || 0} days worked</div>
+                        </div>
+                        <div class="amount-value">${currency} ${(payroll.salary.prorated || 0).toLocaleString()}</div>
+                    </div>
+                `;
+            }
+            
+            // Allowances
+            const allowances = payroll.allowances || {};
             const allowanceTypes = [
                 { key: 'transport', label: 'Transport Allowance' },
                 { key: 'housing', label: 'Housing Allowance' },
@@ -1104,57 +1341,33 @@
             ];
             
             allowanceTypes.forEach(type => {
-                if (allowances[type.key] > 0) {
+                if (allowances[type.key] && allowances[type.key] > 0) {
                     html += `
-                        <div class="list-item">
-                            <div class="list-item-content">
-                                <div class="list-item-name">${type.label}</div>
+                        <div class="amount-breakdown-item item-success">
+                            <div>
+                                <div class="amount-name">${type.label}</div>
                             </div>
-                            <div class="list-item-amount" id="allowances-${type.key}-display">
-                                ${currency} ${allowances[type.key].toLocaleString()}
-                            </div>
-                            <div class="list-item-actions">
-                                <button class="btn btn-sm btn-outline-primary btn-inline" onclick="editInline('allowances.${type.key}', ${allowances[type.key]}, 'allowances-${type.key}')">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                            </div>
+                            <div class="amount-value">${currency} ${allowances[type.key].toLocaleString()}</div>
                         </div>
                     `;
                 }
             });
             
-            return html;
-        }
-
-        // Generate overtime item
-        function generateOvertimeItem(payroll) {
-            if (!payroll.overtime?.amount || payroll.overtime.amount <= 0) return '';
+            // Overtime
+            if (payroll.overtime?.amount && payroll.overtime.amount > 0) {
+                html += `
+                    <div class="amount-breakdown-item item-success">
+                        <div>
+                            <div class="amount-name">Overtime</div>
+                            <div class="amount-description">${payroll.overtime.hours}h @ ${currency} ${payroll.overtime.rate}/hr</div>
+                        </div>
+                        <div class="amount-value">${currency} ${payroll.overtime.amount.toLocaleString()}</div>
+                    </div>
+                `;
+            }
             
-            const currency = payroll.currency || 'MWK';
-            return `
-                <div class="list-item">
-                    <div class="list-item-content">
-                        <div class="list-item-name">Overtime</div>
-                        <div class="list-item-description">${payroll.overtime.hours}h @ ${currency} ${payroll.overtime.rate}</div>
-                    </div>
-                    <div class="list-item-amount" id="overtime-amount-display">
-                        ${currency} ${payroll.overtime.amount.toLocaleString()}
-                    </div>
-                    <div class="list-item-actions">
-                        <button class="btn btn-sm btn-outline-primary btn-inline" onclick="editInline('overtime.amount', ${payroll.overtime.amount}, 'overtime-amount')">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                    </div>
-                </div>
-            `;
-        }
-
-        // Generate bonus items
-        function generateBonusItems(payroll) {
+            // Bonuses
             const bonuses = payroll.bonuses || {};
-            const currency = payroll.currency || 'MWK';
-            let html = '';
-            
             const bonusTypes = [
                 { key: 'performance', label: 'Performance Bonus' },
                 { key: 'annual', label: 'Annual Bonus' },
@@ -1162,493 +1375,214 @@
             ];
             
             bonusTypes.forEach(type => {
-                if (bonuses[type.key] > 0) {
+                if (bonuses[type.key] && bonuses[type.key] > 0) {
                     html += `
-                        <div class="list-item">
-                            <div class="list-item-content">
-                                <div class="list-item-name">${type.label}</div>
+                        <div class="amount-breakdown-item item-success">
+                            <div>
+                                <div class="amount-name">${type.label}</div>
                             </div>
-                            <div class="list-item-amount" id="bonuses-${type.key}-display">
-                                ${currency} ${bonuses[type.key].toLocaleString()}
-                            </div>
-                            <div class="list-item-actions">
-                                <button class="btn btn-sm btn-outline-primary btn-inline" onclick="editInline('bonuses.${type.key}', ${bonuses[type.key]}, 'bonuses-${type.key}')">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                            </div>
+                            <div class="amount-value">${currency} ${bonuses[type.key].toLocaleString()}</div>
                         </div>
                     `;
                 }
             });
             
+            // Gross Pay Total
+            html += `
+                <div class="amount-breakdown-item item-total">
+                    <div>
+                        <div class="amount-name">GROSS PAY</div>
+                    </div>
+                    <div class="amount-value text-success">${currency} ${(payroll.grossPay || 0).toLocaleString()}</div>
+                </div>
+            `;
+            
             return html;
         }
 
-        // Generate tax item
-        function generateTaxItem(payroll) {
-            if (!payroll.deductions?.tax?.amount || payroll.deductions.tax.amount <= 0) return '';
-            
+        // Generate deductions breakdown
+        function generateDeductionsBreakdown(payroll, isPaid) {
             const currency = payroll.currency || 'MWK';
+            let html = '';
+            
+            // Tax
+            if (payroll.deductions?.tax?.amount && payroll.deductions.tax.amount > 0) {
+                html += `
+                    <div class="amount-breakdown-item item-danger">
+                        <div>
+                            <div class="amount-name">PAYE Tax</div>
+                            <div class="amount-description">Rate: ${payroll.deductions.tax.rate}%</div>
+                        </div>
+                        <div class="amount-value">${currency} ${payroll.deductions.tax.amount.toLocaleString()}</div>
+                    </div>
+                `;
+            }
+            
+            // Pension
+            if (payroll.deductions?.pension?.amount && payroll.deductions.pension.amount > 0) {
+                html += `
+                    <div class="amount-breakdown-item item-danger">
+                        <div>
+                            <div class="amount-name">Pension Contribution</div>
+                            <div class="amount-description">Rate: ${payroll.deductions.pension.rate}%</div>
+                        </div>
+                        <div class="amount-value">${currency} ${payroll.deductions.pension.amount.toLocaleString()}</div>
+                    </div>
+                `;
+            }
+            
+            // Loans
+            if (payroll.deductions?.loans && payroll.deductions.loans.length > 0) {
+                payroll.deductions.loans.forEach(loan => {
+                    html += `
+                        <div class="amount-breakdown-item item-danger">
+                            <div>
+                                <div class="amount-name">Loan Deduction</div>
+                                <div class="amount-description">${loan.description || 'Loan repayment'}</div>
+                            </div>
+                            <div class="amount-value">${currency} ${loan.amount.toLocaleString()}</div>
+                        </div>
+                    `;
+                });
+            }
+            
+            // Other deductions
+            if (payroll.deductions?.other && payroll.deductions.other.length > 0) {
+                payroll.deductions.other.forEach(item => {
+                    html += `
+                        <div class="amount-breakdown-item item-danger">
+                            <div>
+                                <div class="amount-name">${item.name || item.description || 'Other Deduction'}</div>
+                                ${item.description ? `<div class="amount-description">${item.description}</div>` : ''}
+                            </div>
+                            <div class="amount-value">${currency} ${item.amount.toLocaleString()}</div>
+                        </div>
+                    `;
+                });
+            }
+            
+            // Total Deductions
+            html += `
+                <div class="amount-breakdown-item item-total-deductions">
+                    <div>
+                        <div class="amount-name">TOTAL DEDUCTIONS</div>
+                    </div>
+                    <div class="amount-value text-danger">${currency} ${(payroll.deductions?.total || 0).toLocaleString()}</div>
+                </div>
+            `;
+            
+            return html;
+        }
+
+        // Generate approvals section
+        function generateApprovalsSection(payroll) {
+            if (!payroll.approvals) return '';
+            
+            const hrStatus = payroll.approvals.hr?.status || 'pending';
+            const financeStatus = payroll.approvals.finance?.status || 'pending';
+            
             return `
-                <div class="list-item">
-                    <div class="list-item-content">
-                        <div class="list-item-name">PAYE Tax</div>
-                        <div class="list-item-description">Rate: ${payroll.deductions.tax.rate}%</div>
+                <div class="detail-section mt-3">
+                    <div class="detail-section-header">
+                        <div class="detail-section-title">
+                            <div class="detail-section-icon" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6;">
+                                <i class="fas fa-clipboard-check"></i>
+                            </div>
+                            Approval Status
+                        </div>
                     </div>
-                    <div class="list-item-amount" id="tax-rate-display">
-                        ${currency} ${payroll.deductions.tax.amount.toLocaleString()}
-                    </div>
-                    <div class="list-item-actions">
-                        <button class="btn btn-sm btn-outline-primary btn-inline" onclick="editInline('deductions.tax.rate', ${payroll.deductions.tax.rate}, 'tax-rate')">
-                            <i class="fas fa-edit"></i>
-                        </button>
+                    
+                    <div class="approval-status-grid">
+                        <div class="approval-card ${hrStatus}">
+                            <div class="approval-icon">
+                                <i class="fas ${hrStatus === 'approved' ? 'fa-check' : hrStatus === 'rejected' ? 'fa-times' : 'fa-clock'}"></i>
+                            </div>
+                            <div class="approval-title">HR Approval</div>
+                            <div class="approval-by">
+                                ${payroll.approvals.hr?.approvedBy?.name || 'Pending'}
+                            </div>
+                            ${payroll.approvals.hr?.approvedAt ? `
+                                <div class="approval-date">
+                                    ${new Date(payroll.approvals.hr.approvedAt).toLocaleDateString()}
+                                </div>
+                            ` : ''}
+                        </div>
+                        
+                        <div class="approval-card ${financeStatus}">
+                            <div class="approval-icon">
+                                <i class="fas ${financeStatus === 'approved' ? 'fa-check' : financeStatus === 'rejected' ? 'fa-times' : 'fa-clock'}"></i>
+                            </div>
+                            <div class="approval-title">Finance Approval</div>
+                            <div class="approval-by">
+                                ${payroll.approvals.finance?.approvedBy?.name || 'Pending'}
+                            </div>
+                            ${payroll.approvals.finance?.approvedAt ? `
+                                <div class="approval-date">
+                                    ${new Date(payroll.approvals.finance.approvedAt).toLocaleDateString()}
+                                </div>
+                            ` : ''}
+                        </div>
                     </div>
                 </div>
             `;
-        }
-
-        // Generate pension item
-        function generatePensionItem(payroll) {
-            if (!payroll.deductions?.pension?.amount || payroll.deductions.pension.amount <= 0) return '';
-            
-            const currency = payroll.currency || 'MWK';
-            return `
-                <div class="list-item">
-                    <div class="list-item-content">
-                        <div class="list-item-name">Pension</div>
-                        <div class="list-item-description">Rate: ${payroll.deductions.pension.rate}%</div>
-                    </div>
-                    <div class="list-item-amount" id="pension-rate-display">
-                        ${currency} ${payroll.deductions.pension.amount.toLocaleString()}
-                    </div>
-                    <div class="list-item-actions">
-                        <button class="btn btn-sm btn-outline-primary btn-inline" onclick="editInline('deductions.pension.rate', ${payroll.deductions.pension.rate}, 'pension-rate')">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                    </div>
-                </div>
-            `;
-        }
-
-        // Generate loan items
-        function generateLoanItems(payroll) {
-            if (!payroll.deductions?.loans || payroll.deductions.loans.length === 0) return '';
-            
-            const currency = payroll.currency || 'MWK';
-            return payroll.deductions.loans.map((loan, index) => `
-                <div class="list-item">
-                    <div class="list-item-content">
-                        <div class="list-item-name">Loan: ${loan.description || 'Loan'}</div>
-                    </div>
-                    <div class="list-item-amount">
-                        ${currency} ${loan.amount.toLocaleString()}
-                    </div>
-                    <div class="list-item-actions">
-                        <button class="btn btn-sm btn-outline-danger btn-inline" onclick="removeLoanDeduction(${index})">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        // Generate other deduction items
-        function generateOtherDeductionItems(payroll) {
-            if (!payroll.deductions?.other || payroll.deductions.other.length === 0) return '';
-            console.log('Generating other deductions:', payroll.deductions.other);
-            
-            const currency = payroll.currency || 'MWK';
-            return payroll.deductions.other.map((item, index) => `
-                <div class="list-item">
-                    <div class="list-item-content">
-                        <div class="list-item-name">${item.name || item.description || 'Deduction'}</div>
-                        ${item.description ? `<div class="list-item-description">${item.description}</div>` : ''}
-                    </div>
-                    <div class="list-item-amount">
-                        ${currency} ${item.amount.toLocaleString()}
-                    </div>
-                    <div class="list-item-actions">
-                        <button class="btn btn-sm btn-outline-danger btn-inline" onclick="removeCustomDeduction(${index})">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                </div>
-            `).join('');
         }
 
         // Generate adjustments section
         function generateAdjustmentsSection(payroll) {
             if (!payroll.adjustments || payroll.adjustments.length === 0) return '';
             
+            const currency = payroll.currency || 'MWK';
+            
             return `
-                <div class="row mt-3">
-                    <div class="col-12">
-                        <div class="card">
-                            <div class="card-header bg-warning text-white">
-                                <h6 class="mb-0"><i class="fas fa-edit me-2"></i>Adjustments History</h6>
+                <div class="detail-section mt-3">
+                    <div class="detail-section-header">
+                        <div class="detail-section-title">
+                            <div class="detail-section-icon" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;">
+                                <i class="fas fa-history"></i>
                             </div>
-                            <div class="card-body">
-                                ${payroll.adjustments.map(adj => `
-                                    <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2">
+                            Adjustment History
+                        </div>
+                    </div>
+                    
+                    <div class="adjustments-timeline">
+                        ${payroll.adjustments.map(adj => `
+                            <div class="adjustment-item">
+                                <div class="adjustment-card">
+                                    <div class="adjustment-header">
                                         <div>
-                                            <strong>${adj.reason}</strong>
-                                            <br>
-                                            <small class="text-muted">${adj.category} - ${adj.type}</small>
-                                            ${adj.duration === 'permanent' ? `
-                                                <br>
-                                                <small class="text-info">
-                                                    <i class="fas fa-calendar me-1"></i>
-                                                    Permanent (${adj.durationDetails?.numberOfMonths || 0} months)
-                                                </small>
-                                            ` : `
-                                                <br>
-                                                <small class="text-muted">
-                                                    <i class="fas fa-calendar me-1"></i>
-                                                    Temporary
-                                                </small>
-                                            `}
+                                            <div class="adjustment-reason">${adj.reason}</div>
+                                            <div class="adjustment-meta">
+                                                <div class="adjustment-meta-item">
+                                                    <i class="fas fa-tag"></i>
+                                                    ${adj.category}
+                                                </div>
+                                                ${adj.duration === 'permanent' ? `
+                                                    <div class="adjustment-meta-item">
+                                                        <i class="fas fa-calendar"></i>
+                                                        Permanent (${adj.durationDetails?.numberOfMonths || 0} months)
+                                                    </div>
+                                                ` : `
+                                                    <div class="adjustment-meta-item">
+                                                        <i class="fas fa-clock"></i>
+                                                        Temporary
+                                                    </div>
+                                                `}
+                                                <div class="adjustment-meta-item">
+                                                    <i class="fas fa-calendar-day"></i>
+                                                    ${adj.appliedAt ? new Date(adj.appliedAt).toLocaleDateString() : 'N/A'}
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div class="text-end">
-                                            <span class="fw-bold ${adj.type === 'addition' ? 'text-success' : 'text-danger'}">
-                                                ${adj.type === 'addition' ? '+' : '-'}${payroll.currency || 'MWK'} ${Math.abs(adj.amount).toLocaleString()}
-                                            </span>
-                                            <br>
-                                            <small class="text-muted">${adj.appliedAt ? new Date(adj.appliedAt).toLocaleDateString() : 'N/A'}</small>
+                                        <div class="adjustment-amount ${adj.type === 'addition' ? 'positive' : 'negative'}">
+                                            ${adj.type === 'addition' ? '+' : '-'}${currency} ${Math.abs(adj.amount).toLocaleString()}
                                         </div>
                                     </div>
-                                `).join('')}
+                                </div>
                             </div>
-                        </div>
+                        `).join('')}
                     </div>
                 </div>
             `;
-        }
-
-        // Toggle add earning form
-        function toggleAddEarningForm() {
-            const form = document.getElementById('add-earning-form');
-            const isVisible = form.style.display !== 'none';
-            
-            if (isVisible) {
-                form.style.display = 'none';
-                form.classList.remove('active');
-                // Clear form
-                document.getElementById('new-earning-name').value = '';
-                document.getElementById('new-earning-amount').value = '';
-            } else {
-                form.style.display = 'block';
-                form.classList.add('active');
-                document.getElementById('new-earning-name').focus();
-            }
-        }
-
-        // Toggle add deduction form
-        function toggleAddDeductionForm() {
-            const form = document.getElementById('add-deduction-form');
-            const isVisible = form.style.display !== 'none';
-            
-            if (isVisible) {
-                form.style.display = 'none';
-                form.classList.remove('active');
-                // Clear form
-                document.getElementById('new-deduction-name').value = '';
-                document.getElementById('new-deduction-amount').value = '';
-                document.getElementById('new-deduction-desc').value = '';
-            } else {
-                form.style.display = 'block';
-                form.classList.add('active');
-                document.getElementById('new-deduction-name').focus();
-            }
-        }
-
-        // Edit inline functionality
-        function editInline(fieldPath, currentValue, elementId) {
-            const displayElement = document.getElementById(`${elementId}-display`);
-            if (!displayElement) return;
-
-            // Create inline edit form
-            const currency = getCurrentCurrency();
-            const editForm = document.createElement('div');
-            editForm.className = 'inline-edit-form active d-flex align-items-center gap-2';
-            editForm.innerHTML = `
-                <input type="number" class="inline-edit-input" value="${currentValue}" step="0.01" min="0" id="${elementId}-input">
-                <button class="btn btn-sm btn-success btn-inline" onclick="saveInlineEdit('${fieldPath}', '${elementId}')">
-                    <i class="fas fa-check"></i>
-                </button>
-                <button class="btn btn-sm btn-secondary btn-inline" onclick="cancelInlineEdit('${elementId}')">
-                    <i class="fas fa-times"></i>
-                </button>
-            `;
-
-            // Store original content
-            displayElement.dataset.originalContent = displayElement.innerHTML;
-            
-            // Replace display with edit form
-            displayElement.innerHTML = '';
-            displayElement.appendChild(editForm);
-            
-            // Focus input and select text
-            const input = document.getElementById(`${elementId}-input`);
-            input.focus();
-            input.select();
-        }
-
-        // Save inline edit
-        async function saveInlineEdit(fieldPath, elementId) {
-            const input = document.getElementById(`${elementId}-input`);
-            const newValue = parseFloat(input.value);
-            
-            if (isNaN(newValue) || newValue < 0) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Invalid Value',
-                    text: 'Please enter a valid positive number'
-                });
-                return;
-            }
-
-            try {
-                showLoading(true);
-                
-                await axios.patch(`/payroll/${selectedPayrollId}/field`, {
-                    fieldPath: fieldPath,
-                    value: newValue
-                });
-
-                // Success message
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Updated',
-                    text: 'Field updated successfully',
-                    timer: 1500,
-                    showConfirmButton: false
-                });
-
-                // Reload payroll details
-                await viewPayrollDetails(selectedPayrollId);
-
-            } catch (error) {
-                console.error('Error updating field:', error);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: error.response?.data?.error || 'Failed to update field'
-                });
-                
-                // Restore original content on error
-                cancelInlineEdit(elementId);
-            } finally {
-                showLoading(false);
-            }
-        }
-
-        // Cancel inline edit
-        function cancelInlineEdit(elementId) {
-            const displayElement = document.getElementById(`${elementId}-display`);
-            if (!displayElement || !displayElement.dataset.originalContent) return;
-            
-            displayElement.innerHTML = displayElement.dataset.originalContent;
-            delete displayElement.dataset.originalContent;
-        }
-
-        // Add custom earning
-        async function addCustomEarning() {
-            const name = document.getElementById('new-earning-name').value.trim();
-            const amount = parseFloat(document.getElementById('new-earning-amount').value);
-            
-            if (!name) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Missing Information',
-                    text: 'Please enter an earning name'
-                });
-                return;
-            }
-            
-            if (isNaN(amount) || amount <= 0) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Invalid Amount',
-                    text: 'Please enter a valid amount greater than 0'
-                });
-                return;
-            }
-
-            try {
-                showLoading(true);
-                
-                await axios.post(`/payroll/${selectedPayrollId}/earnings/custom`, {
-                    name: name,
-                    amount: amount
-                });
-
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Success',
-                    text: 'Custom earning added successfully',
-                    timer: 1500,
-                    showConfirmButton: false
-                });
-
-                // Hide form and reload details
-                toggleAddEarningForm();
-                await viewPayrollDetails(selectedPayrollId);
-
-            } catch (error) {
-                console.error('Error adding custom earning:', error);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: error.response?.data?.error || 'Failed to add custom earning'
-                });
-            } finally {
-                showLoading(false);
-            }
-        }
-
-        // Add custom deduction
-        async function addCustomDeduction() {
-            const name = document.getElementById('new-deduction-name').value.trim();
-            const amount = parseFloat(document.getElementById('new-deduction-amount').value);
-            const description = document.getElementById('new-deduction-desc').value.trim();
-            
-            if (!name) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Missing Information',
-                    text: 'Please enter a deduction name'
-                });
-                return;
-            }
-            
-            if (isNaN(amount) || amount <= 0) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Invalid Amount',
-                    text: 'Please enter a valid amount greater than 0'
-                });
-                return;
-            }
-
-            try {
-                showLoading(true);
-                
-                await axios.post(`/payroll/${selectedPayrollId}/deductions/custom`, {
-                    name: name,
-                    amount: amount,
-                    description: description
-                });
-
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Success',
-                    text: 'Custom deduction added successfully',
-                    timer: 1500,
-                    showConfirmButton: false
-                });
-
-                // Hide form and reload details
-                toggleAddDeductionForm();
-                await viewPayrollDetails(selectedPayrollId);
-
-            } catch (error) {
-                console.error('Error adding custom deduction:', error);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: error.response?.data?.error || 'Failed to add custom deduction'
-                });
-            } finally {
-                showLoading(false);
-            }
-        }
-
-        // Remove custom deduction
-        async function removeCustomDeduction(deductionIndex) {
-            try {
-                const result = await Swal.fire({
-                    title: 'Remove Deduction',
-                    text: 'Are you sure you want to remove this deduction?',
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#ef4444',
-                    cancelButtonColor: '#6b7280',
-                    confirmButtonText: 'Yes, remove it!',
-                    cancelButtonText: 'Cancel'
-                });
-
-                if (result.isConfirmed) {
-                    showLoading(true);
-                    
-                    await axios.delete(`/payroll/${selectedPayrollId}/deductions/custom/${deductionIndex}`);
-
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Removed',
-                        text: 'Deduction removed successfully',
-                        timer: 1500,
-                        showConfirmButton: false
-                    });
-
-                    await viewPayrollDetails(selectedPayrollId);
-                }
-            } catch (error) {
-                console.error('Error removing deduction:', error);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: error.response?.data?.error || 'Failed to remove deduction'
-                });
-            } finally {
-                showLoading(false);
-            }
-        }
-
-        // Remove loan deduction
-        async function removeLoanDeduction(loanIndex) {
-            try {
-                const result = await Swal.fire({
-                    title: 'Remove Loan Deduction',
-                    text: 'Are you sure you want to remove this loan deduction?',
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#ef4444',
-                    cancelButtonColor: '#6b7280',
-                    confirmButtonText: 'Yes, remove it!',
-                    cancelButtonText: 'Cancel'
-                });
-
-                if (result.isConfirmed) {
-                    showLoading(true);
-                    
-                    // This would need a separate endpoint for loan deductions
-                    await axios.delete(`/payroll/${selectedPayrollId}/deductions/loans/${loanIndex}`);
-
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Removed',
-                        text: 'Loan deduction removed successfully',
-                        timer: 1500,
-                        showConfirmButton: false
-                    });
-
-                    await viewPayrollDetails(selectedPayrollId);
-                }
-            } catch (error) {
-                console.error('Error removing loan deduction:', error);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: error.response?.data?.error || 'Failed to remove loan deduction'
-                });
-            } finally {
-                showLoading(false);
-            }
-        }
-
-        // Get current currency
-        function getCurrentCurrency() {
-            return filteredPayrolls.length > 0 ? (filteredPayrolls[0].currency || 'MWK') : 'MWK';
         }
 
         // Download individual payslip
@@ -1733,7 +1667,6 @@
                         text: `Processed payroll for ${response.data.processedCount} employees`
                     });
 
-                    // Close modal and reload data
                     bootstrap.Modal.getInstance(document.getElementById('processPayrollModal')).hide();
                     loadPayrollData();
                 }
@@ -1798,72 +1731,67 @@
         }
 
         // Generate bank instruction
-            async function generateBankInstruction() {
-    const month = document.getElementById('selectedMonth').value;
-    if (!month) {
-        Swal.fire({
-            icon: 'warning',
-            title: 'Warning',
-            text: 'Please select a month first'
-        });
-        return;
-    }
-
-    try {
-        showLoading(true);
-        
-        // Since you already have axios.defaults.headers.common['Authorization'] set globally,
-        // you don't need to add it again here
-        const response = await axios.post('/payroll/export/bank-instruction/excel', 
-            { month }, 
-            { 
-                responseType: 'blob'
-                // Removed headers since axios defaults are already set
+        async function generateBankInstruction() {
+            const month = document.getElementById('selectedMonth').value;
+            if (!month) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Warning',
+                    text: 'Please select a month first'
+                });
+                return;
             }
-        );
 
-        const blob = new Blob([response.data], { 
-            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
-        });
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `bank_instruction_${month}.xlsx`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
+            try {
+                showLoading(true);
+                
+                const response = await axios.post('/payroll/export/bank-instruction/excel', 
+                    { month }, 
+                    { responseType: 'blob' }
+                );
 
-        Swal.fire({
-            icon: 'success',
-            title: 'Success',
-            text: 'Bank instruction Excel file generated successfully',
-            timer: 2000,
-            showConfirmButton: false
-        });
-    } catch (error) {
-        console.error('Error generating bank instruction:', error);
-        
-        let errorMessage = 'Failed to generate bank instruction Excel file';
-        if (error.response) {
-            if (error.response.status === 403) {
-                errorMessage = 'Access denied. Finance/Admin role required.';
-            } else if (error.response.status === 404) {
-                errorMessage = 'No payroll data found for the selected month';
-            } else if (error.response.status === 500) {
-                errorMessage = 'Server error occurred';
+                const blob = new Blob([response.data], { 
+                    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+                });
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `bank_instruction_${month}.xlsx`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success',
+                    text: 'Bank instruction Excel file generated successfully',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            } catch (error) {
+                console.error('Error generating bank instruction:', error);
+                
+                let errorMessage = 'Failed to generate bank instruction Excel file';
+                if (error.response) {
+                    if (error.response.status === 403) {
+                        errorMessage = 'Access denied. Finance/Admin role required.';
+                    } else if (error.response.status === 404) {
+                        errorMessage = 'No payroll data found for the selected month';
+                    } else if (error.response.status === 500) {
+                        errorMessage = 'Server error occurred';
+                    }
+                }
+
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: errorMessage
+                });
+            } finally {
+                showLoading(false);
             }
         }
-
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: errorMessage
-        });
-    } finally {
-        showLoading(false);
-    }
-}
 
         // Show reports modal
         function showReportsModal() {
@@ -1877,150 +1805,145 @@
         }
 
         // Generate specific report from report card click
-            // Generate specific report from report card click
-async function generateSpecificReport(reportType) {
-    const month = document.getElementById('reportMonth').value || document.getElementById('selectedMonth').value;
-    if (!month) {
-        Swal.fire({
-            icon: 'warning',
-            title: 'Warning',
-            text: 'Please select a month first'
-        });
-        return;
-    }
+        async function generateSpecificReport(reportType) {
+            const month = document.getElementById('reportMonth').value || document.getElementById('selectedMonth').value;
+            if (!month) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Warning',
+                    text: 'Please select a month first'
+                });
+                return;
+            }
 
-    try {
-        // Show format selection for PAYE and Pension reports
-        if (reportType === 'paye' || reportType === 'pension') {
-            const { value: format } = await Swal.fire({
-                title: 'Select Export Format',
-                text: 'Choose the format for your report',
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonText: 'Continue',
-                cancelButtonText: 'Cancel',
-                input: 'select',
-                inputOptions: {
-                    'pdf': 'PDF Document',
-                    'excel': 'Excel Spreadsheet'
-                },
-                inputPlaceholder: 'Select format',
-                inputValidator: (value) => {
-                    if (!value) {
-                        return 'Please select a format';
+            try {
+                if (reportType === 'paye' || reportType === 'pension') {
+                    const { value: format } = await Swal.fire({
+                        title: 'Select Export Format',
+                        text: 'Choose the format for your report',
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonText: 'Continue',
+                        cancelButtonText: 'Cancel',
+                        input: 'select',
+                        inputOptions: {
+                            'pdf': 'PDF Document',
+                            'excel': 'Excel Spreadsheet'
+                        },
+                        inputPlaceholder: 'Select format',
+                        inputValidator: (value) => {
+                            if (!value) {
+                                return 'Please select a format';
+                            }
+                        }
+                    });
+
+                    if (!format) return;
+                    await generateReportWithFormat(reportType, month, format);
+                } else {
+                    await generateReportPDF(reportType, month);
+                }
+                
+            } catch (error) {
+                console.error('Error generating report:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: `Failed to generate ${reportType.toUpperCase()} report`
+                });
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Generate report with specific format
+        async function generateReportWithFormat(reportType, month, format = 'pdf') {
+            try {
+                showLoading(true);
+                
+                let endpoint, fileName, contentType;
+                
+                if (format === 'excel') {
+                    switch(reportType) {
+                        case 'paye':
+                            endpoint = '/payroll/export/paye/excel';
+                            break;
+                        case 'pension':
+                            endpoint = '/payroll/export/pension/excel';
+                            break;
+                        default:
+                            endpoint = `/payroll/report/${reportType}`;
+                            format = 'pdf';
+                    }
+                } else {
+                    endpoint = `/payroll/report/${reportType}`;
+                }
+                
+                if (format === 'excel') {
+                    contentType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+                    fileName = `${reportType}_report_${month}.xlsx`;
+                } else {
+                    contentType = 'application/pdf';
+                    fileName = `${reportType}_report_${month}.pdf`;
+                }
+
+                const response = await axios.post(endpoint, 
+                    { month }, 
+                    { responseType: 'blob' }
+                );
+
+                const blob = new Blob([response.data], { type: contentType });
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = fileName;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+
+                const reportsModal = document.getElementById('reportsModal');
+                if (reportsModal) {
+                    const modal = bootstrap.Modal.getInstance(reportsModal);
+                    if (modal) modal.hide();
+                }
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success',
+                    text: `${reportType.toUpperCase()} report generated successfully as ${format.toUpperCase()}`,
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            } catch (error) {
+                console.error(`Error generating ${reportType} report (${format}):`, error);
+                
+                let errorMessage = `Failed to generate ${reportType.toUpperCase()} ${format.toUpperCase()} report`;
+                if (error.response) {
+                    if (error.response.status === 403) {
+                        errorMessage = 'Access denied. Admin/HR/Finance role required.';
+                    } else if (error.response.status === 404) {
+                        errorMessage = 'No data found for the selected month';
+                    } else if (error.response.status === 500) {
+                        errorMessage = 'Server error occurred';
                     }
                 }
-            });
 
-            if (!format) return;
-
-            await generateReportWithFormat(reportType, month, format);
-        } else {
-            // For other reports, use PDF only
-            await generateReportPDF(reportType, month);
-        }
-        
-    } catch (error) {
-        console.error('Error generating report:', error);
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: `Failed to generate ${reportType.toUpperCase()} report`
-        });
-    } finally {
-        showLoading(false);
-    }
-}
-
-// Generate report with specific format
-async function generateReportWithFormat(reportType, month, format = 'pdf') {
-    try {
-        showLoading(true);
-        
-        let endpoint, fileName, contentType;
-        
-        if (format === 'excel') {
-            switch(reportType) {
-                case 'paye':
-                    endpoint = '/payroll/export/paye/excel';
-                    break;
-                case 'pension':
-                    endpoint = '/payroll/export/pension/excel';
-                    break;
-                default:
-                    endpoint = `/payroll/report/${reportType}`;
-                    format = 'pdf'; // Fallback to PDF for other types
-            }
-        } else {
-            endpoint = `/payroll/report/${reportType}`;
-        }
-        
-        if (format === 'excel') {
-            contentType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-            fileName = `${reportType}_report_${month}.xlsx`;
-        } else {
-            contentType = 'application/pdf';
-            fileName = `${reportType}_report_${month}.pdf`;
-        }
-
-        const response = await axios.post(endpoint, 
-            { month }, 
-            { responseType: 'blob' }
-        );
-
-        const blob = new Blob([response.data], { type: contentType });
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = fileName;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-
-        // Close modal if open
-        const reportsModal = document.getElementById('reportsModal');
-        if (reportsModal) {
-            const modal = bootstrap.Modal.getInstance(reportsModal);
-            if (modal) modal.hide();
-        }
-
-        Swal.fire({
-            icon: 'success',
-            title: 'Success',
-            text: `${reportType.toUpperCase()} report generated successfully as ${format.toUpperCase()}`,
-            timer: 2000,
-            showConfirmButton: false
-        });
-    } catch (error) {
-        console.error(`Error generating ${reportType} report (${format}):`, error);
-        
-        let errorMessage = `Failed to generate ${reportType.toUpperCase()} ${format.toUpperCase()} report`;
-        if (error.response) {
-            if (error.response.status === 403) {
-                errorMessage = 'Access denied. Admin/HR/Finance role required.';
-            } else if (error.response.status === 404) {
-                errorMessage = 'No data found for the selected month';
-            } else if (error.response.status === 500) {
-                errorMessage = 'Server error occurred';
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: errorMessage
+                });
+                throw error;
+            } finally {
+                showLoading(false);
             }
         }
 
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: errorMessage
-        });
-        throw error; // Re-throw to be caught by parent function
-    } finally {
-        showLoading(false);
-    }
-}
-
-// Generate PDF report (for backward compatibility)
-async function generateReportPDF(reportType, month) {
-    await generateReportWithFormat(reportType, month, 'pdf');
-}
+        // Generate PDF report
+        async function generateReportPDF(reportType, month) {
+            await generateReportWithFormat(reportType, month, 'pdf');
+        }
 
         // Generate selected report from dropdown
         async function generateSelectedReport() {
@@ -2103,17 +2026,18 @@ async function generateReportPDF(reportType, month) {
                 if (show) {
                     target.innerHTML = `
                         <div class="text-center py-5">
-                            <div class="loading-spinner mb-3"></div>
-                            <div>Loading...</div>
+                            <div class="spinner-border text-primary mb-3" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <div class="text-muted">Loading payroll details...</div>
                         </div>
                     `;
                 }
             } else {
-                // Show global loading
                 if (show) {
                     Swal.fire({
                         title: 'Processing...',
-                        html: '<div class="loading-spinner"></div>',
+                        html: '<div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>',
                         allowOutsideClick: false,
                         allowEscapeKey: false,
                         showConfirmButton: false
@@ -2122,17 +2046,6 @@ async function generateReportPDF(reportType, month) {
                     Swal.close();
                 }
             }
-        }
-
-        // Utility function to format currency
-        function formatCurrency(amount, currency = 'MWK') {
-            return `${currency} ${(amount || 0).toLocaleString()}`;
-        }
-
-        // Utility function to format date
-        function formatDate(dateString) {
-            if (!dateString) return 'N/A';
-            return new Date(dateString).toLocaleDateString();
         }
     </script>
     <script src="/js/admin.js"></script>
