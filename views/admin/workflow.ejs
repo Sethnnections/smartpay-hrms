@@ -1,9 +1,10 @@
-<!DOCTYPE html>
-<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TPS - Payroll Workflow</title>
+    
+    <!-- jQuery MUST be loaded first -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     
     <!-- Bootstrap CSS -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
@@ -13,9 +14,12 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/11.7.12/sweetalert2.min.css" rel="stylesheet">
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Select2 CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
     
     <!-- Custom CSS -->
     <link rel="stylesheet" href="/css/admin.css">
+    
     
     <style>
         :root {
@@ -267,6 +271,36 @@
             color: var(--text-secondary);
             font-size: 0.75rem;
         }
+        .loading-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.8);
+    z-index: 9999;
+    justify-content: center;
+    align-items: center;
+}
+
+.loading-overlay.active {
+    display: flex;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
     </style>
 </head>
 <body>
@@ -330,7 +364,9 @@
                 </div>
 
                 <!-- Phase 1: Generate Payroll -->
-                <div class="workflow-phase" id="phase1">
+                 <!-- Workflow Phases - Only one shows at a time -->
+                <div class="workflow-phase" id="phase1" style="display: none;">
+
                     <div class="phase-header">
                         <h5 class="phase-title">
                             <i class="fas fa-cogs"></i> Phase 1: Generate Payroll
@@ -376,99 +412,171 @@
                 </div>
 
                 <!-- Phase 2: Adjustments -->
-                <div class="workflow-phase" id="phase2">
-                    <div class="phase-header">
-                        <h5 class="phase-title">
-                            <i class="fas fa-edit"></i> Phase 2: Make Adjustments
-                        </h5>
-                        <span class="phase-status status-pending" id="phase2Status">Pending</span>
+
+
+<div class="workflow-phase" id="phase2" style="display: none;">
+ 
+    <div class="phase-header">
+        <h5 class="phase-title">
+            <i class="fas fa-edit"></i> Phase 2: Make Adjustments
+        </h5>
+        <span class="phase-status status-pending" id="phase2Status">Pending</span>
+    </div>
+    <div class="phase-body">
+        <div class="alert-custom alert-warning mb-3">
+            <div class="d-flex align-items-start">
+                <i class="fas fa-exclamation-triangle me-2 mt-1"></i>
+                <div>
+                    <div class="fw-semibold mb-1">Adjustments Period</div>
+                    <div class="text-sm">HR/Admin can add temporary or permanent adjustments before starting approval process.</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Employee Selection Section -->
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <i class="fas fa-users me-2"></i>Select Employee
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Select Employee</label>
+                            <select class="form-control select2-employee" id="employeeSelect" style="width: 100%;">
+                                <option value="">Search employee by name or ID...</option>
+                                <!-- Employees will be loaded dynamically -->
+                            </select>
+                        </div>
                     </div>
-                    <div class="phase-body">
-                        <div class="alert-custom alert-warning mb-3">
-                            <div class="d-flex align-items-start">
-                                <i class="fas fa-exclamation-triangle me-2 mt-1"></i>
-                                <div>
-                                    <div class="fw-semibold mb-1">Adjustments Period</div>
-                                    <div class="text-sm">HR/Admin can add temporary or permanent adjustments before starting approval process.</div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="adjustment-card">
-                                    <h6>Add Salary Advance</h6>
-                                    <p>Add a salary advance that will be recovered over multiple months</p>
-                                    <div class="d-flex gap-2">
-                                        <button class="btn btn-sm btn-outline-primary" id="addAdvanceBtn">
-                                            <i class="fas fa-plus me-1"></i> Add Advance
-                                        </button>
-                                        <button class="btn btn-sm btn-outline-secondary" id="viewAdvancesBtn">
-                                            <i class="fas fa-list me-1"></i> View All
-                                        </button>
+                    <div class="col-md-6">
+                        <div class="employee-details card" id="employeeDetails" style="display: none;">
+                            <div class="card-body">
+                                <h6 class="card-title" id="employeeName">Employee Name</h6>
+                                <div class="row">
+                                    <div class="col-6">
+                                        <small class="text-muted">Employee ID:</small>
+                                        <p id="employeeIdDisplay" class="mb-1"></p>
+                                    </div>
+                                    <div class="col-6">
+                                        <small class="text-muted">Department:</small>
+                                        <p id="employeeDepartment" class="mb-1"></p>
+                                    </div>
+                                    <div class="col-6">
+                                        <small class="text-muted">Position:</small>
+                                        <p id="employeePosition" class="mb-1"></p>
+                                    </div>
+                                    <div class="col-6">
+                                        <small class="text-muted">Basic Salary:</small>
+                                        <p id="employeeSalary" class="mb-1"></p>
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <div class="adjustment-card">
-                                    <h6>Add Bonus or Allowance</h6>
-                                    <p>Add additional earnings for specific employees</p>
-                                    <div class="d-flex gap-2">
-                                        <button class="btn btn-sm btn-outline-primary" id="addBonusBtn">
-                                            <i class="fas fa-plus me-1"></i> Add Bonus
-                                        </button>
-                                        <button class="btn btn-sm btn-outline-secondary" id="viewBonusesBtn">
-                                            <i class="fas fa-list me-1"></i> View All
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="row mt-3">
-                            <div class="col-md-6">
-                                <div class="adjustment-card">
-                                    <h6>Add Deduction</h6>
-                                    <p>Add additional deductions (loans, fines, etc.)</p>
-                                    <div class="d-flex gap-2">
-                                        <button class="btn btn-sm btn-outline-primary" id="addDeductionBtn">
-                                            <i class="fas fa-minus me-1"></i> Add Deduction
-                                        </button>
-                                        <button class="btn btn-sm btn-outline-secondary" id="viewDeductionsBtn">
-                                            <i class="fas fa-list me-1"></i> View All
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="adjustment-card">
-                                    <h6>Edit Payroll Fields</h6>
-                                    <p>Modify base salary, allowances, or other fields</p>
-                                    <div class="d-flex gap-2">
-                                        <button class="btn btn-sm btn-outline-primary" id="editPayrollBtn">
-                                            <i class="fas fa-edit me-1"></i> Edit Payroll
-                                        </button>
-                                        <button class="btn btn-sm btn-outline-secondary" id="viewChangesBtn">
-                                            <i class="fas fa-history me-1"></i> View Changes
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="action-buttons mt-3">
-                            <button class="btn btn-primary" id="startApprovalBtn">
-                                <i class="fas fa-play-circle me-2"></i> Start Approval Process
-                            </button>
-                            <button class="btn btn-outline-secondary" id="previewPayslipsBtn">
-                                <i class="fas fa-file-pdf me-2"></i> Preview Payslips
-                            </button>
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+        
+        <!-- Adjustment Actions -->
+        <div class="row">
+            <div class="col-md-3">
+                <div class="adjustment-card text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-money-bill-wave fa-2x text-success"></i>
+                    </div>
+                    <h6>Add Earnings</h6>
+                    <p>Add bonuses, allowances, or other earnings</p>
+                    <button class="btn btn-sm btn-success w-100" id="addEarningsBtn" disabled>
+                        <i class="fas fa-plus me-1"></i> Add Earnings
+                    </button>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="adjustment-card text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-hand-holding-usd fa-2x text-danger"></i>
+                    </div>
+                    <h6>Salary Advance</h6>
+                    <p>Add salary advance with recovery period</p>
+                    <button class="btn btn-sm btn-warning w-100" id="addSalaryAdvanceBtn" disabled>
+                        <i class="fas fa-plus me-1"></i> Add Advance
+                    </button>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="adjustment-card text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-minus-circle fa-2x text-primary"></i>
+                    </div>
+                    <h6>Add Deductions</h6>
+                    <p>Add loans, fines, or other deductions</p>
+                    <button class="btn btn-sm btn-primary w-100" id="addDeductionsBtn" disabled>
+                        <i class="fas fa-plus me-1"></i> Add Deductions
+                    </button>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="adjustment-card text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-edit fa-2x text-info"></i>
+                    </div>
+                    <h6>Edit Payroll</h6>
+                    <p>Modify salary, allowances, or other fields</p>
+                    <button class="btn btn-sm btn-info w-100" id="editPayrollBtn" disabled>
+                        <i class="fas fa-edit me-1"></i> Edit Payroll
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Current Employee Adjustments -->
+        <div class="card mt-4" id="currentAdjustmentsCard" style="display: none;">
+            <div class="card-header">
+                <i class="fas fa-list me-2"></i>Current Adjustments for <span id="currentEmployeeName"></span>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm" id="currentAdjustmentsTable">
+                        <thead>
+                            <tr>
+                                <th>Type</th>
+                                <th>Description</th>
+                                <th>Amount</th>
+                                <th>Duration</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Adjustments will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="action-buttons mt-4">
+            <button class="btn btn-primary" id="startApprovalBtn">
+                <i class="fas fa-play-circle me-2"></i> Start Approval Process
+            </button>
+            <button class="btn btn-outline-secondary" id="previewPayslipsBtn">
+                <i class="fas fa-file-pdf me-2"></i> Preview Payslips
+            </button>
+            <button class="btn btn-outline-info" id="viewAllAdjustmentsBtn">
+                <i class="fas fa-eye me-2"></i> View All Adjustments
+            </button>
+        </div>
+    </div>
+</div>
 
                 <!-- Phase 3: Approval Process -->
-                <div class="workflow-phase" id="phase3">
+
+            <div class="workflow-phase" id="phase3" style="display: none;">
+
                     <div class="phase-header">
                         <h5 class="phase-title">
                             <i class="fas fa-user-check"></i> Phase 3: Approval Process
@@ -485,12 +593,12 @@
                                     <p>Human Resources verification and approval</p>
                                     <small>Status: <span id="step1Status">Pending</span></small>
                                     <div class="mt-2" id="step1Actions">
-                                        <button class="btn btn-sm btn-success" onclick="approveStep('hr')">
-                                            <i class="fas fa-check me-1"></i> Approve
-                                        </button>
-                                        <button class="btn btn-sm btn-danger" onclick="rejectStep('hr')">
-                                            <i class="fas fa-times me-1"></i> Reject
-                                        </button>
+                                    <button class="btn btn-sm btn-success" onclick="approveStep('hr')">
+                                        <i class="fas fa-check me-1"></i> Approve
+                                    </button>
+                                    <button class="btn btn-sm btn-danger" onclick="rejectStep('hr')">
+                                        <i class="fas fa-times me-1"></i> Reject
+                                    </button>
                                     </div>
                                 </div>
                             </div>
@@ -502,14 +610,14 @@
                                     <h6>Finance Approval</h6>
                                     <p>Financial verification and approval (user type: employee)</p>
                                     <small>Status: <span id="step2Status">Pending</span></small>
-                                    <div class="mt-2" id="step2Actions">
+                                        <div class="mt-2" id="step2Actions">
                                         <button class="btn btn-sm btn-success" onclick="approveStep('employee')">
                                             <i class="fas fa-check me-1"></i> Approve
                                         </button>
                                         <button class="btn btn-sm btn-danger" onclick="rejectStep('employee')">
                                             <i class="fas fa-times me-1"></i> Reject
                                         </button>
-                                    </div>
+                                        </div>
                                 </div>
                             </div>
                             
@@ -521,12 +629,12 @@
                                     <p>Final administrative approval</p>
                                     <small>Status: <span id="step3Status">Pending</span></small>
                                     <div class="mt-2" id="step3Actions">
-                                        <button class="btn btn-sm btn-success" onclick="approveStep('admin')">
-                                            <i class="fas fa-check me-1"></i> Approve
-                                        </button>
-                                        <button class="btn btn-sm btn-danger" onclick="rejectStep('admin')">
-                                            <i class="fas fa-times me-1"></i> Reject
-                                        </button>
+                                    <button class="btn btn-sm btn-success" onclick="approveStep('admin')">
+                                        <i class="fas fa-check me-1"></i> Approve
+                                    </button>
+                                    <button class="btn btn-sm btn-danger" onclick="rejectStep('admin')">
+                                        <i class="fas fa-times me-1"></i> Reject
+                                    </button>
                                     </div>
                                 </div>
                             </div>
@@ -577,1096 +685,19 @@
         </main>
     </div>
 
-    <!-- Bootstrap JS -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
-    <!-- Axios -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.2/axios.min.js"></script>
-    <!-- SweetAlert2 -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/11.7.12/sweetalert2.all.min.js"></script>
-    <!-- Moment.js -->
-    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
-    
-    <!-- Custom JS -->
-    <script src="/js/admin.js"></script>
-
-        <script>
-// Global variables
-let currentUser = null;
-let currentMonth = moment().format('YYYY-MM');
-let workflowData = null;
-let adjustments = [];
-
-// Initialize application
-document.addEventListener('DOMContentLoaded', function() {
-    getUserData();
-    initApplication();
-});
-
-function getUserData() {
-    const userData = localStorage.getItem("user");
-    if (userData) {
-        currentUser = JSON.parse(userData);
-        console.log('Current user:', currentUser);
-    } else {
-        window.location.href = '/';
-    }
-}
-
-const authHeader = () => {
-    const token = localStorage.getItem('authToken');
-    if (!token) {
-        window.location.href = '/';
-        return {};
-    }
-    return {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-    };
-};
-
-function initApplication() {
-    // Set current month display
-    document.getElementById('currentMonthDisplay').textContent = moment(currentMonth).format('MMMM YYYY');
-    document.getElementById('payrollMonth').value = currentMonth;
-    
-    // Load initial data
-    loadWorkflowStatus(currentMonth);
-    loadMonthList();
-    loadAdjustments();
-    
-    // Event listeners
-    setupEventListeners();
-}
-
-function setupEventListeners() {
-    // Month navigation
-    document.getElementById('prevMonthBtn').addEventListener('click', () => navigateMonth(-1));
-    document.getElementById('nextMonthBtn').addEventListener('click', () => navigateMonth(1));
-    
-    // Phase 1: Generate Payroll
-    document.getElementById('generatePayrollBtn').addEventListener('click', generatePayroll);
-    document.getElementById('viewGeneratedPayrollBtn').addEventListener('click', viewGeneratedPayroll);
-    
-    // Phase 2: Adjustments
-    document.getElementById('addAdvanceBtn').addEventListener('click', addSalaryAdvance);
-    document.getElementById('addBonusBtn').addEventListener('click', addBonus);
-    document.getElementById('addDeductionBtn').addEventListener('click', addDeduction);
-    document.getElementById('editPayrollBtn').addEventListener('click', editPayroll);
-    document.getElementById('startApprovalBtn').addEventListener('click', startApprovalProcess);
-    document.getElementById('previewPayslipsBtn').addEventListener('click', previewPayslips);
-    
-    // Phase 3: Approval
-    document.getElementById('markPaidBtn').addEventListener('click', markPayrollPaid);
-    document.getElementById('generatePayslipsBtn').addEventListener('click', generatePayslips);
-    document.getElementById('generateBankInstructionsBtn').addEventListener('click', generateBankInstructions);
-    
-    // View buttons
-    document.getElementById('viewAdvancesBtn').addEventListener('click', () => viewAdjustments('advance'));
-    document.getElementById('viewBonusesBtn').addEventListener('click', () => viewAdjustments('bonus'));
-    document.getElementById('viewDeductionsBtn').addEventListener('click', () => viewAdjustments('deduction'));
-    document.getElementById('viewChangesBtn').addEventListener('click', viewAllChanges);
-    
-    // Month selection
-    document.addEventListener('click', function(e) {
-        if (e.target.classList.contains('month-item')) {
-            const month = e.target.getAttribute('data-month');
-            selectMonth(month);
-        }
-    });
-}
-
-function navigateMonth(direction) {
-    currentMonth = moment(currentMonth).add(direction, 'months').format('YYYY-MM');
-    document.getElementById('currentMonthDisplay').textContent = moment(currentMonth).format('MMMM YYYY');
-    document.getElementById('payrollMonth').value = currentMonth;
-    loadWorkflowStatus(currentMonth);
-    loadAdjustments();
-}
-
-function selectMonth(month) {
-    currentMonth = month;
-    document.getElementById('currentMonthDisplay').textContent = moment(currentMonth).format('MMMM YYYY');
-    document.getElementById('payrollMonth').value = currentMonth;
-    loadWorkflowStatus(currentMonth);
-    loadAdjustments();
-}
-
-async function loadWorkflowStatus(month) {
-    try {
-        console.log('Loading workflow status for:', month);
-        const response = await axios.get(`/api/workflow/status?month=${month}`, {
-            headers: authHeader()
-        });
-        
-        console.log('Workflow status response:', response.data);
-        workflowData = response.data;
-        updateWorkflowUI(response.data);
-    } catch (error) {
-        console.error('Error loading workflow status:', error.response?.data || error.message);
-        showAlert('Failed to load workflow status', 'danger');
-    }
-}
-
-function updateWorkflowUI(data) {
-    console.log('Updating workflow UI with data:', data);
-    
-    // Update workflow info
-    const workflowInfo = document.getElementById('workflowInfo');
-    if (workflowInfo) {
-        workflowInfo.textContent = data.exists ? 
-            `Workflow ${data.status.replace('_', ' ').toUpperCase()}` : 
-            'No workflow for this month';
-    }
-    
-    // Update alert
-    updateAlert(data);
-    
-    // Update phases based on workflow status
-    updatePhases(data);
-    
-    // Update timeline
-    updateTimeline(data);
-}
-
-function updateAlert(data) {
-    const alert = document.getElementById('workflowAlert');
-    const title = document.getElementById('alertTitle');
-    const text = document.getElementById('alertText');
-    
-    if (!alert || !title || !text) return;
-    
-    if (!data.exists) {
-        title.textContent = 'Ready to Generate Payroll';
-        text.textContent = 'No payroll workflow exists for this month. HR can generate payroll to start the process.';
-        alert.className = 'alert-custom alert-info mb-3';
-        return;
-    }
-    
-    switch(data.status) {
-        case 'in_progress':
-            if (data.payrollGenerated) {
-                title.textContent = 'Adjustments Period';
-                text.textContent = 'Payroll has been generated. HR/Admin can now make adjustments before starting the approval process.';
-                alert.className = 'alert-custom alert-warning mb-3';
-            } else {
-                title.textContent = 'Payroll Generation Required';
-                text.textContent = 'Workflow created but payroll not generated yet.';
-                alert.className = 'alert-custom alert-warning mb-3';
-            }
-            break;
-            
-        case 'approved':
-            title.textContent = 'Ready for Payment';
-            text.textContent = 'All approvals complete! You can now mark payroll as paid and generate payslips.';
-            alert.className = 'alert-custom alert-success mb-3';
-            break;
-            
-        case 'completed':
-            title.textContent = 'Payroll Completed';
-            text.textContent = 'Payroll has been marked as paid. Payslips and bank instructions can be generated.';
-            alert.className = 'alert-custom alert-success mb-3';
-            break;
-            
-        case 'rejected':
-            title.textContent = 'Workflow Rejected';
-            text.textContent = 'The workflow has been rejected. You can start over.';
-            alert.className = 'alert-custom alert-danger mb-3';
-            break;
-            
-        default:
-            title.textContent = 'Workflow Status';
-            text.textContent = `Workflow is ${data.status}`;
-            alert.className = 'alert-custom alert-info mb-3';
-    }
-}
-
-function updatePhases(data) {
-    // Phase 1: Generate Payroll
-    const phase1Status = document.getElementById('phase1Status');
-    const generatePayrollBtn = document.getElementById('generatePayrollBtn');
-    const phase2 = document.getElementById('phase2');
-    const phase3 = document.getElementById('phase3');
-    
-    if (!data.exists || !data.payrollGenerated) {
-        phase1Status.textContent = 'Current';
-        phase1Status.className = 'phase-status status-in-progress';
-        generatePayrollBtn.disabled = false;
-        phase2.style.display = 'none';
-        phase3.style.display = 'none';
-    } else {
-        phase1Status.textContent = 'Completed';
-        phase1Status.className = 'phase-status status-completed';
-        generatePayrollBtn.disabled = true;
-        phase2.style.display = 'block';
-        
-        // Phase 2: Adjustments
-        const phase2Status = document.getElementById('phase2Status');
-        const startApprovalBtn = document.getElementById('startApprovalBtn');
-        
-        if (data.status === 'in_progress' && data.canMakeAdjustments) {
-            phase2Status.textContent = 'Current';
-            phase2Status.className = 'phase-status status-in-progress';
-            startApprovalBtn.disabled = false;
-            enableAdjustmentButtons(true);
-            phase3.style.display = 'none';
-        } else {
-            phase2Status.textContent = 'Completed';
-            phase2Status.className = 'phase-status status-completed';
-            startApprovalBtn.disabled = true;
-            enableAdjustmentButtons(false);
-            phase3.style.display = 'block';
-            
-            // Phase 3: Approval
-            const phase3Status = document.getElementById('phase3Status');
-            const markPaidBtn = document.getElementById('markPaidBtn');
-            const generatePayslipsBtn = document.getElementById('generatePayslipsBtn');
-            const generateBankInstructionsBtn = document.getElementById('generateBankInstructionsBtn');
-            
-            if (data.status === 'approved' || data.status === 'completed') {
-                phase3Status.textContent = 'Completed';
-                phase3Status.className = 'phase-status status-completed';
-                markPaidBtn.disabled = data.status === 'completed';
-                generatePayslipsBtn.disabled = false;
-                generateBankInstructionsBtn.disabled = false;
-            } else {
-                phase3Status.textContent = 'In Progress';
-                phase3Status.className = 'phase-status status-in-progress';
-                markPaidBtn.disabled = true;
-                generatePayslipsBtn.disabled = true;
-                generateBankInstructionsBtn.disabled = true;
-            }
-        }
-    }
-}
-
-function enableAdjustmentButtons(enabled) {
-    const buttons = ['addAdvanceBtn', 'addBonusBtn', 'addDeductionBtn', 'editPayrollBtn'];
-    buttons.forEach(btnId => {
-        const btn = document.getElementById(btnId);
-        if (btn) btn.disabled = !enabled;
-    });
-}
-
-function updateTimeline(data) {
-    if (!data.exists || !data.steps) return;
-    
-    data.steps.forEach((step, index) => {
-        const stepNum = index + 1;
-        const stepStatus = document.getElementById(`step${stepNum}Status`);
-        if (stepStatus) {
-            stepStatus.textContent = step.status.charAt(0).toUpperCase() + step.status.slice(1);
-        }
-        
-        // Update marker
-        const marker = document.getElementById(`step${stepNum}Marker`);
-        if (marker) {
-            marker.className = 'timeline-marker';
-            
-            if (step.status === 'approved') {
-                marker.classList.add('completed');
-            } else if (step.status === 'pending' && step.stepNumber === data.currentStep) {
-                marker.classList.add('current');
-            } else {
-                marker.classList.add('pending');
-            }
-        }
-        
-        // Show/hide actions based on user role and step status
-        const actions = document.getElementById(`step${stepNum}Actions`);
-        if (actions) {
-            if (step.status === 'pending' && currentUser && currentUser.role === step.role) {
-                actions.style.display = 'block';
-            } else {
-                actions.style.display = 'none';
-            }
-        }
-    });
-}
-
-async function generatePayroll() {
-    const month = document.getElementById('payrollMonth').value;
-    
-    if (!month) {
-        showAlert('Please select a month', 'warning');
-        return;
-    }
-    
-    try {
-        Swal.fire({
-            title: 'Generate Payroll?',
-            html: `
-                <div class="text-start">
-                    <p>You are about to generate payroll for:</p>
-                    <div class="alert alert-success">
-                        <i class="fas fa-calendar me-2"></i>
-                        <strong>${moment(month).format('MMMM YYYY')}</strong>
-                    </div>
-                    <p>This will:</p>
-                    <ul>
-                        <li>Process payroll for all active employees</li>
-                        <li>Calculate salaries, allowances, and deductions</li>
-                        <li>Create a workflow for this month</li>
-                        <li>Allow HR/Admin to make adjustments before approval</li>
-                    </ul>
-                </div>
-            `,
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonText: 'Yes, Generate Payroll',
-            cancelButtonText: 'Cancel',
-            showLoaderOnConfirm: true,
-            preConfirm: async () => {
-                try {
-                    console.log('Generating payroll for:', month);
-                    const response = await axios.post('/api/payroll/workflow/generate-payroll/' + month, {}, {
-                        headers: authHeader()
-                    });
-                    console.log('Generate payroll response:', response.data);
-                    return response.data;
-                } catch (error) {
-                    console.error('Error generating payroll:', error.response?.data || error.message);
-                    Swal.showValidationMessage(
-                        `Generation failed: ${error.response?.data?.message || error.response?.data?.error || error.message}`
-                    );
-                }
-            }
-        }).then(async (result) => {
-            if (result.isConfirmed) {
-                Swal.fire({
-                    title: 'Success!',
-                    html: `
-                        <div class="text-center">
-                            <div class="mb-3">
-                                <i class="fas fa-check-circle fa-3x text-success"></i>
-                            </div>
-                            <p>${result.value.message}</p>
-                            <div class="alert alert-info mt-3">
-                                <strong>${result.value.payroll?.processedCount || result.value.payrollCount || 0}</strong> employee records processed
-                            </div>
-                        </div>
-                    `,
-                    icon: 'success',
-                    timer: 3000,
-                    showConfirmButton: false
-                });
-                
-                await loadWorkflowStatus(currentMonth);
-                await loadAdjustments();
-            }
-        });
-        
-    } catch (error) {
-        console.error('Error in generatePayroll:', error);
-        Swal.fire('Error!', error.response?.data?.message || error.response?.data?.error || error.message, 'error');
-    }
-}
-
-async function startApprovalProcess() {
-    try {
-        const result = await Swal.fire({
-            title: 'Start Approval Process?',
-            html: `
-                <div class="text-center">
-                    <div class="mb-3">
-                        <i class="fas fa-play-circle fa-3x text-warning"></i>
-                    </div>
-                    <p>Once you start the approval process:</p>
-                    <ul class="text-start">
-                        <li>No more adjustments can be made</li>
-                        <li>The workflow moves to HR approval step</li>
-                        <li>Three-step approval begins</li>
-                    </ul>
-                    <div class="alert alert-warning">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        This action cannot be undone.
-                    </div>
-                </div>
-            `,
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonText: 'Yes, Start Approval',
-            cancelButtonText: 'Cancel'
-        });
-        
-        if (result.isConfirmed) {
-            const response = await axios.post(`/api/payroll/workflow/start-approval/${currentMonth}`, {}, {
-                headers: authHeader()
-            });
-            
-            Swal.fire({
-                title: 'Started!',
-                text: response.data.message,
-                icon: 'success',
-                timer: 2000,
-                showConfirmButton: false
-            });
-            
-            await loadWorkflowStatus(currentMonth);
-        }
-    } catch (error) {
-        console.error('Error starting approval:', error);
-        Swal.fire('Error!', error.response?.data?.message || error.response?.data?.error || error.message, 'error');
-    }
-}
-
-async function approveStep(role) {
-    try {
-        const result = await Swal.fire({
-            title: `Approve as ${role.toUpperCase()}?`,
-            html: `
-                <div class="text-center">
-                    <div class="mb-3">
-                        <i class="fas fa-check-circle fa-3x text-success"></i>
-                    </div>
-                    <p>You are approving this step as <strong>${role.toUpperCase()}</strong></p>
-                </div>
-            `,
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonText: 'Yes, Approve',
-            cancelButtonText: 'Cancel',
-            input: 'textarea',
-            inputLabel: 'Notes (optional)',
-            inputPlaceholder: 'Add any notes...',
-            inputAttributes: {
-                maxlength: 200
-            }
-        });
-        
-        if (result.isConfirmed) {
-            const response = await axios.post('/api/workflow/approve', {
-                notes: result.value,
-                role: role
-            }, {
-                headers: authHeader()
-            });
-            
-            Swal.fire({
-                title: 'Approved!',
-                text: response.data.message,
-                icon: 'success',
-                timer: 2000,
-                showConfirmButton: false
-            });
-            
-            await loadWorkflowStatus(currentMonth);
-        }
-    } catch (error) {
-        console.error('Error approving step:', error);
-        Swal.fire('Error!', error.response?.data?.message || error.response?.data?.error || error.message, 'error');
-    }
-}
-
-async function rejectStep(role) {
-    try {
-        const result = await Swal.fire({
-            title: `Reject as ${role.toUpperCase()}?`,
-            html: `
-                <div class="text-center">
-                    <div class="mb-3">
-                        <i class="fas fa-times-circle fa-3x text-danger"></i>
-                    </div>
-                    <p>You are rejecting this step as <strong>${role.toUpperCase()}</strong></p>
-                    <p class="text-danger"><strong>Warning:</strong> This will stop the entire workflow.</p>
-                </div>
-            `,
-            icon: 'error',
-            showCancelButton: true,
-            confirmButtonText: 'Yes, Reject',
-            cancelButtonText: 'Cancel',
-            input: 'textarea',
-            inputLabel: 'Reason for rejection',
-            inputPlaceholder: 'Please provide a reason...',
-            inputAttributes: {
-                required: true,
-                maxlength: 500
-            }
-        });
-        
-        if (result.isConfirmed) {
-            if (!result.value.trim()) {
-                Swal.fire('Error!', 'Please provide a reason for rejection', 'error');
-                return;
-            }
-            
-            const response = await axios.post('/api/workflow/reject', {
-                reason: result.value,
-                role: role
-            }, {
-                headers: authHeader()
-            });
-            
-            Swal.fire({
-                title: 'Rejected!',
-                text: response.data.message,
-                icon: 'success',
-                timer: 2000,
-                showConfirmButton: false
-            });
-            
-            await loadWorkflowStatus(currentMonth);
-        }
-    } catch (error) {
-        console.error('Error rejecting step:', error);
-        Swal.fire('Error!', error.response?.data?.message || error.response?.data?.error || error.message, 'error');
-    }
-}
-
-async function markPayrollPaid() {
-    try {
-        const result = await Swal.fire({
-            title: 'Mark Payroll as Paid?',
-            html: `
-                <div class="text-start">
-                    <p>This will mark all payroll records for <strong>${moment(currentMonth).format('MMMM YYYY')}</strong> as paid.</p>
-                    <p>After marking as paid, you can:</p>
-                    <ul>
-                        <li>Generate payslips for employees</li>
-                        <li>Generate bank instructions</li>
-                        <li>Export payment reports</li>
-                    </ul>
-                    <div class="alert alert-warning">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        This action cannot be undone.
-                    </div>
-                </div>
-            `,
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonText: 'Yes, Mark as Paid',
-            cancelButtonText: 'Cancel'
-        });
-        
-        if (result.isConfirmed) {
-            const response = await axios.post(`/api/payroll/workflow/mark-paid/${currentMonth}`, {}, {
-                headers: authHeader()
-            });
-            
-            Swal.fire({
-                title: 'Success!',
-                html: `
-                    <div class="text-center">
-                        <div class="mb-3">
-                            <i class="fas fa-check-circle fa-3x text-success"></i>
-                        </div>
-                        <p>${response.data.message}</p>
-                        <div class="alert alert-info mt-3">
-                            <strong>${response.data.count}</strong> payroll records marked as paid
-                        </div>
-                    </div>
-                `,
-                icon: 'success',
-                timer: 3000,
-                showConfirmButton: false
-            });
-            
-            await loadWorkflowStatus(currentMonth);
-        }
-    } catch (error) {
-        console.error('Error marking payroll as paid:', error);
-        Swal.fire('Error!', error.response?.data?.message || error.response?.data?.error || error.message, 'error');
-    }
-}
-
-async function generatePayslips() {
-    try {
-        const result = await Swal.fire({
-            title: 'Generate Payslips?',
-            html: `
-                <div class="text-start">
-                    <p>Generate payslips for <strong>${moment(currentMonth).format('MMMM YYYY')}</strong>.</p>
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle me-2"></i>
-                        Payslips will be generated as PDF files for each employee.
-                    </div>
-                </div>
-            `,
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonText: 'Generate Payslips',
-            cancelButtonText: 'Cancel'
-        });
-        
-        if (result.isConfirmed) {
-            // Generate consolidated payslips
-            window.open(`/api/payroll/payslips/consolidated?month=${currentMonth}`, '_blank');
-        }
-    } catch (error) {
-        console.error('Error generating payslips:', error);
-        Swal.fire('Error!', error.response?.data?.message || error.response?.data?.error || error.message, 'error');
-    }
-}
-
-async function generateBankInstructions() {
-    try {
-        const result = await Swal.fire({
-            title: 'Generate Bank Instructions?',
-            html: `
-                <div class="text-start">
-                    <p>Generate bank payment instructions for <strong>${moment(currentMonth).format('MMMM YYYY')}</strong>.</p>
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle me-2"></i>
-                        You can download as PDF or Excel format.
-                    </div>
-                </div>
-            `,
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonText: 'Generate',
-            cancelButtonText: 'Cancel'
-        });
-        
-        if (result.isConfirmed) {
-            window.open(`/api/payroll/bank-instruction?month=${currentMonth}`, '_blank');
-        }
-    } catch (error) {
-        console.error('Error generating bank instructions:', error);
-        Swal.fire('Error!', error.response?.data?.message || error.response?.data?.error || error.message, 'error');
-    }
-}
-
-async function addSalaryAdvance() {
-    try {
-        const { value: formValues } = await Swal.fire({
-            title: 'Add Salary Advance',
-            html: `
-                <div class="text-start">
-                    <div class="mb-3">
-                        <label class="form-label">Employee ID</label>
-                        <input type="text" id="employeeId" class="form-control" placeholder="Enter employee ID" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Advance Amount</label>
-                        <input type="number" id="amount" class="form-control" placeholder="Enter amount" min="1" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Recovery Period (Months)</label>
-                        <input type="number" id="recoveryMonths" class="form-control" placeholder="Number of months to recover" min="1" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Reason</label>
-                        <textarea id="reason" class="form-control" placeholder="Reason for advance" rows="2"></textarea>
-                    </div>
-                </div>
-            `,
-            focusConfirm: false,
-            showCancelButton: true,
-            confirmButtonText: 'Add Advance',
-            cancelButtonText: 'Cancel',
-            preConfirm: () => {
-                return {
-                    employeeId: document.getElementById('employeeId').value,
-                    amount: document.getElementById('amount').value,
-                    recoveryMonths: document.getElementById('recoveryMonths').value,
-                    reason: document.getElementById('reason').value
-                };
-            }
-        });
-        
-        if (formValues) {
-            const response = await axios.post(`/api/payroll/advance`, {
-                ...formValues,
-                month: currentMonth
-            }, {
-                headers: authHeader()
-            });
-            
-            Swal.fire({
-                title: 'Success!',
-                text: response.data.message,
-                icon: 'success',
-                timer: 2000,
-                showConfirmButton: false
-            });
-            
-            await loadAdjustments();
-        }
-    } catch (error) {
-        console.error('Error adding salary advance:', error);
-        Swal.fire('Error!', error.response?.data?.message || error.response?.data?.error || error.message, 'error');
-    }
-}
-
-async function addBonus() {
-    try {
-        const { value: formValues } = await Swal.fire({
-            title: 'Add Bonus',
-            html: `
-                <div class="text-start">
-                    <div class="mb-3">
-                        <label class="form-label">Employee ID</label>
-                        <input type="text" id="employeeId" class="form-control" placeholder="Enter employee ID" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Amount</label>
-                        <input type="number" id="amount" class="form-control" placeholder="Enter amount" min="1" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Type</label>
-                        <select id="type" class="form-control">
-                            <option value="performance">Performance Bonus</option>
-                            <option value="annual">Annual Bonus</option>
-                            <option value="other">Other Bonus</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Duration</label>
-                        <select id="duration" class="form-control">
-                            <option value="temporary">Temporary (This month only)</option>
-                            <option value="permanent">Permanent (Apply to future months)</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Reason</label>
-                        <textarea id="reason" class="form-control" placeholder="Reason for bonus" rows="2"></textarea>
-                    </div>
-                </div>
-            `,
-            focusConfirm: false,
-            showCancelButton: true,
-            confirmButtonText: 'Add Bonus',
-            cancelButtonText: 'Cancel',
-            preConfirm: () => {
-                return {
-                    employeeId: document.getElementById('employeeId').value,
-                    amount: document.getElementById('amount').value,
-                    type: document.getElementById('type').value,
-                    duration: document.getElementById('duration').value,
-                    reason: document.getElementById('reason').value
-                };
-            }
-        });
-        
-        if (formValues) {
-            // Find the payroll ID for this employee and month first
-            const payrollResponse = await axios.get(`/api/payroll?month=${currentMonth}&employeeId=${formValues.employeeId}`, {
-                headers: authHeader()
-            });
-            
-            if (payrollResponse.data.payrolls && payrollResponse.data.payrolls.length > 0) {
-                const payrollId = payrollResponse.data.payrolls[0]._id;
-                
-                const response = await axios.post(`/api/payroll/${payrollId}/earnings/custom`, {
-                    name: `${formValues.type} Bonus`,
-                    amount: formValues.amount,
-                    description: formValues.reason,
-                    duration: formValues.duration
-                }, {
-                    headers: authHeader()
-                });
-                
-                showAlert('Bonus added successfully!', 'success');
-                await loadAdjustments();
-            } else {
-                showAlert('No payroll found for this employee', 'error');
-            }
-        }
-    } catch (error) {
-        console.error('Error adding bonus:', error);
-        Swal.fire('Error!', error.response?.data?.message || error.response?.data?.error || error.message, 'error');
-    }
-}
-
-async function addDeduction() {
-    try {
-        const { value: formValues } = await Swal.fire({
-            title: 'Add Deduction',
-            html: `
-                <div class="text-start">
-                    <div class="mb-3">
-                        <label class="form-label">Employee ID</label>
-                        <input type="text" id="employeeId" class="form-control" placeholder="Enter employee ID" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Amount</label>
-                        <input type="number" id="amount" class="form-control" placeholder="Enter amount" min="1" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Type</label>
-                        <select id="type" class="form-control">
-                            <option value="loan">Loan Deduction</option>
-                            <option value="advance">Salary Advance</option>
-                            <option value="fine">Fine/Penalty</option>
-                            <option value="other">Other Deduction</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Duration</label>
-                        <select id="duration" class="form-control">
-                            <option value="temporary">Temporary (One-time)</option>
-                            <option value="recovery">Recovery (Multiple months)</option>
-                            <option value="permanent">Permanent (Apply to future months)</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Description</label>
-                        <textarea id="reason" class="form-control" placeholder="Description of deduction" rows="2"></textarea>
-                    </div>
-                </div>
-            `,
-            focusConfirm: false,
-            showCancelButton: true,
-            confirmButtonText: 'Add Deduction',
-            cancelButtonText: 'Cancel',
-            preConfirm: () => {
-                return {
-                    employeeId: document.getElementById('employeeId').value,
-                    amount: document.getElementById('amount').value,
-                    type: document.getElementById('type').value,
-                    duration: document.getElementById('duration').value,
-                    reason: document.getElementById('reason').value
-                };
-            }
-        });
-        
-        if (formValues) {
-            // Find the payroll ID for this employee and month first
-            const payrollResponse = await axios.get(`/api/payroll?month=${currentMonth}&employeeId=${formValues.employeeId}`, {
-                headers: authHeader()
-            });
-            
-            if (payrollResponse.data.payrolls && payrollResponse.data.payrolls.length > 0) {
-                const payrollId = payrollResponse.data.payrolls[0]._id;
-                
-                if (formValues.duration === 'recovery') {
-                    // For recovery deductions (like salary advance)
-                    const recoveryResponse = await Swal.fire({
-                        title: 'Recovery Period',
-                        html: `
-                            <div class="text-start">
-                                <div class="mb-3">
-                                    <label class="form-label">Number of Recovery Months</label>
-                                    <input type="number" id="recoveryMonths" class="form-control" placeholder="Number of months to recover" min="1" required>
-                                </div>
-                            </div>
-                        `,
-                        focusConfirm: false,
-                        showCancelButton: true,
-                        confirmButtonText: 'Add with Recovery',
-                        cancelButtonText: 'Cancel',
-                        preConfirm: () => {
-                            return {
-                                recoveryMonths: document.getElementById('recoveryMonths').value
-                            };
-                        }
-                    });
-                    
-                    if (recoveryResponse.isConfirmed) {
-                        const response = await axios.post(`/api/payroll/${payrollId}/adjustment/recovery`, {
-                            type: 'deduction',
-                            category: formValues.type,
-                            duration: 'temporary',
-                            reason: formValues.reason,
-                            amount: formValues.amount / recoveryResponse.value.recoveryMonths,
-                            recoveryPeriod: {
-                                numberOfMonths: parseInt(recoveryResponse.value.recoveryMonths),
-                                amountPerMonth: formValues.amount / recoveryResponse.value.recoveryMonths,
-                                totalAmount: formValues.amount
-                            },
-                            remainingMonths: recoveryResponse.value.recoveryMonths - 1
-                        }, {
-                            headers: authHeader()
-                        });
-                        
-                        showAlert('Recovery deduction added successfully!', 'success');
-                    }
-                } else {
-                    // For regular deductions
-                    const response = await axios.post(`/api/payroll/${payrollId}/deductions/custom`, {
-                        name: formValues.type,
-                        amount: formValues.amount,
-                        description: formValues.reason,
-                        duration: formValues.duration
-                    }, {
-                        headers: authHeader()
-                    });
-                    
-                    showAlert('Deduction added successfully!', 'success');
-                }
-                
-                await loadAdjustments();
-            } else {
-                showAlert('No payroll found for this employee', 'error');
-            }
-        }
-    } catch (error) {
-        console.error('Error adding deduction:', error);
-        Swal.fire('Error!', error.response?.data?.message || error.response?.data?.error || error.message, 'error');
-    }
-}
-
-async function editPayroll() {
-    // Redirect to payroll editing interface
-    window.location.href = `/admin/payrolls?month=${currentMonth}&action=edit`;
-}
-
-async function loadAdjustments() {
-    try {
-        const response = await axios.get(`/api/payroll/adjustments/${currentMonth}`, {
-            headers: authHeader()
-        });
-        
-        adjustments = response.data.adjustments || [];
-        renderAdjustmentsTable(adjustments);
-    } catch (error) {
-        console.error('Error loading adjustments:', error);
-    }
-}
-
-function renderAdjustmentsTable(adjustments) {
-    const tbody = document.querySelector('#adjustmentsTable tbody');
-    
-    if (!tbody) return;
-    
-    if (adjustments.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-3">No adjustments yet</td></tr>';
-        return;
-    }
-    
-    const rows = adjustments.map(adj => `
-        <tr>
-            <td>${moment(adj.appliedAt).format('DD MMM YYYY')}</td>
-            <td>
-                <span class="badge ${adj.type === 'addition' ? 'bg-success' : 'bg-danger'}">
-                    ${adj.type}
-                </span>
-            </td>
-            <td>${adj.reason}</td>
-            <td>MWK ${adj.amount?.toLocaleString() || '0'}</td>
-            <td>
-                <span class="badge ${adj.duration === 'permanent' ? 'bg-info' : 'bg-warning'}">
-                    ${adj.duration}
-                </span>
-            </td>
-            <td>${adj.appliedBy?.name || 'System'}</td>
-        </tr>
-    `).join('');
-    
-    tbody.innerHTML = rows;
-}
-
-function viewAdjustments(type) {
-    // Filter adjustments by type and show in modal
-    const filtered = adjustments.filter(adj => 
-        (type === 'advance' && adj.category === 'advance') ||
-        (type === 'bonus' && adj.type === 'addition' && adj.category === 'bonus') ||
-        (type === 'deduction' && adj.type === 'deduction')
-    );
-    
-    if (filtered.length === 0) {
-        Swal.fire('Info', `No ${type} adjustments found`, 'info');
-        return;
-    }
-    
-    const adjustmentsHtml = filtered.map(adj => `
-        <div class="adjustment-card">
-            <h6>${adj.reason}</h6>
-            <p>Amount: MWK ${adj.amount?.toLocaleString() || '0'} | ${adj.duration} | ${moment(adj.appliedAt).format('DD MMM YYYY')}</p>
-            ${adj.recoveryPeriod ? `
-                <div class="recovery-info">
-                    <strong>Recovery:</strong> ${adj.recoveryPeriod.amountPerMonth} per month for ${adj.recoveryPeriod.numberOfMonths} months
-                </div>
-            ` : ''}
-        </div>
-    `).join('');
-    
-    Swal.fire({
-        title: `${type.charAt(0).toUpperCase() + type.slice(1)} Adjustments`,
-        html: adjustmentsHtml,
-        width: 600,
-        showConfirmButton: false,
-        showCloseButton: true
-    });
-}
-
-function viewAllChanges() {
-    Swal.fire({
-        title: 'All Changes',
-        html: `
-            <div class="text-center">
-                <i class="fas fa-history fa-3x text-secondary mb-3"></i>
-                <p>View all payroll changes in the payrolls page</p>
-            </div>
-        `,
-        showCancelButton: true,
-        confirmButtonText: 'Go to Payrolls',
-        cancelButtonText: 'Close'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            window.location.href = `/admin/payrolls?month=${currentMonth}`;
-        }
-    });
-}
-
-function viewGeneratedPayroll() {
-    window.location.href = `/admin/payrolls?month=${currentMonth}&status=generated`;
-}
-
-function previewPayslips() {
-    window.open(`/api/payroll/payslips/consolidated?month=${currentMonth}&preview=true`, '_blank');
-}
-
-async function loadMonthList() {
-    try {
-        const response = await axios.get('/api/payroll/periods/available', {
-            headers: authHeader()
-        });
-        
-        const months = response.data || [];
-        const monthListHtml = months.map(month => `
-            <li>
-                <a class="dropdown-item month-item" href="#" data-month="${month._id}">
-                    ${moment(month._id).format('MMMM YYYY')}
-                    ${month._id === currentMonth ? '<i class="fas fa-check text-success ms-2"></i>' : ''}
-                </a>
-            </li>
-        `).join('');
-        
-        const monthList = document.getElementById('monthList');
-        if (monthList) {
-            monthList.innerHTML = monthListHtml;
-        }
-    } catch (error) {
-        console.error('Error loading month list:', error);
-        // Fallback to generated months
-        const months = [];
-        for (let i = 0; i < 12; i++) {
-            const month = moment().subtract(i, 'months').format('YYYY-MM');
-            months.push({
-                _id: month,
-                label: moment(month).format('MMMM YYYY')
-            });
-        }
-        
-        const monthListHtml = months.map(month => `
-            <li>
-                <a class="dropdown-item month-item" href="#" data-month="${month._id}">
-                    ${month.label}
-                    ${month._id === currentMonth ? '<i class="fas fa-check text-success ms-2"></i>' : ''}
-                </a>
-            </li>
-        `).join('');
-        
-        const monthList = document.getElementById('monthList');
-        if (monthList) {
-            monthList.innerHTML = monthListHtml;
-        }
-    }
-}
-
-function showAlert(message, type) {
-    Swal.fire({
-        title: type.charAt(0).toUpperCase() + type.slice(1),
-        text: message,
-        icon: type,
-        timer: 3000,
-        showConfirmButton: false
-    });
-}
-
-// Expose functions to global scope for onclick handlers
-window.approveStep = approveStep;
-window.rejectStep = rejectStep;
-</script>
+<!-- jQuery (already loaded in head) -->
+<!-- Bootstrap JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+<!-- Axios -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.2/axios.min.js"></script>
+<!-- SweetAlert2 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/11.7.12/sweetalert2.all.min.js"></script>
+<!-- Moment.js -->
+<script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
+<!-- Select2 JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+<!-- Custom JS -->
+<script src="/js/admin.js"></script>
+<script src="/js/workflow.js"></script>
 </body>
 </html>

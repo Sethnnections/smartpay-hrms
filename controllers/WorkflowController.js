@@ -127,140 +127,146 @@ static async createWorkflow(month, requestedBy) {
   }
   
   // Start approval process (HR initiates approvals after adjustments)
-  static async startApprovalProcess(month, userId) {
+// Update the startApprovalProcess method in WorkflowController.js
+static async startApprovalProcess(month, userId) {
     try {
-      const workflow = await Workflow.findOne({ month });
-      
-      if (!workflow) {
-        throw new Error('No workflow found for this month');
-      }
-      
-      if (!workflow.payrollGenerated) {
-        throw new Error('Payroll must be generated before starting approval');
-      }
-      
-      if (workflow.status !== 'in_progress') {
-        throw new Error(`Workflow status is ${workflow.status}, cannot start approval`);
-      }
-      
-      // Mark HR step as approved (since HR is the one starting approval after adjustments)
-      const hrStep = workflow.steps.find(step => step.role === 'hr');
-      if (hrStep) {
-        hrStep.status = 'approved';
-        hrStep.approvedAt = new Date();
-        hrStep.approvedBy = userId;
-      }
-      
-      // Move to employee (finance) step
-      workflow.currentStep = 2;
-      
-      await workflow.save();
-      
-      return {
-        success: true,
-        message: 'Approval process started. Waiting for finance approval (employee role).',
-        workflow: workflow
-      };
+        console.log('Starting approval process for month:', month, 'user:', userId);
+        
+        const workflow = await Workflow.findOne({ month });
+        
+        if (!workflow) {
+            throw new Error(`No workflow found for month ${month}`);
+        }
+        
+        if (!workflow.payrollGenerated) {
+            throw new Error('Payroll must be generated before starting approval');
+        }
+        
+        if (workflow.status !== 'in_progress') {
+            throw new Error(`Workflow status is ${workflow.status}, cannot start approval`);
+        }
+        
+        // Mark HR step as approved
+        const hrStep = workflow.steps.find(step => step.role === 'hr');
+        if (hrStep) {
+            hrStep.status = 'approved';
+            hrStep.approvedAt = new Date();
+            hrStep.approvedBy = userId;
+            hrStep.notes = 'HR started approval process';
+        }
+        
+        // Move to next step
+        workflow.currentStep = 2;
+        workflow.status = 'in_progress';
+        
+        await workflow.save();
+        
+        console.log('Approval process started for:', month);
+        
+        return {
+            success: true,
+            message: 'Approval process started. Waiting for finance approval.',
+            workflow: workflow
+        };
     } catch (error) {
-      throw error;
+        console.error('Error in startApprovalProcess:', error);
+        throw error;
     }
-  }
-  
-  // Approve step (for any role)
-  static async approveStep(userId, userRole, notes = '') {
-    try {
-      const currentMonth = moment().format('YYYY-MM');
-      
-      // Get active workflow for current month
-      const workflow = await Workflow.findOne({ 
-        month: currentMonth,
-        status: 'in_progress'
-      });
-      
-      if (!workflow) {
-        throw new Error('No active workflow found for current month');
-      }
-      
-      // Find the current step for this user's role
-      const currentStep = workflow.steps.find(
-        step => step.role === userRole && step.status === 'pending'
-      );
-      
-      if (!currentStep) {
-        throw new Error('You have no pending approvals');
-      }
-      
-      // Update step
-      currentStep.status = 'approved';
-      currentStep.approvedAt = new Date();
-      currentStep.approvedBy = userId;
-      currentStep.notes = notes;
-      
-      // Move to next step
-      workflow.currentStep = currentStep.stepNumber + 1;
-      
-      // Check if all steps are approved
-      const pendingSteps = workflow.steps.filter(step => step.status === 'pending');
-      
-      if (pendingSteps.length === 0) {
-        // All steps approved
-        workflow.status = 'approved';
-        workflow.completedAt = new Date();
-      }
-      
-      await workflow.save();
-      
-      return {
-        success: true,
-        message: 'Approval recorded',
-        workflow: workflow
-      };
-    } catch (error) {
-      throw error;
+}
+
+// Approve step (for any role)
+static async approveStep(month, userId, userRole, notes = '') {
+  try {
+    // Get workflow for the specified month
+    const workflow = await Workflow.findOne({ 
+      month: month,
+      status: 'in_progress'
+    });
+    
+    if (!workflow) {
+      throw new Error(`No active workflow found for month ${month}`);
     }
-  }
-  
-  // Reject step
-  static async rejectStep(userId, userRole, reason) {
-    try {
-      const currentMonth = moment().format('YYYY-MM');
-      
-      const workflow = await Workflow.findOne({ 
-        month: currentMonth,
-        status: 'in_progress'
-      });
-      
-      if (!workflow) {
-        throw new Error('No active workflow found for current month');
-      }
-      
-      // Find the current step for this user's role
-      const currentStep = workflow.steps.find(
-        step => step.role === userRole && step.status === 'pending'
-      );
-      
-      if (!currentStep) {
-        throw new Error('You have no pending approvals');
-      }
-      
-      // Update step
-      currentStep.status = 'rejected';
-      currentStep.approvedAt = new Date();
-      currentStep.approvedBy = userId;
-      currentStep.notes = reason;
-      workflow.status = 'rejected';
-      
-      await workflow.save();
-      
-      return {
-        success: true,
-        message: 'Rejection recorded',
-        workflow: workflow
-      };
-    } catch (error) {
-      throw error;
+    
+    // Find the current step for this user's role
+    const currentStep = workflow.steps.find(
+      step => step.role === userRole && step.status === 'pending'
+    );
+    
+    if (!currentStep) {
+      throw new Error('You have no pending approvals for this workflow');
     }
+    
+    // Update step
+    currentStep.status = 'approved';
+    currentStep.approvedAt = new Date();
+    currentStep.approvedBy = userId;
+    currentStep.notes = notes;
+    
+    // Move to next step
+    workflow.currentStep = currentStep.stepNumber + 1;
+    
+    // Check if all steps are approved
+    const pendingSteps = workflow.steps.filter(step => step.status === 'pending');
+    
+    if (pendingSteps.length === 0) {
+      // All steps approved
+      workflow.status = 'approved';
+      workflow.completedAt = new Date();
+    }
+    
+    await workflow.save();
+    
+    return {
+      success: true,
+      message: 'Approval recorded',
+      workflow: workflow
+    };
+  } catch (error) {
+    throw error;
   }
+}
+
+// Reject step
+static async rejectStep(month, userId, userRole, reason) {
+  try {
+    const workflow = await Workflow.findOne({ 
+      month: month,
+      status: 'in_progress'
+    });
+    
+    if (!workflow) {
+      throw new Error(`No active workflow found for month ${month}`);
+    }
+    
+    // Find the current step for this user's role
+    const currentStep = workflow.steps.find(
+      step => step.role === userRole && step.status === 'pending'
+    );
+    
+    if (!currentStep) {
+      throw new Error('You have no pending approvals for this workflow');
+    }
+    
+    // Update step
+    currentStep.status = 'rejected';
+    currentStep.approvedAt = new Date();
+    currentStep.approvedBy = userId;
+    currentStep.notes = reason;
+    workflow.status = 'rejected';
+    
+    await workflow.save();
+    
+    return {
+      success: true,
+      message: 'Rejection recorded',
+      workflow: workflow
+    };
+  } catch (error) {
+    throw error;
+  }
+}
+
+
   
   // Mark payroll as paid (after approvals)
   static async markPayrollPaid(month, paidBy) {
@@ -344,48 +350,48 @@ static async createWorkflow(month, requestedBy) {
     }
   }
   
-  // Get user's pending approvals
-  static async getMyPendingApprovals(userId, userRole) {
-    try {
-      const currentMonth = moment().format('YYYY-MM');
-      
-      const workflow = await Workflow.findOne({ 
-        month: currentMonth,
-        status: 'in_progress'
-      });
-      
-      if (!workflow) {
-        return {
-          hasPending: false,
-          message: 'No active workflow'
-        };
-      }
-      
-      // Check if this user has pending step for their role
-      const pendingStep = workflow.steps.find(
-        step => step.role === userRole && step.status === 'pending'
-      );
-      
-      if (!pendingStep) {
-        return {
-          hasPending: false,
-          message: 'No pending approvals for you'
-        };
-      }
-      
+  // Get user's pending approval
+
+// Also update getMyPendingApprovals to accept month parameter
+static async getMyPendingApprovals(month, userId, userRole) {
+  try {
+    const workflow = await Workflow.findOne({ 
+      month: month,
+      status: 'in_progress'
+    });
+    
+    if (!workflow) {
       return {
-        hasPending: true,
-        workflow: workflow,
-        myStep: {
-          stepNumber: pendingStep.stepNumber,
-          role: pendingStep.role,
-          canApprove: true
-        }
+        hasPending: false,
+        message: `No active workflow found for ${month}`
       };
-    } catch (error) {
-      throw error;
     }
+    
+    // Check if this user has pending step for their role
+    const pendingStep = workflow.steps.find(
+      step => step.role === userRole && step.status === 'pending'
+    );
+    
+    if (!pendingStep) {
+      return {
+        hasPending: false,
+        message: 'No pending approvals for you in this workflow'
+      };
+    }
+    
+    return {
+      hasPending: true,
+      workflow: workflow,
+      myStep: {
+        stepNumber: pendingStep.stepNumber,
+        role: pendingStep.role,
+        canApprove: true
+      }
+    };
+  } catch (error) {
+    throw error;
   }
+}
   
   // Get workflow history
   static async getWorkflowHistory() {
