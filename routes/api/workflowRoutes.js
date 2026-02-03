@@ -1,7 +1,7 @@
 // routes/workflowRoutes.js - UPDATED VERSION
 const express = require('express');
 const router = express.Router();
-const WorkflowController = require('../../controllers/workflowController');
+const WorkflowController = require('../../controllers/WorkflowController');
 const payrollController = require('../../controllers/payrollController');
 const { authenticateToken, requireAdmin, requireHROrAdmin } = require('../../utils/auth');
 
